@@ -8,7 +8,7 @@ import "./globals.css";
 import Header from "../components/header";
 export const metadata: Metadata = {
   title: "Bambum",
-  description: "",
+  description: "Undergarments for men and women",
 };
 
 export default function RootLayout({
