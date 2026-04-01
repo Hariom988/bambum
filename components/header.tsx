@@ -283,29 +283,6 @@ export default function Navbar() {
             </div>
 
             {/* Search */}
-            <div className="drawer-search">
-              <div className="drawer-search-inner">
-                <input
-                  type="text"
-                  placeholder="Search for products…"
-                  value={mobileSearch}
-                  onChange={(e) => setMobileSearch(e.target.value)}
-                  autoFocus
-                />
-                {mobileSearch ? (
-                  <button
-                    className="icon-btn"
-                    onClick={() => setMobileSearch("")}
-                  >
-                    <X size={14} />
-                  </button>
-                ) : (
-                  <button className="icon-btn">
-                    <Search size={14} />
-                  </button>
-                )}
-              </div>
-            </div>
 
             {/* Nav list + Level-2 panel */}
             <nav className="drawer-nav">
