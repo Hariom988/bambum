@@ -1,7 +1,9 @@
+import HeroSection from "@/components/(mobilePage)/heroSection";
+
 export default function Home() {
   return (
     <>
-      <div></div>
+      <HeroSection />
     </>
   );
 }
