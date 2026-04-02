@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import banner1 from "@/public/bambum_image.jpeg";
+import banner1 from "@/public/banner_image.png";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const SLIDES = [
@@ -106,7 +106,7 @@ export default function HeroSection() {
                 fill
                 priority={index === 0}
                 sizes="100vw"
-                className="object-contain object-center select-none"
+                className="object-cover object-center select-none"
                 draggable={false}
               />
             </div>

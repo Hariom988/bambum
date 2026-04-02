@@ -22,6 +22,16 @@
   --nav-font: "Georgia", serif;
   --nav-font-ui: system-ui, sans-serif;
   --nav-overlay: rgba(0, 0, 0, 0.35);
+    --ft-bg: #111009;
+  --ft-bg-band: #191510;
+  --ft-fg: #e8e0d0;
+  --ft-fg-muted: #8a8070;
+  --ft-fg-faint: #3a352c;
+  --ft-accent: var(--nav-accent);
+  --ft-accent-hover: var(--nav-accent-hover);
+  --ft-border: rgba(200, 169, 126, 0.12);
+  --ft-border-strong: rgba(200, 169, 126, 0.25);
+ 
 }
 /* ─ Logo ─ */
 .nav-logo {
