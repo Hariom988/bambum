@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -15,12 +14,12 @@ const SLIDES = [
   {
     id: 2,
     image: banner1,
-    cta: { label: "NEW ARRIVALS", href: "/" },
+    cta: { label: "UPCOMING", href: "/" },
   },
   {
     id: 3,
     image: banner1,
-    cta: { label: "NEW ARRIVALS", href: "/" },
+    cta: { label: "UPCOMING", href: "/" },
   },
 ];
 
@@ -31,8 +30,6 @@ export default function HeroSection() {
   const [isHovered, setIsHovered] = useState(false);
   const count = SLIDES.length;
   const isReducedMotion = useReducedMotion();
-
-  // Touch handling refs
   const touchStartX = useRef<number | null>(null);
 
   const next = useCallback(() => {
@@ -47,7 +44,6 @@ export default function HeroSection() {
     setCurrent(index);
   };
 
-  // Autoplay logic
   useEffect(() => {
     if (count < 2 || isReducedMotion || isHovered) return;
 
@@ -55,7 +51,6 @@ export default function HeroSection() {
     return () => clearInterval(interval);
   }, [count, next, isReducedMotion, isHovered]);
 
-  // Accessibility: Keyboard arrows
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") prev();
@@ -65,7 +60,6 @@ export default function HeroSection() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [next, prev]);
 
-  // Touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -117,7 +111,6 @@ export default function HeroSection() {
               />
             </div>
 
-            {/* Optional Overlay Content (CTA) */}
             {slide.cta && (
               <div
                 className={`absolute inset-0 flex items-center justify-center bg-black/10 transition-opacity duration-1000 delay-300 ${
@@ -131,7 +124,6 @@ export default function HeroSection() {
 
       <div className="absolute inset-0 bg-liner-to-t from-black/30 via-transparent to-transparent pointer-events-none z-20" />
 
-      {/* ── Navigation Arrows ── */}
       {count > 1 && (
         <>
           <button
@@ -157,7 +149,6 @@ export default function HeroSection() {
         </>
       )}
 
-      {/* ── Dot Indicators ── */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3">
         {SLIDES.map((_, i) => (
           <button
