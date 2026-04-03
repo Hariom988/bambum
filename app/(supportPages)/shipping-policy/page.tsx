@@ -113,7 +113,7 @@ export default function ShippingPolicyPage() {
                 className="text-sm md:text-base leading-relaxed max-w-md"
                 style={{ color: "var(--nav-fg-muted)" }}
               >
-                At <strong style={{ color: "var(--nav-fg)" }}>Bambum,</strong>{" "}
+                At <strong style={{ color: "var(--nav-fg)" }}>Bambumm,</strong>{" "}
                 we aim to deliver your orders quickly, safely, and efficiently.
               </p>
             </div>

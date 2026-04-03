@@ -107,7 +107,7 @@ export default function RefundPolicyPage() {
               className="text-base leading-relaxed max-w-md"
               style={{ color: "var(--ft-fg-muted)" }}
             >
-              At <strong style={{ color: "var(--ft-fg)" }}>Bambum,</strong> we
+              At <strong style={{ color: "var(--ft-fg)" }}>Bambumm,</strong> we
               prioritize hygiene, quality, and customer satisfaction. Due to the
               intimate nature of our products, all innerwear and undergarments
               are strictly non-returnable and non-exchangeable once delivered.

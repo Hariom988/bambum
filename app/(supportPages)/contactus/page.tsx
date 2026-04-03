@@ -159,7 +159,7 @@ export default function ContactPage() {
                   className="text-xs tracking-[0.14em] uppercase"
                   style={{ color: "var(--nav-fg-muted)" }}
                 >
-                  Bambum Support
+                  Bambumm Support
                 </p>
               </div>
 

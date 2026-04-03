@@ -282,7 +282,7 @@ export default function Navbar() {
           <div className="drawer" role="dialog" aria-label="Navigation menu">
             <div className="drawer-header">
               <span className="nav-logo" style={{ fontSize: "1.2rem" }}>
-                Bambum
+                Bambumm
               </span>
               <button
                 className="icon-btn"

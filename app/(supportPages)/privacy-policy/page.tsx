@@ -94,7 +94,7 @@ export default function PrivacyPolicyPage() {
             className="text-base md:text-lg leading-relaxed max-w-xl mx-auto"
             style={{ color: "var(--nav-fg-muted)" }}
           >
-            At <strong style={{ color: "var(--nav-fg)" }}>Bambum</strong>, we
+            At <strong style={{ color: "var(--nav-fg)" }}>Bambumm</strong>, we
             value your privacy and are committed to protecting your personal
             information with complete transparency and responsibility.
           </p>

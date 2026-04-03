@@ -25,7 +25,7 @@ const STEPS = [
     icon: ShieldAlert,
     number: "04",
     title: "Our Right to Cancel",
-    body: "Bambum reserves the right to cancel any order due to stock issues, payment failures, or operational constraints.",
+    body: "Bambumm reserves the right to cancel any order due to stock issues, payment failures, or operational constraints.",
   },
 ];
 

@@ -5,7 +5,7 @@ import { Plus, Minus } from "lucide-react";
 
 const FAQ_ITEMS = [
   {
-    q: "What makes Bambum products different?",
+    q: "What makes Bambumm products different?",
     a: "Our products are made from premium bamboo fabric, offering superior comfort and breathability that synthetic or cotton alternatives simply can't match.",
   },
   {

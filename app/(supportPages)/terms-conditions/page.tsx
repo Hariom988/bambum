@@ -12,7 +12,7 @@ const SECTIONS = [
   {
     icon: Copyright,
     title: "Intellectual Property",
-    body: "All content on this website, including images, designs, text, and branding elements, is the intellectual property of Bambum and may not be reproduced, distributed, or used in any form without prior written permission.",
+    body: "All content on this website, including images, designs, text, and branding elements, is the intellectual property of Bambumm and may not be reproduced, distributed, or used in any form without prior written permission.",
   },
   {
     icon: RefreshCw,
@@ -102,7 +102,7 @@ export default function TermsConditionsPage() {
             style={{ color: "var(--nav-fg-muted)" }}
           >
             Welcome to{" "}
-            <strong style={{ color: "var(--nav-fg)" }}>Bambum.</strong> By
+            <strong style={{ color: "var(--nav-fg)" }}>Bambumm.</strong> By
             accessing and using this website, you agree to comply with the
             following terms and conditions.
           </p>

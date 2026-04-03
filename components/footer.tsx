@@ -185,7 +185,7 @@ export default function Footer() {
           className="text-[0.77rem] tracking-wide"
           style={{ color: "var(--ft-fg-muted)" }}
         >
-          © {new Date().getFullYear()} Bambum. All rights reserved.
+          © {new Date().getFullYear()} Bambumm. All rights reserved.
         </p>
 
         <div className="flex items-center gap-2">
@@ -219,7 +219,7 @@ export default function Footer() {
         }}
         aria-hidden="true"
       >
-        BAMBUM
+        BAMBUMM
       </div>
     </footer>
   );

@@ -208,7 +208,7 @@ export default function AboutUsPage() {
                     } as React.CSSProperties
                   }
                 >
-                  <span>Bambum</span>
+                  <span>Bambumm</span>
                 </span>
                 <span className="hero-line">
                   <span
@@ -259,7 +259,7 @@ export default function AboutUsPage() {
                 {[
                   "Wear the Comfort",
                   "·",
-                  "Wear Bambum",
+                  "Wear Bambumm",
                   "·",
                   "Bamboo Fabric",
                   "·",
@@ -491,7 +491,7 @@ export default function AboutUsPage() {
           >
             Wear the Comfort.
             <br />
-            <span style={{ color: "var(--nav-accent)" }}>Wear Bambum.</span>
+            <span style={{ color: "var(--nav-accent)" }}>Wear Bambumm.</span>
           </blockquote>
 
           <div className="flex items-center justify-center gap-4 mb-10">
