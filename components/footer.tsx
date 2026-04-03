@@ -14,22 +14,20 @@ const FOOTER_LINKS = [
     ],
   },
   {
-    heading: "Help",
+    heading: "Policies",
     links: [
-      { label: "Size Guide", href: "/" },
-      { label: "Shipping & Returns", href: "/" },
-      { label: "Track My Order", href: "/" },
-      { label: "FAQ", href: "/" },
-      { label: "Care Instructions", href: "/" },
+      { label: "Privacy Policy", href: "/privacy-policy" },
+      { label: "Terms And Conditions", href: "/terms-conditions" },
+      { label: "Refund Policy", href: "/return-refund" },
+      { label: "Cancellation Policy", href: "/cancellation" },
+      { label: "Shipping Policy", href: "/shipping-policy" },
     ],
   },
   {
-    heading: "Policies",
+    heading: "Help",
     links: [
-      { label: "Privacy Policy", href: "/" },
-      { label: "Terms And Conditions", href: "/" },
-      { label: "Refund Policy", href: "/" },
-      { label: "Term of Service", href: "/" },
+      { label: "Contact Us", href: "/contactus" },
+      { label: "About Us", href: "/aboutus" },
     ],
   },
 ];

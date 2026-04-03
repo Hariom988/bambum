@@ -194,7 +194,7 @@ export default function FAQ() {
           fontFamily: "var(--nav-font-ui)",
         }}
       >
-        <div className="max-w-3xl mx-auto px-6 py-16 md:py-20">
+        <div className="max-w-8xl mx-auto px-6 py-16 md:py-20">
           {/* Header */}
           <div className="flex flex-col items-center text-center mb-12">
             <p
