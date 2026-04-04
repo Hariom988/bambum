@@ -8,20 +8,20 @@ const CONTACTS = [
     icon: Mail,
     label: "Email Us",
     value: "support@bambum.com",
-    sub: "We'll get back to you within 24–48 hours",
+    sub: "We'll get back to you within 24-48 hours",
     href: "mailto:support@bambum.com",
   },
   {
     icon: Phone,
     label: "Call Us",
-    value: "+91-XXXXXXXXXX",
-    sub: "Mon – Sat, 10 AM to 6 PM IST",
-    href: "tel:+91XXXXXXXXXX",
+    value: "+91 9953532262",
+    sub: "Mon - Sat, 10 AM to 6 PM IST",
+    href: "tel:+919953532262",
   },
   {
     icon: MapPin,
     label: "Find Us",
-    value: "Gurgaon, Haryana",
+    value: "Plot No. 34B Block D Basement Chhattarpur Enclave, Delhi-110074",
     sub: "India",
     href: null,
   },
@@ -169,7 +169,7 @@ export default function ContactPage() {
               >
                 Have a question about your order, our products, or anything
                 else? Our support team typically responds within{" "}
-                <strong style={{ color: "var(--nav-fg)" }}>24–48 hours.</strong>
+                <strong style={{ color: "var(--nav-fg)" }}>24-48 hours.</strong>
               </p>
             </div>
 
@@ -317,7 +317,7 @@ export default function ContactPage() {
         </section>
 
         {/* ── CONTACT CARDS ── */}
-        <section className="max-w-5xl mx-auto px-6 py-16 md:py-24">
+        <section className="max-w-6xl mx-auto px-6 py-16 md:py-24">
           <div
             ref={cardsRef}
             className="ct-cards grid sm:grid-cols-2 lg:grid-cols-4 gap-5"

@@ -88,16 +88,20 @@ export default function Footer() {
 
           <ul className="flex flex-col gap-2 list-none p-0 m-0">
             {[
-              { icon: MapPin, text: "New Delhi, India", href: null },
+              {
+                icon: MapPin,
+                text: "Plot No. 34B Block D Basement Chhattarpur Enclave Delhi-110074",
+                href: null,
+              },
               {
                 icon: Mail,
-                text: "hello@bambum.in",
-                href: "mailto:hello@bambum.in",
+                text: "support@bambum.in",
+                href: "mailto:support@bambum.in",
               },
               {
                 icon: Phone,
-                text: "+91 1800 000 000",
-                href: "tel:+911800000000",
+                text: "+91 9953532262",
+                href: "tel:+919953532262",
               },
             ].map(({ icon: Icon, text, href }) => (
               <li

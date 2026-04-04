@@ -15,7 +15,7 @@ import Link from "next/link";
 
 const NAV_ITEMS = [
   {
-    label: "Men's Wear",
+    label: "Men",
     categories: [
       { title: "Trunks", links: ["SAMPLE", "SAMPLE", "SAMPLE", "SAMPLE"] },
       { title: "Briefs", links: ["SAMPLE", "SAMPLE", "SAMPLE", "SAMPLE"] },
@@ -30,7 +30,7 @@ const NAV_ITEMS = [
     ],
   },
   {
-    label: "Women's Wear",
+    label: "Women",
     categories: [
       { title: "Hipster", links: ["SAMPLE", "SAMPLE"] },
       {
@@ -98,7 +98,7 @@ export default function Navbar() {
           onMouseLeave={leave}
         >
           <Link href="/">
-            <img className="w-20" src="/logo-removebg-preview.png" alt="" />
+            <img className="w-20" src="/logo.png" alt="" />
           </Link>
 
           <nav className="desktop-only justify-center items-center gap-6 flex-1">
