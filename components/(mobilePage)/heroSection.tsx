@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import banner1 from "@/public/banner_image1.jpeg";
+import banner1 from "@/public/banner_image.png";
 import banner2 from "@/public/banner_image2.png";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
@@ -79,7 +79,7 @@ export default function HeroSection() {
 
   return (
     <section
-      className="relative w-full h-screen min-h-100 overflow-hidden bg-gray-100"
+      className="relative w-full h-[70vh] min-h-100 overflow-hidden bg-gray-100"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
