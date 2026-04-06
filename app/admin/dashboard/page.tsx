@@ -78,12 +78,12 @@ export default function AdminDashboardPage() {
 
   return (
     <div
-      className={`min-h-screen bg-[#0a0a0b] text-[#e8e0d0] transition-opacity duration-500 ${
+      className={`min-h-screen text-[#c8a97e] bg-(--nav-bg)  transition-opacity duration-500 ${
         mounted ? "opacity-100" : "opacity-0"
       }`}
     >
       {/* TOP BAR */}
-      <header className="sticky top-0 z-50 h-15 bg-[#0a0a0b]/90 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-7">
+      <header className="sticky top-0 z-50 h-15  bg-(--nav-bg)  backdrop-blur-md border-b border-white/5 flex items-center justify-between px-7">
         <div className="flex items-center gap-4">
           <span
             className="text-lg font-bold uppercase tracking-widest text-[#e8e0d0]"
@@ -133,7 +133,7 @@ export default function AdminDashboardPage() {
         </section>
 
         {/* Divider */}
-        <div className="h-px bg-gradient-to-r from-[#c8a97e]/20 via-white/5 to-transparent mb-10" />
+        <div className="h-px bg-linear-to-r from-[#c8a97e]/20 via-white/5 to-transparent mb-10" />
 
         {/* Status cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">

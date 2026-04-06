@@ -1,16 +1,15 @@
 import { MongoClient } from "mongodb";
 import bcrypt from "bcryptjs";
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
 
 const { MONGODB_ADMIN_URI, ADMIN_USER, ADMIN_PASS } = process.env;
 
-if (!MONGODB_ADMIN_URI && !ADMIN_USER && !ADMIN_PASS) {
+if (!MONGODB_ADMIN_URI || !ADMIN_USER || !ADMIN_PASS) {
     console.error("Missing env vars: MONGODB_ADMIN_URI, ADMIN_USER, ADMIN_PASS");
     process.exit(1);
 }
-if (!ADMIN_USER) {
-    console.error("Missing env var: ADMIN_USER");
-    process.exit(1);
-}
+
 async function seed() {
     const client = await MongoClient.connect(MONGODB_ADMIN_URI);
     const db = client.db("credentials");

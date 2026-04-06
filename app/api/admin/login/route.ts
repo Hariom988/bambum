@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
 
     // Connect to MongoDB
     const client = await MongoClient.connect(MONGODB_URI);
-    const db = client.db(); // uses the default DB in the URI (or set: client.db("admin"))
-    const adminCol = db.collection("credentials"); // admin.credentials collection
+    const db = client.db("credentials"); 
+    const adminCol = db.collection("admin");
     
     // Find admin by username (case-insensitive)
     const admin = await adminCol.findOne({
