@@ -5,7 +5,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import banner1 from "@/public/banner_image.png";
 import banner2 from "@/public/banner_image2.png";
 import banner3 from "@/public/banner_image3.png";
-import banner4 from "@/public/banner_image4.png";
+import banner4 from "@/public/banner_image5.jpeg";
+
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const SLIDES = [
