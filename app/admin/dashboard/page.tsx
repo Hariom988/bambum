@@ -17,9 +17,23 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const [time, setTime] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
+    // Tab-close session check: sessionStorage is wiped on tab close
+    const isActive = sessionStorage.getItem("admin_session_active");
+    if (!isActive) {
+      // New tab opened — kill the cookie and go back to login
+      fetch("/api/admin/logout", { method: "POST" }).finally(() => {
+        router.replace("/admin/login");
+      });
+      return; // don't render the page
+    }
+
+    // Session is valid — render the page
+    setChecking(false);
     setMounted(true);
+
     const tick = () => {
       const now = new Date();
       setTime(
@@ -33,9 +47,10 @@ export default function AdminDashboardPage() {
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [router]);
 
   const handleLogout = async () => {
+    sessionStorage.removeItem("admin_session_active");
     await fetch("/api/admin/logout", { method: "POST" });
     router.push("/admin/login");
   };
@@ -76,38 +91,66 @@ export default function AdminDashboardPage() {
     { icon: Settings, label: "Settings", badge: "Soon", active: false },
   ];
 
+  // Don't render anything while checking session or redirecting
+  if (checking) return null;
+
   return (
     <div
-      className={`min-h-screen text-[#c8a97e] bg-(--nav-bg)  transition-opacity duration-500 ${
-        mounted ? "opacity-100" : "opacity-0"
-      }`}
+      className={`min-h-screen transition-opacity duration-500 ${mounted ? "opacity-100" : "opacity-0"}`}
+      style={{
+        background: "var(--nav-bg)",
+        color: "var(--nav-fg)",
+        fontFamily: "var(--nav-font-ui)",
+      }}
     >
       {/* TOP BAR */}
-      <header className="sticky top-0 z-50 h-15  bg-(--nav-bg)  backdrop-blur-md border-b border-white/5 flex items-center justify-between px-7">
+      <header
+        className="sticky top-0 z-50 flex items-center justify-between px-7"
+        style={{
+          height: "var(--nav-height)",
+          background: "#fff",
+          borderBottom: "1px solid var(--nav-border)",
+          boxShadow: "0 1px 8px rgba(0,0,0,0.05)",
+        }}
+      >
         <div className="flex items-center gap-4">
           <span
-            className="text-lg font-bold uppercase tracking-widest text-[#e8e0d0]"
-            style={{ fontFamily: "var(--nav-font)" }}
+            className="text-lg font-bold uppercase tracking-widest"
+            style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
           >
-            Bambumm
+            <img className="w-22" src="/logo.png" alt="" />
           </span>
-          <div className="w-px h-5 bg-white/5" />
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-[#c8a97e]/10 border border-[#c8a97e]/25 text-[#c8a97e] text-[0.6rem] tracking-[0.18em] uppercase font-semibold">
-            <ShieldCheck size={10} />
-            Admin
-          </div>
         </div>
 
         <div className="flex items-center gap-4">
           {time && (
-            <div className="hidden sm:flex items-center gap-1.5 text-[0.7rem] text-[#6b6460] tracking-wide">
+            <div
+              className="hidden sm:flex items-center gap-1.5 text-[0.7rem] tracking-wide"
+              style={{ color: "var(--nav-fg-muted)" }}
+            >
               <Clock size={12} />
               {time}
             </div>
           )}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 px-3.5 py-2 border border-white/5 text-[#6b6460] text-[0.65rem] tracking-[0.16em] uppercase hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/5 transition-all duration-200"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-[0.65rem] tracking-[0.16em] uppercase transition-all duration-200"
+            style={{
+              border: "1px solid var(--nav-border)",
+              color: "var(--nav-fg-muted)",
+              background: "transparent",
+              cursor: "pointer",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "rgba(217,79,61,0.4)";
+              e.currentTarget.style.color = "var(--nav-sale)";
+              e.currentTarget.style.background = "rgba(217,79,61,0.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "var(--nav-border)";
+              e.currentTarget.style.color = "var(--nav-fg-muted)";
+              e.currentTarget.style.background = "transparent";
+            }}
           >
             <LogOut size={12} />
             Sign Out
@@ -117,51 +160,85 @@ export default function AdminDashboardPage() {
 
       {/* MAIN */}
       <main className="max-w-5xl mx-auto px-6 py-12">
-        {/* Welcome */}
         <section className="mb-12">
-          <p className="flex items-center gap-2 text-[0.65rem] tracking-[0.22em] uppercase text-[#c8a97e] mb-3">
-            <Activity size={10} />
-            Control Center
-          </p>
           <h1
-            className="text-4xl md:text-5xl font-bold text-[#e8e0d0] leading-tight mb-2"
-            style={{ fontFamily: "var(--nav-font)" }}
+            className="text-4xl md:text-5xl font-bold leading-tight mb-2"
+            style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
           >
-            Welcome back, <span className="italic text-[#c8a97e]">Admin.</span>
+            Welcome back, <em style={{ color: "var(--nav-accent)" }}>Admin.</em>
           </h1>
-          <p className="text-[0.75rem] text-[#6b6460] tracking-wide">{today}</p>
+          <p
+            className="text-[0.75rem] tracking-wide"
+            style={{ color: "var(--nav-fg-muted)" }}
+          >
+            {today}
+          </p>
         </section>
 
-        {/* Divider */}
-        <div className="h-px bg-linear-to-r from-[#c8a97e]/20 via-white/5 to-transparent mb-10" />
+        <div
+          className="h-px mb-10"
+          style={{
+            background:
+              "linear-gradient(90deg, var(--nav-accent) 0%, var(--nav-border) 60%, transparent 100%)",
+            opacity: 0.5,
+          }}
+        />
 
-        {/* Status cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           {statusCards.map((card) => {
             const Icon = card.icon;
             return (
               <div
                 key={card.label}
-                className="bg-[#111114] border border-white/5 hover:border-[#c8a97e]/25 transition-colors duration-200 p-6 relative overflow-hidden"
+                className="relative overflow-hidden p-6 transition-all duration-200"
+                style={{
+                  background: "#fff",
+                  border: "1px solid var(--nav-border)",
+                  boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.borderColor = "var(--nav-accent)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.borderColor = "var(--nav-border)")
+                }
               >
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#c8a97e] opacity-30" />
-                <div className="w-9 h-9 flex items-center justify-center bg-[#c8a97e]/10 border border-[#c8a97e]/20 mb-4">
+                <div
+                  className="absolute top-0 left-0 right-0 h-0.5"
+                  style={{ background: "var(--nav-accent)", opacity: 0.4 }}
+                />
+                <div
+                  className="w-9 h-9 flex items-center justify-center mb-4"
+                  style={{
+                    background: "rgba(200,169,126,0.1)",
+                    border: "1px solid var(--nav-border)",
+                  }}
+                >
                   <Icon
                     size={16}
-                    className="text-[#c8a97e]"
+                    style={{ color: "var(--nav-accent)" }}
                     strokeWidth={1.5}
                   />
                 </div>
-                <p className="text-[0.6rem] tracking-[0.18em] uppercase text-[#6b6460] mb-1">
+                <p
+                  className="text-[0.6rem] tracking-[0.18em] uppercase mb-1"
+                  style={{ color: "var(--nav-fg-muted)" }}
+                >
                   {card.label}
                 </p>
                 <p
-                  className="text-2xl font-bold text-[#e8e0d0]"
-                  style={{ fontFamily: "var(--nav-font)" }}
+                  className="text-2xl font-bold"
+                  style={{
+                    fontFamily: "var(--nav-font)",
+                    color: "var(--nav-fg)",
+                  }}
                 >
                   {card.value}
                 </p>
-                <p className="text-[0.6rem] text-[#6b6460] mt-1 tracking-wide">
+                <p
+                  className="text-[0.6rem] tracking-wide mt-1"
+                  style={{ color: "var(--nav-fg-muted)" }}
+                >
                   {card.sub}
                 </p>
               </div>
@@ -169,51 +246,77 @@ export default function AdminDashboardPage() {
           })}
         </div>
 
-        {/* Coming soon box */}
-        <div className="bg-[#111114] border border-white/5 p-10 text-center">
+        <div
+          className="p-10 text-center"
+          style={{
+            background: "#fff",
+            border: "1px solid var(--nav-border)",
+            boxShadow: "0 2px 16px rgba(200,169,126,0.08)",
+          }}
+        >
           <div className="flex justify-center mb-5">
-            <div className="w-12 h-12 flex items-center justify-center bg-[#c8a97e]/10 border border-[#c8a97e]/20">
+            <div
+              className="w-12 h-12 flex items-center justify-center"
+              style={{
+                background: "rgba(200,169,126,0.1)",
+                border: "1px solid var(--nav-border)",
+              }}
+            >
               <Settings
                 size={20}
-                className="text-[#c8a97e]"
+                style={{ color: "var(--nav-accent)" }}
                 strokeWidth={1.5}
               />
             </div>
           </div>
-
           <h2
-            className="text-xl font-bold text-[#e8e0d0] mb-2"
-            style={{ fontFamily: "var(--nav-font)" }}
+            className="text-xl font-bold mb-2"
+            style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
           >
             Inventory Management Coming Soon
           </h2>
-          <p className="text-sm text-[#6b6460] tracking-wide leading-relaxed">
+          <p
+            className="text-sm tracking-wide leading-relaxed"
+            style={{ color: "var(--nav-fg-muted)" }}
+          >
             Modules for product management, order tracking,
             <br className="hidden sm:block" />
             and analytics are being built. Stay tuned.
           </p>
 
-          {/* Nav chips */}
           <div className="flex flex-wrap items-center justify-center gap-2.5 mt-8">
             {navChips.map((chip) => {
               const Icon = chip.icon;
               return (
                 <div
                   key={chip.label}
-                  className={`flex items-center gap-2 px-4 py-2 border text-[0.65rem] tracking-[0.14em] uppercase transition-colors duration-150 ${
-                    chip.active
-                      ? "border-[#c8a97e]/30 text-[#c8a97e] bg-[#c8a97e]/10 cursor-pointer"
-                      : "border-white/5 text-[#6b6460] bg-[#17171b] cursor-not-allowed"
+                  className={`flex items-center gap-2 px-4 py-2 text-[0.65rem] tracking-[0.14em] uppercase ${
+                    chip.active ? "cursor-pointer" : "cursor-not-allowed"
                   }`}
+                  style={{
+                    border: chip.active
+                      ? "1px solid var(--nav-accent)"
+                      : "1px solid var(--nav-border)",
+                    color: chip.active
+                      ? "var(--nav-accent)"
+                      : "var(--nav-fg-muted)",
+                    background: chip.active
+                      ? "rgba(200,169,126,0.08)"
+                      : "transparent",
+                  }}
                 >
                   <Icon size={11} />
                   {chip.label}
                   <span
-                    className={`text-[0.55rem] px-1.5 py-0.5 tracking-wide ${
-                      chip.active
-                        ? "bg-[#c8a97e]/15 text-[#c8a97e]"
-                        : "bg-white/5 text-[#6b6460]"
-                    }`}
+                    className="text-[0.55rem] px-1.5 py-0.5 tracking-wide"
+                    style={{
+                      background: chip.active
+                        ? "rgba(200,169,126,0.15)"
+                        : "rgba(0,0,0,0.05)",
+                      color: chip.active
+                        ? "var(--nav-accent)"
+                        : "var(--nav-fg-muted)",
+                    }}
                   >
                     {chip.badge}
                   </span>

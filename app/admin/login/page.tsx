@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Shield, AlertCircle, Loader2, Link } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -38,6 +38,8 @@ export default function AdminLoginPage() {
       if (!res.ok) {
         setError(data.error || "Invalid credentials.");
       } else {
+        // Set the sessionStorage flag — this is wiped automatically when the tab closes
+        sessionStorage.setItem("admin_session_active", "true");
         router.push("/admin/dashboard");
       }
     } catch {
@@ -50,34 +52,37 @@ export default function AdminLoginPage() {
   return (
     <main
       className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: "var(--nav-bg)" }}
+      style={{ background: "var(--nav-bg)", fontFamily: "var(--nav-font-ui)" }}
     >
       <div
-        className={`w-full max-w-md transition-all duration-700 ease-out ${
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(var(--nav-border) 1px, transparent 1px), linear-gradient(90deg, var(--nav-border) 1px, transparent 1px)`,
+          backgroundSize: "60px 60px",
+          opacity: 0.5,
+        }}
+      />
+
+      <div
+        className={`relative w-full max-w-md transition-all duration-700 ease-out ${
           mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         }`}
       >
-        {/* Card */}
         <div
-          className="border overflow-hidden"
           style={{
             background: "#fff",
-            borderColor: "var(--nav-border)",
-            boxShadow: "0 4px 40px rgba(200,169,126,0.10)",
+            border: "1px solid var(--nav-border)",
+            boxShadow: "0 8px 40px rgba(200,169,126,0.12)",
           }}
         >
-          {/* Top accent bar */}
-
           <div className="px-10 py-10">
-            {/* Header */}
-            <div className="flex flex-row items-center gap-4 mb-10">
-              <a href="/" className="text-[#c8a97e]">
-                <img src="/logo.png" className="w-22" alt="logo" />
+            <div className="flex items-center gap-4 mb-10">
+              <a href="/">
+                <img className="w-25" src="/logo.png" alt="Bambumm Logo" />
               </a>
-
-              <div className="text-center">
+              <div>
                 <h1
-                  className="text-2xl font-bold uppercase tracking-widest"
+                  className="text-xl font-bold uppercase tracking-widest"
                   style={{
                     fontFamily: "var(--nav-font)",
                     color: "var(--nav-fg)",
@@ -88,14 +93,13 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
-            {/* Divider */}
             <div className="flex items-center gap-3 mb-8">
               <div
                 className="flex-1 h-px"
                 style={{ background: "var(--nav-border)" }}
               />
               <div
-                className="w-1 h-1 rounded-full"
+                className="w-1.5 h-1.5 rounded-full"
                 style={{ background: "var(--nav-accent)", opacity: 0.5 }}
               />
               <div
@@ -104,9 +108,7 @@ export default function AdminLoginPage() {
               />
             </div>
 
-            {/* Form */}
             <form onSubmit={handleSubmit} autoComplete="off">
-              {/* Username */}
               <div className="flex flex-col gap-1.5 mb-4">
                 <label
                   className="text-[0.65rem] tracking-[0.18em] uppercase font-semibold"
@@ -115,11 +117,17 @@ export default function AdminLoginPage() {
                   Username
                 </label>
                 <div
-                  className="flex items-center border transition-colors duration-200 focus-within:border-[#c8a97e]"
+                  className="flex items-center"
                   style={{
-                    borderColor: "var(--nav-border)",
+                    border: "1px solid var(--nav-border)",
                     background: "var(--nav-bg)",
                   }}
+                  onFocusCapture={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--nav-accent)")
+                  }
+                  onBlurCapture={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--nav-border)")
+                  }
                 >
                   <input
                     type="text"
@@ -129,15 +137,11 @@ export default function AdminLoginPage() {
                     autoComplete="off"
                     spellCheck={false}
                     className="flex-1 bg-transparent outline-none text-sm px-4 py-3 tracking-wide"
-                    style={{
-                      color: "var(--nav-fg)",
-                      fontFamily: "var(--nav-font-ui)",
-                    }}
+                    style={{ color: "var(--nav-fg)" }}
                   />
                 </div>
               </div>
 
-              {/* Password */}
               <div className="flex flex-col gap-1.5 mb-6">
                 <label
                   className="text-[0.65rem] tracking-[0.18em] uppercase font-semibold"
@@ -146,11 +150,17 @@ export default function AdminLoginPage() {
                   Password
                 </label>
                 <div
-                  className="flex items-center border transition-colors duration-200 focus-within:border-[#c8a97e]"
+                  className="flex items-center"
                   style={{
-                    borderColor: "var(--nav-border)",
+                    border: "1px solid var(--nav-border)",
                     background: "var(--nav-bg)",
                   }}
+                  onFocusCapture={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--nav-accent)")
+                  }
+                  onBlurCapture={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--nav-border)")
+                  }
                 >
                   <input
                     type={showPass ? "text" : "password"}
@@ -159,36 +169,36 @@ export default function AdminLoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="new-password"
                     className="flex-1 bg-transparent outline-none text-sm px-4 py-3 tracking-wide"
-                    style={{
-                      color: "var(--nav-fg)",
-                      fontFamily: "var(--nav-font-ui)",
-                    }}
+                    style={{ color: "var(--nav-fg)" }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPass((v) => !v)}
-                    className="px-4 py-3 transition-colors duration-150"
-                    style={{ color: "var(--nav-fg-muted)" }}
+                    className="px-4 py-3"
+                    style={{
+                      color: "var(--nav-fg-muted)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.color = "var(--nav-accent)")
                     }
                     onMouseLeave={(e) =>
                       (e.currentTarget.style.color = "var(--nav-fg-muted)")
                     }
-                    aria-label={showPass ? "Hide password" : "Show password"}
                   >
                     {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
 
-              {/* Error */}
               {error && (
                 <div
-                  className="flex items-center gap-2.5 px-4 py-3 mb-5 border"
+                  className="flex items-center gap-2.5 px-4 py-3 mb-5"
                   style={{
                     background: "rgba(217,79,61,0.06)",
-                    borderColor: "rgba(217,79,61,0.2)",
+                    border: "1px solid rgba(217,79,61,0.2)",
                   }}
                 >
                   <AlertCircle
@@ -205,12 +215,16 @@ export default function AdminLoginPage() {
                 </div>
               )}
 
-              {/* Submit */}
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full py-3.5 text-xs font-bold tracking-[0.2em] uppercase flex items-center justify-center gap-2.5 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: "var(--nav-accent)", color: "#fff" }}
+                style={{
+                  background: "var(--nav-accent)",
+                  color: "#fff",
+                  border: "none",
+                  cursor: "pointer",
+                }}
                 onMouseEnter={(e) => {
                   if (!loading)
                     (e.currentTarget as HTMLButtonElement).style.background =
@@ -231,8 +245,6 @@ export default function AdminLoginPage() {
                 )}
               </button>
             </form>
-
-            {/* Footer */}
           </div>
         </div>
       </div>
