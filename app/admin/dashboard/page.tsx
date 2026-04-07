@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Clock,
   Activity,
+  ArrowRight,
 } from "lucide-react";
 
 export default function AdminDashboardPage() {
@@ -55,13 +56,6 @@ export default function AdminDashboardPage() {
     router.push("/admin/login");
   };
 
-  const today = new Date().toLocaleDateString("en-IN", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
   const statusCards = [
     {
       icon: Package,
@@ -82,13 +76,6 @@ export default function AdminDashboardPage() {
       value: "Online",
       sub: "All services running",
     },
-  ];
-
-  const navChips = [
-    { icon: LayoutDashboard, label: "Dashboard", badge: "Live", active: true },
-    { icon: Package, label: "Products", badge: "Soon", active: false },
-    { icon: Users, label: "Users", badge: "Soon", active: false },
-    { icon: Settings, label: "Settings", badge: "Soon", active: false },
   ];
 
   // Don't render anything while checking session or redirecting
@@ -159,31 +146,7 @@ export default function AdminDashboardPage() {
       </header>
 
       {/* MAIN */}
-      <main className="max-w-5xl mx-auto px-6 py-12">
-        <section className="mb-12">
-          <h1
-            className="text-4xl md:text-5xl font-bold leading-tight mb-2"
-            style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
-          >
-            Welcome back, <em style={{ color: "var(--nav-accent)" }}>Admin.</em>
-          </h1>
-          <p
-            className="text-[0.75rem] tracking-wide"
-            style={{ color: "var(--nav-fg-muted)" }}
-          >
-            {today}
-          </p>
-        </section>
-
-        <div
-          className="h-px mb-10"
-          style={{
-            background:
-              "linear-gradient(90deg, var(--nav-accent) 0%, var(--nav-border) 60%, transparent 100%)",
-            opacity: 0.5,
-          }}
-        />
-
+      <main className="max-w-5xl mx-auto px-6 py-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           {statusCards.map((card) => {
             const Icon = card.icon;
@@ -246,83 +209,35 @@ export default function AdminDashboardPage() {
           })}
         </div>
 
-        <div
-          className="p-10 text-center"
-          style={{
-            background: "#fff",
-            border: "1px solid var(--nav-border)",
-            boxShadow: "0 2px 16px rgba(200,169,126,0.08)",
-          }}
-        >
-          <div className="flex justify-center mb-5">
-            <div
-              className="w-12 h-12 flex items-center justify-center"
-              style={{
-                background: "rgba(200,169,126,0.1)",
-                border: "1px solid var(--nav-border)",
-              }}
-            >
-              <Settings
-                size={20}
-                style={{ color: "var(--nav-accent)" }}
-                strokeWidth={1.5}
-              />
-            </div>
-          </div>
-          <h2
-            className="text-xl font-bold mb-2"
-            style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
-          >
-            Inventory Management Coming Soon
-          </h2>
-          <p
-            className="text-sm tracking-wide leading-relaxed"
-            style={{ color: "var(--nav-fg-muted)" }}
-          >
-            Modules for product management, order tracking,
-            <br className="hidden sm:block" />
-            and analytics are being built. Stay tuned.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-2.5 mt-8">
-            {navChips.map((chip) => {
-              const Icon = chip.icon;
-              return (
-                <div
-                  key={chip.label}
-                  className={`flex items-center gap-2 px-4 py-2 text-[0.65rem] tracking-[0.14em] uppercase ${
-                    chip.active ? "cursor-pointer" : "cursor-not-allowed"
-                  }`}
-                  style={{
-                    border: chip.active
-                      ? "1px solid var(--nav-accent)"
-                      : "1px solid var(--nav-border)",
-                    color: chip.active
-                      ? "var(--nav-accent)"
-                      : "var(--nav-fg-muted)",
-                    background: chip.active
-                      ? "rgba(200,169,126,0.08)"
-                      : "transparent",
-                  }}
+        <div className="bg-[#c8a97e]/10 border rounded-xl border-white/20 overflow-hidden">
+          <div className="p-10 ">
+            <div className="flex flex-col  md:flex-row items-center gap-8">
+              {/* Left: text */}
+              <div className="flex-1 text-center md:text-left">
+                <h2
+                  className="text-xl font-bold text-black mb-2"
+                  style={{ fontFamily: "var(--nav-font)" }}
                 >
-                  <Icon size={11} />
-                  {chip.label}
-                  <span
-                    className="text-[0.55rem] px-1.5 py-0.5 tracking-wide"
-                    style={{
-                      background: chip.active
-                        ? "rgba(200,169,126,0.15)"
-                        : "rgba(0,0,0,0.05)",
-                      color: chip.active
-                        ? "var(--nav-accent)"
-                        : "var(--nav-fg-muted)",
-                    }}
-                  >
-                    {chip.badge}
-                  </span>
-                </div>
-              );
-            })}
+                  Inventory Management
+                </h2>
+                <p className="text-sm text-[#6b6460] tracking-wide leading-relaxed">
+                  Add, edit, and manage your product catalogue.
+                </p>
+              </div>
+
+              <div className="shrink-0">
+                <button
+                  onClick={() => router.push("/admin/inventory")}
+                  className="group cursor-pointer flex items-center gap-3 px-8 py-4 bg-[#c8a97e] text-white text-xs font-bold tracking-[0.18em] uppercase hover:bg-[#a8845a] transition-colors duration-200"
+                >
+                  Open Inventory
+                  <ArrowRight
+                    size={14}
+                    className="group-hover:translate-x-0.5 transition-transform"
+                  />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </main>
