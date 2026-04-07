@@ -7,29 +7,28 @@ import {
   Package,
   X,
   ChevronLeft,
-  Upload,
   Trash2,
   Save,
   Loader2,
-  ImagePlus,
   Tag,
-  DollarSign,
   FileText,
   Layers,
   LogOut,
-  LayoutDashboard,
   ShieldCheck,
   Clock,
   AlertCircle,
   CheckCircle2,
   Edit3,
-  Eye,
+  Upload,
+  LayoutGrid,
+  ArrowLeft,
 } from "lucide-react";
 
 interface ProductVariant {
   colorName: string;
   colorHex: string;
   images: string[];
+  imageFiles?: File[];
 }
 
 interface Product {
@@ -59,16 +58,542 @@ const EMPTY_PRODUCT: Omit<Product, "_id" | "createdAt"> = {
   description: "",
   price: 0,
   category: "",
-  variants: [{ colorName: "", colorHex: "#c8a97e", images: [""] }],
+  variants: [
+    { colorName: "", colorHex: "#c8a97e", images: [], imageFiles: [] },
+  ],
 };
+
+type View = "products" | "add" | "edit";
+
+// ─── CSS injected once ────────────────────────────────────────────────────────
+const STYLES = `
+  :root {
+    --inv-bg: #f7f3ee;
+    --inv-surface: #ffffff;
+    --inv-border: #e8e0d5;
+    --inv-border-light: #f0ebe3;
+    --inv-accent: #b8945e;
+    --inv-accent-hover: #9a7a4a;
+    --inv-accent-faint: rgba(184,148,94,0.10);
+    --inv-accent-faint2: rgba(184,148,94,0.06);
+    --inv-text: #1c1813;
+    --inv-muted: #7a7068;
+    --inv-danger: #c0392b;
+    --inv-danger-faint: rgba(192,57,43,0.08);
+    --inv-sidebar-w: 260px;
+    --inv-header-h: 60px;
+    --inv-mob-nav-h: 58px;
+    --inv-radius: 2px;
+    --inv-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    --inv-shadow-lg: 0 4px 24px rgba(0,0,0,0.10);
+  }
+  .inv-root * { box-sizing: border-box; }
+  .inv-root { font-family: 'Georgia', serif; background: var(--inv-bg); min-height: 100vh; color: var(--inv-text); }
+
+  /* ── Header ── */
+  .inv-header {
+    position: sticky; top: 0; z-index: 100;
+    height: var(--inv-header-h);
+    background: var(--inv-surface);
+    border-bottom: 1px solid var(--inv-border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: 0 1px 0 var(--inv-border);
+  }
+  .inv-header-left { display: flex; align-items: center; gap: 12px; }
+  .inv-back-btn {
+    display: flex; align-items: center; gap: 6px;
+    font-family: system-ui, sans-serif;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--inv-muted); background: none; border: none; cursor: pointer;
+    padding: 6px 10px; transition: color 0.15s;
+  }
+  .inv-back-btn:hover { color: var(--inv-text); }
+  .inv-header-badge {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    background: var(--inv-accent-faint);
+    border: 1px solid rgba(184,148,94,0.25);
+    font-family: system-ui, sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--inv-accent);
+  }
+  .inv-header-right { display: flex; align-items: center; gap: 16px; }
+  .inv-clock {
+    font-family: system-ui, sans-serif; font-size: 11px; color: var(--inv-muted);
+    letter-spacing: 0.04em;
+  }
+  .inv-logout {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--inv-border);
+    background: none; cursor: pointer;
+    font-family: system-ui, sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--inv-muted); transition: all 0.15s;
+  }
+  .inv-logout:hover { border-color: var(--inv-danger); color: var(--inv-danger); background: var(--inv-danger-faint); }
+
+  /* ── Body layout ── */
+  .inv-body {
+    display: flex;
+    height: calc(100vh - var(--inv-header-h));
+  }
+
+  /* ── Sidebar ── */
+  .inv-sidebar {
+    width: var(--inv-sidebar-w);
+    flex-shrink: 0;
+    background: var(--inv-surface);
+    border-right: 1px solid var(--inv-border);
+    display: flex; flex-direction: column;
+    position: sticky; top: var(--inv-header-h);
+    height: calc(100vh - var(--inv-header-h));
+    overflow-y: auto;
+  }
+  .inv-sidebar-brand {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--inv-border-light);
+  }
+  .inv-sidebar-brand-label {
+    font-family: system-ui, sans-serif;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--inv-accent); margin-bottom: 3px;
+  }
+  .inv-sidebar-brand-title {
+    font-size: 18px; font-weight: 700; color: var(--inv-text); letter-spacing: 0.01em;
+  }
+  .inv-nav { padding: 12px 0; }
+  .inv-nav-item {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 10px 20px;
+    background: none; border: none; cursor: pointer;
+    font-family: system-ui, sans-serif;
+    font-size: 13px; font-weight: 600; color: var(--inv-muted);
+    text-align: left; transition: all 0.15s;
+    border-right: 2px solid transparent;
+    position: relative;
+  }
+  .inv-nav-item:hover { background: var(--inv-accent-faint2); color: var(--inv-text); }
+  .inv-nav-item.active {
+    background: var(--inv-accent-faint); color: var(--inv-text);
+    border-right-color: var(--inv-accent);
+  }
+  .inv-nav-item.active svg { color: var(--inv-accent); }
+  .inv-nav-badge {
+    margin-left: auto;
+    font-size: 9px; font-weight: 700; padding: 2px 6px;
+    background: rgba(184,148,94,0.15);
+    border: 1px solid rgba(184,148,94,0.25);
+    color: var(--inv-accent);
+  }
+  .inv-sidebar-divider {
+    height: 1px; background: var(--inv-border-light); margin: 4px 0;
+  }
+  .inv-sidebar-list-label {
+    padding: 12px 20px 6px;
+    font-family: system-ui, sans-serif;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--inv-muted);
+  }
+  .inv-sidebar-product {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 8px 20px;
+    background: none; border: none; cursor: pointer; text-align: left;
+    transition: all 0.15s; border-right: 2px solid transparent;
+  }
+  .inv-sidebar-product:hover { background: var(--inv-accent-faint2); }
+  .inv-sidebar-product.active { background: var(--inv-accent-faint); border-right-color: var(--inv-accent); }
+  .inv-sidebar-product-icon {
+    width: 30px; height: 30px; flex-shrink: 0;
+    background: var(--inv-bg); border: 1px solid var(--inv-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--inv-accent);
+  }
+  .inv-sidebar-product-name {
+    font-family: system-ui, sans-serif;
+    font-size: 12px; font-weight: 600; color: var(--inv-text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .inv-sidebar-product-meta {
+    font-family: system-ui, sans-serif;
+    font-size: 10px; color: var(--inv-muted);
+  }
+
+  /* ── Main ── */
+  .inv-main { flex: 1; overflow-y: auto; }
+
+  /* ── Products view ── */
+  .inv-page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 28px 32px 20px;
+    border-bottom: 1px solid var(--inv-border-light);
+  }
+  .inv-page-title { font-size: 22px; font-weight: 700; color: var(--inv-text); }
+  .inv-page-subtitle {
+    font-family: system-ui, sans-serif;
+    font-size: 12px; color: var(--inv-muted); margin-top: 2px;
+  }
+  .inv-btn-primary {
+    display: flex; align-items: center; gap: 7px;
+    padding: 9px 18px;
+    background: var(--inv-accent); color: #fff;
+    border: none; cursor: pointer;
+    font-family: system-ui, sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    transition: background 0.15s; white-space: nowrap;
+  }
+  .inv-btn-primary:hover { background: var(--inv-accent-hover); }
+  .inv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    padding: 24px 32px;
+  }
+  .inv-card {
+    background: var(--inv-surface);
+    border: 1px solid var(--inv-border);
+    transition: all 0.2s;
+    overflow: hidden;
+  }
+  .inv-card:hover { border-color: var(--inv-accent); box-shadow: var(--inv-shadow); }
+  .inv-card.selected { border-color: var(--inv-accent); box-shadow: 0 0 0 2px rgba(184,148,94,0.15); }
+  .inv-card-top { height: 3px; background: var(--inv-accent); opacity: 0.35; }
+  .inv-card-body { padding: 16px; }
+  .inv-card-name { font-size: 15px; font-weight: 700; color: var(--inv-text); }
+  .inv-card-cat {
+    font-family: system-ui, sans-serif;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--inv-accent); margin-top: 2px;
+  }
+  .inv-card-price {
+    font-size: 16px; font-weight: 700; color: var(--inv-text);
+  }
+  .inv-card-desc {
+    font-family: system-ui, sans-serif;
+    font-size: 12px; color: var(--inv-muted); line-height: 1.5;
+    margin: 10px 0;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .inv-swatches { display: flex; align-items: center; gap: 5px; margin-bottom: 14px; }
+  .inv-swatch { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--inv-border); }
+  .inv-swatch-label {
+    font-family: system-ui, sans-serif;
+    font-size: 10px; color: var(--inv-muted); margin-left: 2px;
+  }
+  .inv-card-actions {
+    display: flex; gap: 8px; padding-top: 12px;
+    border-top: 1px solid var(--inv-border-light);
+  }
+  .inv-btn-edit {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--inv-border); background: none; cursor: pointer;
+    font-family: system-ui, sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--inv-muted); transition: all 0.15s;
+  }
+  .inv-btn-edit:hover { border-color: var(--inv-accent); color: var(--inv-accent); }
+  .inv-btn-delete {
+    display: flex; align-items: center; justify-content: center;
+    padding: 8px 12px;
+    border: 1px solid var(--inv-border); background: none; cursor: pointer;
+    color: var(--inv-muted); transition: all 0.15s;
+  }
+  .inv-btn-delete:hover { border-color: var(--inv-danger); color: var(--inv-danger); background: var(--inv-danger-faint); }
+
+  /* ── Empty state ── */
+  .inv-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 80px 20px; text-align: center;
+  }
+  .inv-empty-icon {
+    width: 56px; height: 56px;
+    background: var(--inv-accent-faint);
+    border: 1px solid rgba(184,148,94,0.2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--inv-accent); margin-bottom: 16px;
+  }
+  .inv-empty-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .inv-empty-sub { font-family: system-ui, sans-serif; font-size: 13px; color: var(--inv-muted); margin-bottom: 20px; }
+
+  /* ── Form view ── */
+  .inv-form-wrap { max-width: 680px; padding: 28px 32px 60px; }
+  .inv-form-breadcrumb {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 20px;
+    font-family: system-ui, sans-serif; font-size: 11px; color: var(--inv-muted);
+  }
+  .inv-form-breadcrumb button {
+    background: none; border: none; cursor: pointer; color: var(--inv-muted);
+    font-family: system-ui, sans-serif; font-size: 11px;
+    display: flex; align-items: center; gap: 4px; padding: 0;
+    transition: color 0.15s;
+  }
+  .inv-form-breadcrumb button:hover { color: var(--inv-accent); }
+  .inv-form-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+  .inv-section {
+    background: var(--inv-surface);
+    border: 1px solid var(--inv-border);
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .inv-section-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--inv-border-light);
+    background: #fdfaf7;
+  }
+  .inv-section-icon {
+    width: 24px; height: 24px; flex-shrink: 0;
+    background: var(--inv-accent-faint);
+    border: 1px solid rgba(184,148,94,0.2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--inv-accent);
+  }
+  .inv-section-title {
+    font-family: system-ui, sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--inv-text);
+  }
+  .inv-section-body { padding: 20px; }
+  .inv-field { margin-bottom: 16px; }
+  .inv-field:last-child { margin-bottom: 0; }
+  .inv-label {
+    display: block;
+    font-family: system-ui, sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--inv-muted); margin-bottom: 6px;
+  }
+  .inv-input {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--inv-border);
+    background: var(--inv-bg);
+    font-family: system-ui, sans-serif; font-size: 13px; color: var(--inv-text);
+    outline: none; transition: border-color 0.15s;
+  }
+  .inv-input:focus { border-color: var(--inv-accent); background: #fff; }
+  .inv-input::placeholder { color: #bdb5a8; }
+  .inv-input-price { padding-left: 30px; }
+  .inv-price-wrap { position: relative; }
+  .inv-price-symbol {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    font-family: system-ui, sans-serif; font-size: 13px; font-weight: 700;
+    color: var(--inv-accent);
+  }
+  .inv-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .inv-textarea {
+    width: 100%; padding: 10px 14px; resize: none;
+    border: 1px solid var(--inv-border);
+    background: var(--inv-bg);
+    font-family: system-ui, sans-serif; font-size: 13px; color: var(--inv-text);
+    outline: none; transition: border-color 0.15s; line-height: 1.6;
+  }
+  .inv-textarea:focus { border-color: var(--inv-accent); background: #fff; }
+  .inv-textarea::placeholder { color: #bdb5a8; }
+
+  /* Variant */
+  .inv-variant-card {
+    border: 1px solid var(--inv-border); margin-bottom: 12px; overflow: hidden;
+  }
+  .inv-variant-card:last-child { margin-bottom: 0; }
+  .inv-variant-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; background: #fdfaf7;
+    border-bottom: 1px solid var(--inv-border-light);
+  }
+  .inv-color-input {
+    width: 30px; height: 30px; border: 2px solid var(--inv-border);
+    cursor: pointer; border-radius: 2px; flex-shrink: 0; padding: 0;
+  }
+  .inv-color-name {
+    flex: 1; background: none; border: none; outline: none;
+    font-family: system-ui, sans-serif; font-size: 13px; font-weight: 600;
+    color: var(--inv-text);
+  }
+  .inv-color-name::placeholder { color: #bdb5a8; }
+  .inv-variant-remove {
+    width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer; color: #bdb5a8; transition: color 0.15s;
+  }
+  .inv-variant-remove:hover { color: var(--inv-danger); }
+  .inv-variant-body { padding: 14px; }
+  .inv-images-label {
+    font-family: system-ui, sans-serif;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--inv-muted); margin-bottom: 10px;
+  }
+  .inv-img-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 10px; }
+  .inv-img-thumb {
+    position: relative; aspect-ratio: 1;
+    border: 1px solid var(--inv-border); overflow: hidden;
+  }
+  .inv-img-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .inv-img-remove {
+    position: absolute; top: 3px; right: 3px;
+    width: 18px; height: 18px;
+    background: rgba(192,57,43,0.9); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    border: none; cursor: pointer; opacity: 0; transition: opacity 0.15s;
+  }
+  .inv-img-thumb:hover .inv-img-remove { opacity: 1; }
+  .inv-upload-zone {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; padding: 24px 12px;
+    border: 2px dashed var(--inv-border);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .inv-upload-zone:hover { border-color: var(--inv-accent); background: var(--inv-accent-faint2); }
+  .inv-upload-icon {
+    width: 36px; height: 36px;
+    background: var(--inv-accent-faint);
+    border: 1px solid rgba(184,148,94,0.2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--inv-accent);
+  }
+  .inv-upload-text {
+    font-family: system-ui, sans-serif; font-size: 12px; font-weight: 600; color: var(--inv-muted);
+  }
+  .inv-upload-hint {
+    font-family: system-ui, sans-serif; font-size: 10px; color: #bdb5a8;
+  }
+  .inv-add-variant-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 12px;
+    border: 1px solid rgba(184,148,94,0.3);
+    background: none; cursor: pointer;
+    font-family: system-ui, sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--inv-accent); transition: all 0.15s;
+  }
+  .inv-add-variant-btn:hover { background: var(--inv-accent-faint); }
+
+  /* Form actions */
+  .inv-form-actions {
+    background: var(--inv-surface);
+    border: 1px solid var(--inv-border);
+    padding: 16px 20px;
+  }
+  .inv-btn-danger-text {
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: none; cursor: pointer;
+    font-family: system-ui, sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--inv-danger); padding: 0; margin-bottom: 14px; transition: opacity 0.15s;
+  }
+  .inv-btn-danger-text:hover { opacity: 0.7; }
+  .inv-form-btns { display: flex; gap: 10px; }
+  .inv-btn-secondary {
+    flex: 1; padding: 11px;
+    border: 1px solid var(--inv-border); background: none; cursor: pointer;
+    font-family: system-ui, sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--inv-muted); transition: all 0.15s;
+  }
+  .inv-btn-secondary:hover { border-color: var(--inv-accent); color: var(--inv-text); }
+  .inv-btn-save {
+    flex: 1.5; display: flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 11px;
+    background: var(--inv-accent); border: none; cursor: pointer;
+    font-family: system-ui, sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #fff; transition: background 0.15s;
+  }
+  .inv-btn-save:hover { background: var(--inv-accent-hover); }
+  .inv-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Toast */
+  .inv-toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 18px;
+    background: var(--inv-surface);
+    border: 1px solid var(--inv-border);
+    box-shadow: var(--inv-shadow-lg);
+    animation: toastIn 0.3s ease;
+  }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .inv-toast-text {
+    font-family: system-ui, sans-serif; font-size: 13px; font-weight: 600; color: var(--inv-text);
+  }
+
+  /* Loading */
+  .inv-loading {
+    display: flex; align-items: center; justify-content: center;
+    padding: 80px; color: var(--inv-muted);
+    font-family: system-ui, sans-serif; font-size: 13px; gap: 10px;
+  }
+  .inv-spin { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ═══════════════════════════════════════
+     MOBILE  (≤ 767px)
+  ═══════════════════════════════════════ */
+  @media (max-width: 767px) {
+    :root {
+      --inv-header-h: 52px;
+      --inv-mob-nav-h: 56px;
+    }
+
+    /* Sidebar hidden on mobile */
+    .inv-sidebar { display: none; }
+
+    /* Body takes full width */
+    .inv-body { height: auto; flex-direction: column; }
+    .inv-main { overflow-y: visible; }
+
+    /* Mobile bottom nav */
+    .inv-mob-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
+      height: var(--inv-mob-nav-h);
+      background: var(--inv-surface);
+      border-top: 1px solid var(--inv-border);
+      display: flex;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    }
+    .inv-mob-nav-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px; background: none; border: none; cursor: pointer;
+      font-family: system-ui, sans-serif;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--inv-muted); transition: all 0.15s;
+      border-top: 2px solid transparent;
+    }
+    .inv-mob-nav-btn.active { color: var(--inv-accent); border-top-color: var(--inv-accent); }
+    .inv-mob-nav-btn svg { width: 18px; height: 18px; }
+
+    /* Page bottom padding for fixed nav */
+    .inv-main { padding-bottom: var(--inv-mob-nav-h); }
+
+    /* Form wrap adjustments */
+    .inv-form-wrap { padding: 20px 16px 80px; max-width: 100%; }
+    .inv-page-header { padding: 20px 16px 14px; }
+    .inv-grid { grid-template-columns: 1fr; padding: 16px; gap: 12px; }
+    .inv-grid-2 { grid-template-columns: 1fr 1fr; }
+    .inv-img-grid { grid-template-columns: repeat(4, 1fr); }
+
+    /* Mobile page title row */
+    .inv-mob-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 16px 12px;
+      border-bottom: 1px solid var(--inv-border-light);
+    }
+    .inv-mob-title { font-size: 18px; font-weight: 700; }
+    .inv-mob-subtitle {
+      font-family: system-ui, sans-serif; font-size: 11px; color: var(--inv-muted); margin-top: 1px;
+    }
+  }
+
+  /* Hide mobile nav on desktop */
+  @media (min-width: 768px) {
+    .inv-mob-nav { display: none; }
+  }
+`;
 
 export default function InventoryPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [activeTab, setActiveTab] = useState<"products" | "add">("products");
+  const [view, setView] = useState<View>("products");
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [form, setForm] =
     useState<Omit<Product, "_id" | "createdAt">>(EMPTY_PRODUCT);
   const [saving, setSaving] = useState(false);
@@ -77,7 +602,7 @@ export default function InventoryPage() {
     msg: string;
   } | null>(null);
   const [time, setTime] = useState("");
-  const panelRef = useRef<HTMLDivElement>(null);
+  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Clock
   useEffect(() => {
@@ -96,31 +621,28 @@ export default function InventoryPage() {
     return () => clearInterval(id);
   }, []);
 
-  // Fetch products
   const fetchProducts = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/inventory");
       if (res.ok) {
-        const data = await res.json();
-        setProducts(data.products || []);
+        const d = await res.json();
+        setProducts(d.products || []);
       }
     } catch {}
     setLoading(false);
   };
-
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  // Toast auto-dismiss
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 3500);
     return () => clearTimeout(t);
   }, [toast]);
 
-  // Auto-generate slug from name
+  // slug auto-gen
   useEffect(() => {
     setForm((f) => ({
       ...f,
@@ -131,87 +653,87 @@ export default function InventoryPage() {
     }));
   }, [form.name]);
 
-  const openAddPanel = () => {
+  const openAdd = () => {
+    setEditingProduct(null);
     setForm(EMPTY_PRODUCT);
-    setSelectedProduct(null);
-    setPanelOpen(true);
-    setActiveTab("add");
+    setView("add");
   };
-
-  const openEditPanel = (product: Product) => {
-    setSelectedProduct(product);
+  const openEdit = (p: Product) => {
+    setEditingProduct(p);
     setForm({
-      name: product.name,
-      slug: product.slug,
-      description: product.description,
-      price: product.price,
-      category: product.category,
-      variants: product.variants,
+      name: p.name,
+      slug: p.slug,
+      description: p.description,
+      price: p.price,
+      category: p.category,
+      variants: p.variants.map((v) => ({ ...v, imageFiles: [] })),
     });
-    setPanelOpen(true);
-    setActiveTab("add");
+    setView("add");
+  };
+  const cancel = () => {
+    setEditingProduct(null);
+    setForm(EMPTY_PRODUCT);
+    setView("products");
   };
 
-  const closePanel = () => {
-    setPanelOpen(false);
-    setTimeout(() => {
-      setSelectedProduct(null);
-      setForm(EMPTY_PRODUCT);
-    }, 300);
-    if (activeTab === "add" && !selectedProduct) setActiveTab("products");
-  };
-
-  // Variant helpers
   const addVariant = () =>
     setForm((f) => ({
       ...f,
       variants: [
         ...f.variants,
-        { colorName: "", colorHex: "#c8a97e", images: [""] },
+        { colorName: "", colorHex: "#c8a97e", images: [], imageFiles: [] },
       ],
     }));
-
   const removeVariant = (i: number) =>
     setForm((f) => ({
       ...f,
       variants: f.variants.filter((_, idx) => idx !== i),
     }));
-
   const updateVariant = (
     i: number,
-    field: keyof ProductVariant,
-    value: string | string[],
+    field: "colorName" | "colorHex",
+    value: string,
   ) =>
     setForm((f) => {
-      const variants = [...f.variants];
-      variants[i] = { ...variants[i], [field]: value };
-      return { ...f, variants };
+      const v = [...f.variants];
+      v[i] = { ...v[i], [field]: value };
+      return { ...f, variants: v };
     });
 
-  const addImageToVariant = (i: number) =>
-    setForm((f) => {
-      const variants = [...f.variants];
-      variants[i] = { ...variants[i], images: [...variants[i].images, ""] };
-      return { ...f, variants };
+  const handleImageUpload = (vi: number, files: FileList | null) => {
+    if (!files) return;
+    const arr = Array.from(files);
+    Promise.all(
+      arr.map(
+        (f) =>
+          new Promise<string>((res) => {
+            const r = new FileReader();
+            r.onload = () => res(r.result as string);
+            r.readAsDataURL(f);
+          }),
+      ),
+    ).then((b64s) => {
+      setForm((f) => {
+        const v = [...f.variants];
+        v[vi] = {
+          ...v[vi],
+          images: [...v[vi].images, ...b64s],
+          imageFiles: [...(v[vi].imageFiles || []), ...arr],
+        };
+        return { ...f, variants: v };
+      });
     });
+  };
 
-  const updateImageInVariant = (vi: number, ii: number, value: string) =>
+  const removeImg = (vi: number, ii: number) =>
     setForm((f) => {
-      const variants = [...f.variants];
-      const images = [...variants[vi].images];
-      images[ii] = value;
-      variants[vi] = { ...variants[vi], images };
-      return { ...f, variants };
-    });
-
-  const removeImageFromVariant = (vi: number, ii: number) =>
-    setForm((f) => {
-      const variants = [...f.variants];
-      variants[vi] = {
-        ...variants[vi],
-        images: variants[vi].images.filter((_, idx) => idx !== ii),
+      const v = [...f.variants];
+      v[vi] = {
+        ...v[vi],
+        images: v[vi].images.filter((_, i) => i !== ii),
+        imageFiles: (v[vi].imageFiles || []).filter((_, i) => i !== ii),
       };
-      return { ...f, variants };
+      return { ...f, variants: v };
     });
 
   const handleSave = async () => {
@@ -224,21 +746,19 @@ export default function InventoryPage() {
     }
     setSaving(true);
     try {
-      const body = selectedProduct
-        ? { ...form, _id: selectedProduct._id }
-        : form;
+      const body = editingProduct ? { ...form, _id: editingProduct._id } : form;
       const res = await fetch("/api/admin/inventory", {
-        method: selectedProduct ? "PUT" : "POST",
+        method: editingProduct ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       if (res.ok) {
         setToast({
           type: "success",
-          msg: selectedProduct ? "Product updated!" : "Product added!",
+          msg: editingProduct ? "Product updated!" : "Product added!",
         });
         await fetchProducts();
-        closePanel();
+        cancel();
       } else {
         const d = await res.json();
         setToast({ type: "error", msg: d.error || "Failed to save." });
@@ -258,7 +778,7 @@ export default function InventoryPage() {
       if (res.ok) {
         setToast({ type: "success", msg: "Product deleted." });
         fetchProducts();
-        if (selectedProduct?._id === id) closePanel();
+        if (editingProduct?._id === id) cancel();
       }
     } catch {}
   };
@@ -268,564 +788,497 @@ export default function InventoryPage() {
     router.push("/admin/login");
   };
 
-  return (
-    <div
-      className="min-h-screen bg-[#f5f0e8] flex flex-col"
-      style={{ fontFamily: "system-ui, sans-serif" }}
-    >
-      {/* ── TOP BAR ── */}
-      <header className="sticky top-0 z-50 h-16 bg-[#f5f0e8] border-b border-[#e0d8cc] flex items-center justify-between px-6 shrink-0">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push("/admin/dashboard")}
-            className="flex items-center gap-1.5 text-[#6b6b6b] hover:text-[#1a1a1a] transition-colors text-xs font-semibold tracking-wide uppercase"
-          >
-            <ChevronLeft size={14} />
-            Dashboard
-          </button>
-          <div className="w-px h-5 bg-[#e0d8cc]" />
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[rgba(200,169,126,0.12)] border border-[rgba(200,169,126,0.3)] text-[#c8a97e] text-[0.6rem] tracking-[0.18em] uppercase font-semibold">
-            <ShieldCheck size={10} />
-            Inventory
+  // ─── Form JSX (shared desktop/mobile) ──────────────────────────────────────
+  const FormView = () => (
+    <div className="inv-form-wrap">
+      {/* Breadcrumb */}
+      <div className="inv-form-breadcrumb">
+        <button onClick={cancel}>
+          <ArrowLeft size={12} /> All Products
+        </button>
+        <span>/</span>
+        <span style={{ color: "var(--inv-text)" }}>
+          {editingProduct ? "Edit" : "New Product"}
+        </span>
+      </div>
+
+      <div className="inv-form-title">
+        {editingProduct ? editingProduct.name : "Add to Inventory"}
+      </div>
+
+      {/* Basic Info */}
+      <div className="inv-section">
+        <div className="inv-section-header">
+          <div className="inv-section-icon">
+            <Tag size={11} />
           </div>
+          <span className="inv-section-title">Basic Info</span>
         </div>
-        <div className="flex items-center gap-4">
-          {time && (
-            <div className="hidden sm:flex items-center gap-1.5 text-[0.7rem] text-[#6b6b6b] tracking-wide">
-              <Clock size={12} />
-              {time}
+        <div className="inv-section-body">
+          <div className="inv-field">
+            <label className="inv-label">Product Name *</label>
+            <input
+              className="inv-input"
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="e.g. Classic Brief"
+            />
+          </div>
+          <div className="inv-grid-2">
+            <div className="inv-field">
+              <label className="inv-label">Price (₹) *</label>
+              <div className="inv-price-wrap">
+                <span className="inv-price-symbol">₹</span>
+                <input
+                  className="inv-input inv-input-price"
+                  type="number"
+                  value={form.price || ""}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, price: Number(e.target.value) }))
+                  }
+                  placeholder="0"
+                />
+              </div>
             </div>
-          )}
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-[#e0d8cc] text-[#6b6b6b] text-[0.65rem] tracking-[0.16em] uppercase hover:border-red-400 hover:text-red-500 transition-all duration-200"
-          >
-            <LogOut size={12} />
-            Sign Out
-          </button>
-        </div>
-      </header>
-
-      {/* ── BODY ── */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* ── LEFT SIDEBAR ── */}
-        <aside className="w-64 shrink-0 bg-white border-r border-[#e0d8cc] flex flex-col h-[calc(100vh-64px)] sticky top-16 overflow-y-auto">
-          {/* Sidebar header */}
-          <div className="px-5 pt-6 pb-4 border-b border-[#e0d8cc]">
-            <p className="text-[0.6rem] font-bold tracking-[0.2em] uppercase text-[#c8a97e] mb-1">
-              Bambumm Admin
-            </p>
-            <h2
-              className="text-lg font-bold text-[#1a1a1a]"
-              style={{ fontFamily: "Georgia, serif" }}
-            >
-              Inventory
-            </h2>
-          </div>
-
-          {/* Nav items */}
-          <nav className="flex-1 py-3">
-            <button
-              onClick={() => {
-                setActiveTab("products");
-                setPanelOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-5 py-3 text-sm font-semibold transition-all duration-150 ${activeTab === "products" && !panelOpen ? "bg-[rgba(200,169,126,0.12)] text-[#1a1a1a] border-r-2 border-[#c8a97e]" : "text-[#6b6b6b] hover:bg-[rgba(200,169,126,0.06)] hover:text-[#1a1a1a]"}`}
-            >
-              <Package
-                size={16}
-                className={
-                  activeTab === "products" && !panelOpen ? "text-[#c8a97e]" : ""
-                }
-              />
-              All Products
-              <span className="ml-auto text-[0.6rem] font-bold px-1.5 py-0.5 bg-[rgba(200,169,126,0.15)] text-[#c8a97e] border border-[rgba(200,169,126,0.2)]">
-                {products.length}
-              </span>
-            </button>
-
-            <button
-              onClick={openAddPanel}
-              className={`w-full flex items-center gap-3 px-5 py-3 text-sm font-semibold transition-all duration-150 ${panelOpen && !selectedProduct ? "bg-[rgba(200,169,126,0.12)] text-[#1a1a1a] border-r-2 border-[#c8a97e]" : "text-[#6b6b6b] hover:bg-[rgba(200,169,126,0.06)] hover:text-[#1a1a1a]"}`}
-            >
-              <Plus
-                size={16}
-                className={
-                  panelOpen && !selectedProduct ? "text-[#c8a97e]" : ""
-                }
-              />
-              Add Product
-            </button>
-          </nav>
-
-          {/* Product list in sidebar */}
-          <div className="border-t border-[#e0d8cc] flex-1 overflow-y-auto">
-            <p className="px-5 pt-4 pb-2 text-[0.6rem] font-bold tracking-[0.18em] uppercase text-[#6b6b6b]">
-              Products
-            </p>
-            {loading ? (
-              <div className="px-5 py-4 flex items-center gap-2 text-[#6b6b6b] text-xs">
-                <Loader2 size={13} className="animate-spin" /> Loading...
-              </div>
-            ) : products.length === 0 ? (
-              <p className="px-5 py-4 text-xs text-[#6b6b6b]">
-                No products yet.
-              </p>
-            ) : (
-              products.map((p) => (
-                <button
-                  key={p._id}
-                  onClick={() => openEditPanel(p)}
-                  className={`w-full flex items-center gap-3 px-5 py-3 text-left transition-all duration-150 group ${selectedProduct?._id === p._id ? "bg-[rgba(200,169,126,0.12)] border-r-2 border-[#c8a97e]" : "hover:bg-[rgba(200,169,126,0.05)]"}`}
-                >
-                  <div className="w-8 h-8 shrink-0 bg-[#f5f0e8] border border-[#e0d8cc] flex items-center justify-center">
-                    <Package size={13} className="text-[#c8a97e]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-[#1a1a1a] truncate">
-                      {p.name}
-                    </p>
-                    <p className="text-[0.6rem] text-[#6b6b6b]">
-                      ₹{p.price} · {p.variants.length} variant
-                      {p.variants.length !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                </button>
-              ))
-            )}
-          </div>
-        </aside>
-
-        {/* ── MAIN CONTENT ── */}
-        <main className="flex-1 overflow-y-auto relative">
-          {/* Products grid view */}
-          <div
-            className={`transition-all duration-300 ${panelOpen ? "mr-[600px]" : ""}`}
-          >
-            <div className="p-8">
-              {/* Page header */}
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h1
-                    className="text-2xl font-bold text-[#1a1a1a]"
-                    style={{ fontFamily: "Georgia, serif" }}
-                  >
-                    {activeTab === "products" ? "All Products" : "Inventory"}
-                  </h1>
-                  <p className="text-sm text-[#6b6b6b] mt-0.5">
-                    {products.length} product{products.length !== 1 ? "s" : ""}{" "}
-                    in inventory
-                  </p>
-                </div>
-                <button
-                  onClick={openAddPanel}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-[#c8a97e] text-white text-xs font-bold tracking-[0.14em] uppercase hover:bg-[#a8845a] transition-colors duration-200"
-                >
-                  <Plus size={14} />
-                  Add Product
-                </button>
-              </div>
-
-              {/* Products grid */}
-              {loading ? (
-                <div className="flex items-center justify-center py-24 text-[#6b6b6b]">
-                  <Loader2 size={24} className="animate-spin mr-3" />
-                  Loading inventory...
-                </div>
-              ) : products.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-24 text-center">
-                  <div className="w-16 h-16 bg-[rgba(200,169,126,0.1)] border border-[#e0d8cc] flex items-center justify-center mb-4">
-                    <Package size={24} className="text-[#c8a97e]" />
-                  </div>
-                  <h3 className="text-base font-bold text-[#1a1a1a] mb-1">
-                    No products yet
-                  </h3>
-                  <p className="text-sm text-[#6b6b6b] mb-5">
-                    Add your first product to get started.
-                  </p>
-                  <button
-                    onClick={openAddPanel}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#c8a97e] text-white text-xs font-bold tracking-widest uppercase hover:bg-[#a8845a] transition-colors"
-                  >
-                    <Plus size={14} /> Add Product
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {products.map((product) => (
-                    <div
-                      key={product._id}
-                      className={`bg-white border transition-all duration-200 group ${selectedProduct?._id === product._id ? "border-[#c8a97e] shadow-[0_4px_20px_rgba(200,169,126,0.15)]" : "border-[#e0d8cc] hover:border-[#c8a97e] hover:shadow-[0_4px_20px_rgba(200,169,126,0.1)]"}`}
-                    >
-                      {/* Card top accent */}
-                      <div className="h-0.5 bg-[#c8a97e] opacity-40" />
-
-                      <div className="p-5">
-                        {/* Header */}
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div>
-                            <h3
-                              className="font-bold text-[#1a1a1a] text-sm"
-                              style={{ fontFamily: "Georgia, serif" }}
-                            >
-                              {product.name}
-                            </h3>
-                            <span className="text-[0.6rem] font-bold tracking-[0.14em] uppercase text-[#c8a97e]">
-                              {product.category}
-                            </span>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p
-                              className="text-lg font-bold text-[#1a1a1a]"
-                              style={{ fontFamily: "Georgia, serif" }}
-                            >
-                              ₹{product.price}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Description */}
-                        <p className="text-xs text-[#6b6b6b] leading-relaxed line-clamp-2 mb-4">
-                          {product.description || "No description."}
-                        </p>
-
-                        {/* Variants */}
-                        <div className="flex items-center gap-1.5 mb-4">
-                          {product.variants.map((v, i) => (
-                            <div
-                              key={i}
-                              title={v.colorName}
-                              className="w-5 h-5 rounded-full border-2 border-[#e0d8cc]"
-                              style={{ background: v.colorHex }}
-                            />
-                          ))}
-                          <span className="text-[0.6rem] text-[#6b6b6b] ml-1">
-                            {product.variants.length} colour
-                            {product.variants.length !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex gap-2 pt-3 border-t border-[#e0d8cc]">
-                          <button
-                            onClick={() => openEditPanel(product)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[0.65rem] font-bold tracking-[0.12em] uppercase border border-[#e0d8cc] text-[#6b6b6b] hover:border-[#c8a97e] hover:text-[#c8a97e] transition-all duration-150"
-                          >
-                            <Edit3 size={11} /> Edit
-                          </button>
-                          <button
-                            onClick={() =>
-                              product._id && handleDelete(product._id)
-                            }
-                            className="flex items-center justify-center gap-1.5 px-3 py-2 text-[0.65rem] font-bold tracking-[0.12em] uppercase border border-[#e0d8cc] text-[#6b6b6b] hover:border-red-400 hover:text-red-500 transition-all duration-150"
-                          >
-                            <Trash2 size={11} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </main>
-
-        {/* ── SLIDE-IN PANEL ── */}
-        <div
-          ref={panelRef}
-          className={`fixed top-16 right-0 bottom-0 w-[600px] bg-white border-l border-[#e0d8cc] shadow-[-8px_0_40px_rgba(0,0,0,0.08)] flex flex-col z-40 transition-transform duration-300 ease-in-out ${panelOpen ? "translate-x-0" : "translate-x-full"}`}
-        >
-          {/* Panel header */}
-          <div className="flex items-center justify-between px-8 py-5 border-b border-[#e0d8cc] shrink-0 bg-white">
-            <div>
-              <p className="text-[0.6rem] font-bold tracking-[0.2em] uppercase text-[#c8a97e] mb-0.5">
-                {selectedProduct ? "Edit Product" : "New Product"}
-              </p>
-              <h2
-                className="text-base font-bold text-[#1a1a1a]"
-                style={{ fontFamily: "Georgia, serif" }}
-              >
-                {selectedProduct ? selectedProduct.name : "Add to Inventory"}
-              </h2>
-            </div>
-            <button
-              onClick={closePanel}
-              className="w-8 h-8 flex items-center justify-center border border-[#e0d8cc] text-[#6b6b6b] hover:border-[#c8a97e] hover:text-[#c8a97e] transition-all"
-            >
-              <X size={15} />
-            </button>
-          </div>
-
-          {/* Panel body — scrollable */}
-          <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
-            {/* Basic Info */}
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-6 h-6 flex items-center justify-center bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.2)]">
-                  <Tag size={11} className="text-[#c8a97e]" />
-                </div>
-                <h3 className="text-xs font-bold tracking-[0.14em] uppercase text-[#1a1a1a]">
-                  Basic Info
-                </h3>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[0.65rem] font-bold tracking-[0.14em] uppercase text-[#6b6b6b] mb-1.5">
-                    Product Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, name: e.target.value }))
-                    }
-                    placeholder="e.g. Classic Brief"
-                    className="w-full px-4 py-2.5 border border-[#e0d8cc] bg-[#faf7f2] text-sm text-[#1a1a1a] focus:outline-none focus:border-[#c8a97e] placeholder:text-[#b0a898] transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[0.65rem] font-bold tracking-[0.14em] uppercase text-[#6b6b6b] mb-1.5">
-                    URL Slug
-                  </label>
-                  <input
-                    type="text"
-                    value={form.slug}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, slug: e.target.value }))
-                    }
-                    placeholder="auto-generated"
-                    className="w-full px-4 py-2.5 border border-[#e0d8cc] bg-[#faf7f2] text-sm text-[#6b6b6b] focus:outline-none focus:border-[#c8a97e] placeholder:text-[#b0a898] transition-colors font-mono"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[0.65rem] font-bold tracking-[0.14em] uppercase text-[#6b6b6b] mb-1.5">
-                      Price (₹) *
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#c8a97e] text-sm font-bold">
-                        ₹
-                      </span>
-                      <input
-                        type="number"
-                        value={form.price || ""}
-                        onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            price: Number(e.target.value),
-                          }))
-                        }
-                        placeholder="0"
-                        className="w-full pl-7 pr-4 py-2.5 border border-[#e0d8cc] bg-[#faf7f2] text-sm text-[#1a1a1a] focus:outline-none focus:border-[#c8a97e] placeholder:text-[#b0a898] transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[0.65rem] font-bold tracking-[0.14em] uppercase text-[#6b6b6b] mb-1.5">
-                      Category *
-                    </label>
-                    <select
-                      value={form.category}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, category: e.target.value }))
-                      }
-                      className="w-full px-4 py-2.5 border border-[#e0d8cc] bg-[#faf7f2] text-sm text-[#1a1a1a] focus:outline-none focus:border-[#c8a97e] transition-colors appearance-none"
-                    >
-                      <option value="">Select…</option>
-                      {CATEGORIES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Description */}
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-6 h-6 flex items-center justify-center bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.2)]">
-                  <FileText size={11} className="text-[#c8a97e]" />
-                </div>
-                <h3 className="text-xs font-bold tracking-[0.14em] uppercase text-[#1a1a1a]">
-                  Description
-                </h3>
-              </div>
-              <textarea
-                value={form.description}
+            <div className="inv-field">
+              <label className="inv-label">Category *</label>
+              <select
+                className="inv-input"
+                style={{ appearance: "none" }}
+                value={form.category}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, description: e.target.value }))
+                  setForm((f) => ({ ...f, category: e.target.value }))
                 }
-                placeholder="Describe your product — fabric, comfort, use case…"
-                rows={3}
-                className="w-full px-4 py-3 border border-[#e0d8cc] bg-[#faf7f2] text-sm text-[#1a1a1a] resize-none focus:outline-none focus:border-[#c8a97e] placeholder:text-[#b0a898] leading-relaxed transition-colors"
-              />
-            </section>
-
-            {/* Variants */}
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 flex items-center justify-center bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.2)]">
-                    <Layers size={11} className="text-[#c8a97e]" />
-                  </div>
-                  <h3 className="text-xs font-bold tracking-[0.14em] uppercase text-[#1a1a1a]">
-                    Colour Variants
-                  </h3>
-                </div>
-                <button
-                  onClick={addVariant}
-                  className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(200,169,126,0.3)] text-[#c8a97e] text-[0.65rem] font-bold tracking-[0.12em] uppercase hover:bg-[rgba(200,169,126,0.08)] transition-colors"
-                >
-                  <Plus size={11} /> Add Variant
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {form.variants.map((variant, vi) => (
-                  <div
-                    key={vi}
-                    className="border border-[#e0d8cc] bg-[#faf7f2]"
-                  >
-                    {/* Variant header */}
-                    <div className="flex items-center gap-3 px-4 py-3 border-b border-[#e0d8cc] bg-white">
-                      <input
-                        type="color"
-                        value={variant.colorHex}
-                        onChange={(e) =>
-                          updateVariant(vi, "colorHex", e.target.value)
-                        }
-                        className="w-8 h-8 border-2 border-[#e0d8cc] cursor-pointer rounded-sm"
-                        title="Pick colour"
-                      />
-                      <input
-                        type="text"
-                        value={variant.colorName}
-                        onChange={(e) =>
-                          updateVariant(vi, "colorName", e.target.value)
-                        }
-                        placeholder="Colour name (e.g. Black)"
-                        className="flex-1 bg-transparent text-sm text-[#1a1a1a] focus:outline-none placeholder:text-[#b0a898] font-semibold"
-                      />
-                      {form.variants.length > 1 && (
-                        <button
-                          onClick={() => removeVariant(vi)}
-                          className="w-6 h-6 flex items-center justify-center text-[#b0a898] hover:text-red-500 transition-colors"
-                        >
-                          <X size={13} />
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Images */}
-                    <div className="px-4 py-3">
-                      <p className="text-[0.6rem] font-bold tracking-[0.16em] uppercase text-[#6b6b6b] mb-2.5">
-                        Image Paths
-                      </p>
-                      <div className="space-y-2">
-                        {variant.images.map((img, ii) => (
-                          <div key={ii} className="flex items-center gap-2">
-                            <div className="flex items-center flex-1 border border-[#e0d8cc] bg-white">
-                              <span className="px-2.5 text-[#c8a97e]">
-                                <ImagePlus size={12} />
-                              </span>
-                              <input
-                                type="text"
-                                value={img}
-                                onChange={(e) =>
-                                  updateImageInVariant(vi, ii, e.target.value)
-                                }
-                                placeholder="/product/image.JPG"
-                                className="flex-1 py-2 pr-3 bg-transparent text-xs text-[#1a1a1a] focus:outline-none placeholder:text-[#b0a898] font-mono"
-                              />
-                            </div>
-                            {variant.images.length > 1 && (
-                              <button
-                                onClick={() => removeImageFromVariant(vi, ii)}
-                                className="w-7 h-7 flex items-center justify-center border border-[#e0d8cc] text-[#b0a898] hover:text-red-500 hover:border-red-300 transition-all"
-                              >
-                                <Trash2 size={11} />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => addImageToVariant(vi)}
-                        className="mt-2 flex items-center gap-1.5 text-[0.65rem] font-bold tracking-[0.12em] uppercase text-[#c8a97e] hover:text-[#a8845a] transition-colors"
-                      >
-                        <Plus size={10} /> Add image path
-                      </button>
-                    </div>
-                  </div>
+              >
+                <option value="">Select…</option>
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
-              </div>
-            </section>
-
-            {/* Bottom spacer */}
-            <div className="h-4" />
-          </div>
-
-          {/* Panel footer — save actions */}
-          <div className="px-8 py-5 border-t border-[#e0d8cc] bg-white shrink-0">
-            {selectedProduct && (
-              <button
-                onClick={() =>
-                  selectedProduct._id && handleDelete(selectedProduct._id)
-                }
-                className="flex items-center gap-1.5 text-[0.65rem] font-bold tracking-[0.12em] uppercase text-red-400 hover:text-red-600 transition-colors mb-4"
-              >
-                <Trash2 size={11} /> Delete this product
-              </button>
-            )}
-            <div className="flex gap-3">
-              <button
-                onClick={closePanel}
-                className="flex-1 py-3 border border-[#e0d8cc] text-[#6b6b6b] text-xs font-bold tracking-[0.14em] uppercase hover:border-[#c8a97e] hover:text-[#1a1a1a] transition-all duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex-1 py-3 bg-[#c8a97e] text-white text-xs font-bold tracking-[0.14em] uppercase hover:bg-[#a8845a] transition-colors duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {saving ? (
-                  <Loader2 size={13} className="animate-spin" />
-                ) : (
-                  <Save size={13} />
-                )}
-                {saving
-                  ? "Saving…"
-                  : selectedProduct
-                    ? "Update Product"
-                    : "Save Product"}
-              </button>
+              </select>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── TOAST ── */}
-      {toast && (
+      {/* Description */}
+      <div className="inv-section">
+        <div className="inv-section-header">
+          <div className="inv-section-icon">
+            <FileText size={11} />
+          </div>
+          <span className="inv-section-title">Description</span>
+        </div>
+        <div className="inv-section-body">
+          <textarea
+            className="inv-textarea"
+            rows={3}
+            value={form.description}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, description: e.target.value }))
+            }
+            placeholder="Describe your product — fabric, comfort, use case…"
+          />
+        </div>
+      </div>
+
+      {/* Variants */}
+      <div className="inv-section">
         <div
-          className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-5 py-3.5 border shadow-lg transition-all duration-300 ${toast.type === "success" ? "bg-white border-[#c8a97e]" : "bg-white border-red-400"}`}
+          className="inv-section-header"
+          style={{ justifyContent: "space-between" }}
         >
-          {toast.type === "success" ? (
-            <CheckCircle2 size={15} className="text-[#c8a97e] shrink-0" />
-          ) : (
-            <AlertCircle size={15} className="text-red-500 shrink-0" />
-          )}
-          <p className="text-sm font-semibold text-[#1a1a1a]">{toast.msg}</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="inv-section-icon">
+              <Layers size={11} />
+            </div>
+            <span className="inv-section-title">Colour Variants</span>
+          </div>
+          <button className="inv-add-variant-btn" onClick={addVariant}>
+            <Plus size={10} /> Add Variant
+          </button>
+        </div>
+        <div className="inv-section-body">
+          {form.variants.map((variant, vi) => (
+            <div key={vi} className="inv-variant-card">
+              <div className="inv-variant-header">
+                <input
+                  type="color"
+                  className="inv-color-input"
+                  value={variant.colorHex}
+                  onChange={(e) =>
+                    updateVariant(vi, "colorHex", e.target.value)
+                  }
+                />
+                <input
+                  type="text"
+                  className="inv-color-name"
+                  value={variant.colorName}
+                  onChange={(e) =>
+                    updateVariant(vi, "colorName", e.target.value)
+                  }
+                  placeholder="Colour name (e.g. Black)"
+                />
+                {form.variants.length > 1 && (
+                  <button
+                    className="inv-variant-remove"
+                    onClick={() => removeVariant(vi)}
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+              <div className="inv-variant-body">
+                <div className="inv-images-label">Images</div>
+                {variant.images.length > 0 && (
+                  <div className="inv-img-grid">
+                    {variant.images.map((img, ii) => (
+                      <div key={ii} className="inv-img-thumb">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img} alt="" />
+                        <button
+                          className="inv-img-remove"
+                          onClick={() => removeImg(vi, ii)}
+                        >
+                          <X size={9} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div
+                  className="inv-upload-zone"
+                  onClick={() => fileInputRefs.current[vi]?.click()}
+                >
+                  <div className="inv-upload-icon">
+                    <Upload size={14} />
+                  </div>
+                  <span className="inv-upload-text">
+                    Click to upload images
+                  </span>
+                  <span className="inv-upload-hint">
+                    JPG, PNG, WEBP · Multiple allowed
+                  </span>
+                </div>
+                <input
+                  ref={(el) => {
+                    fileInputRefs.current[vi] = el;
+                  }}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  style={{ display: "none" }}
+                  onChange={(e) => handleImageUpload(vi, e.target.files)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="inv-form-actions">
+        {editingProduct && (
+          <button
+            className="inv-btn-danger-text"
+            onClick={() =>
+              editingProduct._id && handleDelete(editingProduct._id)
+            }
+          >
+            <Trash2 size={11} /> Delete this product
+          </button>
+        )}
+        <div className="inv-form-btns">
+          <button className="inv-btn-secondary" onClick={cancel}>
+            Cancel
+          </button>
+          <button
+            className="inv-btn-save"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? (
+              <Loader2 size={13} className="inv-spin" />
+            ) : (
+              <Save size={13} />
+            )}
+            {saving
+              ? "Saving…"
+              : editingProduct
+                ? "Update Product"
+                : "Save Product"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─── Products grid JSX ──────────────────────────────────────────────────────
+  const ProductsView = () => (
+    <>
+      <div className="inv-page-header">
+        <div>
+          <div className="inv-page-title">All Products</div>
+          <div className="inv-page-subtitle">
+            {products.length} product{products.length !== 1 ? "s" : ""} in
+            inventory
+          </div>
+        </div>
+        <button className="inv-btn-primary" onClick={openAdd}>
+          <Plus size={13} /> Add Product
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="inv-loading">
+          <Loader2 size={18} className="inv-spin" /> Loading inventory…
+        </div>
+      ) : products.length === 0 ? (
+        <div className="inv-empty">
+          <div className="inv-empty-icon">
+            <Package size={22} />
+          </div>
+          <div className="inv-empty-title">No products yet</div>
+          <div className="inv-empty-sub">
+            Add your first product to get started.
+          </div>
+          <button className="inv-btn-primary" onClick={openAdd}>
+            <Plus size={13} /> Add Product
+          </button>
+        </div>
+      ) : (
+        <div className="inv-grid">
+          {products.map((product) => (
+            <div
+              key={product._id}
+              className={`inv-card${editingProduct?._id === product._id ? " selected" : ""}`}
+            >
+              <div className="inv-card-top" />
+              <div className="inv-card-body">
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: 6,
+                  }}
+                >
+                  <div>
+                    <div className="inv-card-name">{product.name}</div>
+                    <div className="inv-card-cat">{product.category}</div>
+                  </div>
+                  <div className="inv-card-price">₹{product.price}</div>
+                </div>
+                <div className="inv-card-desc">
+                  {product.description || "No description."}
+                </div>
+                <div className="inv-swatches">
+                  {product.variants.map((v, i) => (
+                    <div
+                      key={i}
+                      className="inv-swatch"
+                      title={v.colorName}
+                      style={{ background: v.colorHex }}
+                    />
+                  ))}
+                  <span className="inv-swatch-label">
+                    {product.variants.length} colour
+                    {product.variants.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="inv-card-actions">
+                  <button
+                    className="inv-btn-edit"
+                    onClick={() => openEdit(product)}
+                  >
+                    <Edit3 size={11} /> Edit
+                  </button>
+                  <button
+                    className="inv-btn-delete"
+                    onClick={() => product._id && handleDelete(product._id)}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      <style>{STYLES}</style>
+      <div className="inv-root">
+        {/* ── Header ── */}
+        <header className="inv-header">
+          <div className="inv-header-left">
+            <button
+              className="inv-back-btn"
+              onClick={() => router.push("/admin/dashboard")}
+            >
+              <ChevronLeft size={13} /> Dashboard
+            </button>
+            <div
+              style={{ width: 1, height: 20, background: "var(--inv-border)" }}
+            />
+            <div className="inv-header-badge">
+              <ShieldCheck size={10} /> Inventory
+            </div>
+          </div>
+          <div className="inv-header-right">
+            {time && <span className="inv-clock">{time}</span>}
+            <button className="inv-logout" onClick={handleLogout}>
+              <LogOut size={11} /> Sign Out
+            </button>
+          </div>
+        </header>
+
+        {/* ── Body ── */}
+        <div className="inv-body">
+          {/* Desktop Sidebar */}
+          <aside className="inv-sidebar">
+            <div className="inv-sidebar-brand">
+              <div className="inv-sidebar-brand-label">Bambumm Admin</div>
+              <div className="inv-sidebar-brand-title">Inventory</div>
+            </div>
+
+            <nav className="inv-nav">
+              <button
+                className={`inv-nav-item${view === "products" ? " active" : ""}`}
+                onClick={() => {
+                  setView("products");
+                  setEditingProduct(null);
+                }}
+              >
+                <LayoutGrid size={15} /> All Products
+                <span className="inv-nav-badge">{products.length}</span>
+              </button>
+              <button
+                className={`inv-nav-item${view === "add" ? " active" : ""}`}
+                onClick={openAdd}
+              >
+                <Plus size={15} />{" "}
+                {editingProduct ? "Edit Product" : "Add Product"}
+              </button>
+            </nav>
+
+            <div className="inv-sidebar-divider" />
+            <div className="inv-sidebar-list-label">Products</div>
+
+            {loading ? (
+              <div
+                style={{
+                  padding: "12px 20px",
+                  fontFamily: "system-ui",
+                  fontSize: 12,
+                  color: "var(--inv-muted)",
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "center",
+                }}
+              >
+                <Loader2 size={12} className="inv-spin" /> Loading…
+              </div>
+            ) : products.length === 0 ? (
+              <div
+                style={{
+                  padding: "12px 20px",
+                  fontFamily: "system-ui",
+                  fontSize: 12,
+                  color: "var(--inv-muted)",
+                }}
+              >
+                No products yet.
+              </div>
+            ) : (
+              products.map((p) => (
+                <button
+                  key={p._id}
+                  className={`inv-sidebar-product${editingProduct?._id === p._id ? " active" : ""}`}
+                  onClick={() => openEdit(p)}
+                >
+                  <div className="inv-sidebar-product-icon">
+                    <Package size={12} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="inv-sidebar-product-name">{p.name}</div>
+                    <div className="inv-sidebar-product-meta">
+                      ₹{p.price} · {p.variants.length} variant
+                      {p.variants.length !== 1 ? "s" : ""}
+                    </div>
+                  </div>
+                </button>
+              ))
+            )}
+          </aside>
+
+          {/* Main Content */}
+          <main className="inv-main">
+            {view === "products" && <ProductsView />}
+            {view === "add" && <FormView />}
+          </main>
+        </div>
+
+        {/* Mobile Bottom Nav */}
+        <nav className="inv-mob-nav">
+          <button
+            className={`inv-mob-nav-btn${view === "products" ? " active" : ""}`}
+            onClick={() => {
+              setView("products");
+              setEditingProduct(null);
+            }}
+          >
+            <LayoutGrid size={18} />
+            Products
+          </button>
+          <button
+            className={`inv-mob-nav-btn${view === "add" ? " active" : ""}`}
+            onClick={openAdd}
+          >
+            <Plus size={18} />
+            Add
+          </button>
+          <button
+            className="inv-mob-nav-btn"
+            onClick={() => router.push("/admin/dashboard")}
+          >
+            <ChevronLeft size={18} />
+            Dashboard
+          </button>
+        </nav>
+
+        {/* Toast */}
+        {toast && (
+          <div
+            className="inv-toast"
+            style={{
+              borderColor:
+                toast.type === "success"
+                  ? "var(--inv-accent)"
+                  : "var(--inv-danger)",
+            }}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle2
+                size={15}
+                style={{ color: "var(--inv-accent)", flexShrink: 0 }}
+              />
+            ) : (
+              <AlertCircle
+                size={15}
+                style={{ color: "var(--inv-danger)", flexShrink: 0 }}
+              />
+            )}
+            <span className="inv-toast-text">{toast.msg}</span>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
