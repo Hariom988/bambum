@@ -95,8 +95,8 @@ export default function Footer() {
               },
               {
                 icon: Mail,
-                text: "support@bambum.in",
-                href: "mailto:support@bambum.in",
+                text: "support@bambumm.in",
+                href: "mailto:support@bambumm.in",
               },
               {
                 icon: Phone,
