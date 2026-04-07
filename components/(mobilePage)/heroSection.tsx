@@ -6,6 +6,7 @@ import banner1 from "@/public/banner_image.png";
 import banner2 from "@/public/banner_image2.png";
 import banner3 from "@/public/banner_image3.png";
 import banner4 from "@/public/banner_image5.jpeg";
+import banner6 from "@/public/banner_image6.png";
 
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
@@ -28,6 +29,11 @@ const SLIDES = [
   {
     id: 4,
     image: banner4,
+    cta: { label: "UPCOMING", href: "/" },
+  },
+  {
+    id: 5,
+    image: banner6,
     cta: { label: "UPCOMING", href: "/" },
   },
 ];
