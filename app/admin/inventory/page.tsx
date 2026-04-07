@@ -937,7 +937,7 @@ export default function InventoryPage() {
                     {variant.images.map((img, ii) => (
                       <div key={ii} className="inv-img-thumb">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={img} alt="" />
+                        <img src={img} alt="image-preview" />
                         <button
                           className="inv-img-remove"
                           onClick={() => removeImg(vi, ii)}
