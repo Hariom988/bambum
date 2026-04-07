@@ -68,7 +68,7 @@ export default function Footer() {
           <Link href="/">
             <img
               src="/logo-removebg-preview.png"
-              alt="Bambum"
+              alt="Bambumm"
               className="w-20"
               style={{
                 filter:
