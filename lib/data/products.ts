@@ -7,7 +7,7 @@ export const products: Product[] = [
     name: "Brief",
     description:
       "Crafted from premium bamboo fabric, this brief offers exceptional softness, breathability, and all-day comfort. Naturally hypoallergenic and moisture-wicking — made for the skin you live in.",
-    price: 99,
+    price: 999,
     category: "Men's Brief",
     variants: [
       {
