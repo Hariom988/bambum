@@ -333,7 +333,7 @@ export default function AboutUsPage() {
             {/* Visual block */}
             <div className="relative">
               <div
-                className="w-full aspect-square max-w-sm mx-auto flex flex-col items-center justify-center gap-3 p-10 text-center"
+                className="w-full aspect-square max-w-sm mx-auto flex flex-col items-center justify-center gap-3 text-center"
                 style={{
                   background:
                     "linear-gradient(135deg, #fff 0%, rgba(200,169,126,0.08) 100%)",
@@ -341,7 +341,6 @@ export default function AboutUsPage() {
                   boxShadow: "0 4px 40px rgba(200,169,126,0.1)",
                 }}
               >
-                {/* Corner accents */}
                 {[
                   "top-0 left-0",
                   "top-0 right-0",
@@ -362,37 +361,11 @@ export default function AboutUsPage() {
                     }}
                   />
                 ))}
-
-                <Leaf
-                  size={40}
-                  strokeWidth={1}
-                  style={{ color: "var(--nav-accent)", opacity: 0.7 }}
+                <img
+                  className="w-full"
+                  src="/about_banner_image.png"
+                  alt="about_banner_image"
                 />
-                <p
-                  className="text-4xl font-bold uppercase tracking-widest"
-                  style={{
-                    fontFamily: "var(--nav-font)",
-                    color: "var(--nav-fg)",
-                  }}
-                >
-                  Bamboo
-                </p>
-                <p
-                  className="text-xs tracking-[0.2em] uppercase"
-                  style={{ color: "var(--nav-fg-muted)" }}
-                >
-                  fabric by nature
-                </p>
-                <div
-                  className="w-8 h-px my-2"
-                  style={{ background: "var(--nav-accent)" }}
-                />
-                <p
-                  className="text-xs leading-relaxed max-w-[18ch]"
-                  style={{ color: "var(--nav-fg-muted)" }}
-                >
-                  Soft · Breathable · Sustainable
-                </p>
               </div>
 
               {/* Floating label */}
