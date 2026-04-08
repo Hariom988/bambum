@@ -9,7 +9,7 @@ async function getDb() {
   return { client, db, col: db.collection("products") };
 }
 
-// GET all products
+// GET — all products
 export async function GET() {
   try {
     const { client, col } = await getDb();
@@ -26,10 +26,13 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, slug, description, price, category, variants } = body;
+    const { name, slug, description, price, category, variants, isActive } = body;
 
     if (!name || !category || !price) {
-      return NextResponse.json({ error: "Name, category and price are required." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Name, category and price are required." },
+        { status: 400 }
+      );
     }
 
     const { client, col } = await getDb();
@@ -41,6 +44,7 @@ export async function POST(req: NextRequest) {
       price: Number(price),
       category,
       variants: variants || [],
+      isActive: isActive !== false, // default true
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -55,13 +59,15 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT — update existing product
+// PUT — full product update (all fields)
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { _id, name, slug, description, price, category, variants } = body;
+    const { _id, name, slug, description, price, category, variants, isActive } = body;
 
-    if (!_id) return NextResponse.json({ error: "Product ID required." }, { status: 400 });
+    if (!_id) {
+      return NextResponse.json({ error: "Product ID required." }, { status: 400 });
+    }
 
     const { client, col } = await getDb();
 
@@ -75,6 +81,7 @@ export async function PUT(req: NextRequest) {
           price: Number(price),
           category,
           variants,
+          isActive: isActive !== false,
           updatedAt: new Date(),
         },
       }
@@ -88,13 +95,50 @@ export async function PUT(req: NextRequest) {
   }
 }
 
+// PATCH — partial update (e.g. toggle isActive only, without touching other fields)
+export async function PATCH(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID required." }, { status: 400 });
+    }
+
+    const body = await req.json();
+
+    // Only allow safe partial fields through PATCH
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allowed: Record<string, any> = {};
+    if (typeof body.isActive === "boolean") allowed.isActive = body.isActive;
+    // Add more patchable fields here as needed
+
+    if (Object.keys(allowed).length === 0) {
+      return NextResponse.json({ error: "No valid fields to update." }, { status: 400 });
+    }
+
+    allowed.updatedAt = new Date();
+
+    const { client, col } = await getDb();
+    await col.updateOne({ _id: new ObjectId(id) }, { $set: allowed });
+    await client.close();
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[inventory PATCH]", err);
+    return NextResponse.json({ error: "Failed to patch product." }, { status: 500 });
+  }
+}
+
 // DELETE — remove product
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
-    if (!id) return NextResponse.json({ error: "ID required." }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: "ID required." }, { status: 400 });
+    }
 
     const { client, col } = await getDb();
     await col.deleteOne({ _id: new ObjectId(id) });
