@@ -10,6 +10,10 @@ import Footer from "@/components/footer";
 export const metadata: Metadata = {
   title: "Bambumm",
   description: "Undergarments for men and women",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
