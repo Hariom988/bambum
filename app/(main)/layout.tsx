@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import "@/app/globals.css";
+import Footer from "@/components/footer";
+import Header from "@/components/header";
 
 export const metadata: Metadata = {
-  title: "Bambum",
+  title: "Bambumm",
   description: "Undergarments for men and women",
 };
 
@@ -13,7 +15,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Header />
+        {children}
+        <Footer />
+      </body>
     </html>
   );
 }

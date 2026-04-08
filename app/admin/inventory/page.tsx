@@ -15,7 +15,6 @@ import {
   Layers,
   LogOut,
   ShieldCheck,
-  Clock,
   AlertCircle,
   CheckCircle2,
   Edit3,
@@ -59,535 +58,280 @@ const EMPTY_PRODUCT: Omit<Product, "_id" | "createdAt"> = {
   price: 0,
   category: "",
   variants: [
-    { colorName: "", colorHex: "#c8a97e", images: [], imageFiles: [] },
+    { colorName: "", colorHex: "#c8a97e", images: [""], imageFiles: [] },
   ],
 };
 
 type View = "products" | "add" | "edit";
+const FormSection = ({
+  icon,
+  title,
+  children,
+  headerRight,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+  headerRight?: React.ReactNode;
+}) => (
+  <div className="bg-white border border-[#e8e0d5] mb-4 overflow-hidden">
+    <div className="flex items-center justify-between gap-2.5 px-5 py-3.5 border-b border-[#f0ebe3] bg-[#fdfaf7]">
+      <div className="flex items-center gap-2.5">
+        <div className="w-6 h-6 shrink-0 bg-[rgba(184,148,94,0.1)] border border-[rgba(184,148,94,0.2)] flex items-center justify-center text-[#b8945e]">
+          {icon}
+        </div>
+        <span className="font-sans text-[10px] font-bold tracking-[0.14em] uppercase text-[#1c1813]">
+          {title}
+        </span>
+      </div>
+      {headerRight}
+    </div>
+    <div className="p-5">{children}</div>
+  </div>
+);
 
-// ─── CSS injected once ────────────────────────────────────────────────────────
-const STYLES = `
-  :root {
-    --inv-bg: #f7f3ee;
-    --inv-surface: #ffffff;
-    --inv-border: #e8e0d5;
-    --inv-border-light: #f0ebe3;
-    --inv-accent: #b8945e;
-    --inv-accent-hover: #9a7a4a;
-    --inv-accent-faint: rgba(184,148,94,0.10);
-    --inv-accent-faint2: rgba(184,148,94,0.06);
-    --inv-text: #1c1813;
-    --inv-muted: #7a7068;
-    --inv-danger: #c0392b;
-    --inv-danger-faint: rgba(192,57,43,0.08);
-    --inv-sidebar-w: 260px;
-    --inv-header-h: 60px;
-    --inv-mob-nav-h: 58px;
-    --inv-radius: 2px;
-    --inv-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
-    --inv-shadow-lg: 0 4px 24px rgba(0,0,0,0.10);
-  }
-  .inv-root * { box-sizing: border-box; }
-  .inv-root { font-family: 'Georgia', serif; background: var(--inv-bg); min-height: 100vh; color: var(--inv-text); }
+const Label = ({ children }: { children: React.ReactNode }) => (
+  <label className="block font-sans text-[10px] font-bold tracking-[0.12em] uppercase text-[#7a7068] mb-1.5">
+    {children}
+  </label>
+);
 
-  /* ── Header ── */
-  .inv-header {
-    position: sticky; top: 0; z-index: 100;
-    height: var(--inv-header-h);
-    background: var(--inv-surface);
-    border-bottom: 1px solid var(--inv-border);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 20px;
-    box-shadow: 0 1px 0 var(--inv-border);
-  }
-  .inv-header-left { display: flex; align-items: center; gap: 12px; }
-  .inv-back-btn {
-    display: flex; align-items: center; gap: 6px;
-    font-family: system-ui, sans-serif;
-    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--inv-muted); background: none; border: none; cursor: pointer;
-    padding: 6px 10px; transition: color 0.15s;
-  }
-  .inv-back-btn:hover { color: var(--inv-text); }
-  .inv-header-badge {
-    display: flex; align-items: center; gap: 6px;
-    padding: 4px 10px;
-    background: var(--inv-accent-faint);
-    border: 1px solid rgba(184,148,94,0.25);
-    font-family: system-ui, sans-serif;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--inv-accent);
-  }
-  .inv-header-right { display: flex; align-items: center; gap: 16px; }
-  .inv-clock {
-    font-family: system-ui, sans-serif; font-size: 11px; color: var(--inv-muted);
-    letter-spacing: 0.04em;
-  }
-  .inv-logout {
-    display: flex; align-items: center; gap: 6px;
-    padding: 6px 12px;
-    border: 1px solid var(--inv-border);
-    background: none; cursor: pointer;
-    font-family: system-ui, sans-serif;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--inv-muted); transition: all 0.15s;
-  }
-  .inv-logout:hover { border-color: var(--inv-danger); color: var(--inv-danger); background: var(--inv-danger-faint); }
+const inputCls =
+  "w-full px-3.5 py-2.5 border border-[#e8e0d5] bg-[#f7f3ee] font-sans text-[13px] text-[#1c1813] outline-none transition-all duration-150 placeholder-[#bdb5a8] focus:border-[#b8945e] focus:bg-white";
+const ProductRow = ({
+  product,
+  onEdit,
+  onDelete,
+  activeProducts,
+  setConfirmDialog,
+}: {
+  product: Product;
+  onEdit: (p: Product) => void;
+  onDelete: (id: string) => void;
+  activeProducts: Record<string, boolean>;
+  setConfirmDialog: React.Dispatch<
+    React.SetStateAction<{
+      type: "delete" | "toggle";
+      productId: string;
+      productName: string;
+      currentActive?: boolean;
+    } | null>
+  >;
+}) => {
+  const isActive = activeProducts[product._id!] !== false;
+  const firstImage = product.variants[0]?.images[0];
 
-  /* ── Body layout ── */
-  .inv-body {
-    display: flex;
-    height: calc(100vh - var(--inv-header-h));
-  }
+  return (
+    <div
+      className="grid gap-3 px-4 py-3 items-center border-b border-[#f0ebe3] bg-white hover:bg-[rgba(184,148,94,0.04)] transition-colors duration-150"
+      style={{
+        gridTemplateColumns: "60px 1fr 140px 120px 80px 60px 100px 60px",
+      }}
+    >
+      <div className="w-12 h-14 border border-[#e8e0d5] overflow-hidden shrink-0 bg-[#f7f3ee]">
+        {firstImage && (
+          <img
+            src={firstImage}
+            alt={product.name}
+            className="w-full h-full object-cover"
+          />
+        )}
+      </div>
+      <div>
+        <div className="font-bold text-[13px] text-[#1c1813]">
+          {product.name}
+        </div>
+        <div className="font-sans text-[10px] text-[#7a7068] mt-0.5">
+          /{product.slug}
+        </div>
+      </div>
+      <div className="font-sans text-[11px] text-[#7a7068] font-semibold tracking-wide">
+        {product.category}
+      </div>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {product.variants.map((v, i) => (
+          <div
+            key={i}
+            title={v.colorName}
+            className="w-4 h-4 rounded-full border-2 border-[#e8e0d5] shrink-0"
+            style={{ background: v.colorHex }}
+          />
+        ))}
+      </div>
+      <div className="font-bold text-[13px] text-[#1c1813]">
+        ₹{product.price}
+      </div>
+      <button
+        className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 border border-[#e8e0d5] font-sans text-[10px] font-bold tracking-widest uppercase text-[#7a7068] hover:border-[#b8945e] hover:text-[#b8945e] transition-all duration-150"
+        onClick={() => onEdit(product)}
+      >
+        <Edit3 size={11} /> Edit
+      </button>
+      <button
+        onClick={() =>
+          setConfirmDialog({
+            type: "toggle",
+            productId: product._id!,
+            productName: product.name,
+            currentActive: isActive,
+          })
+        }
+        className="flex items-center gap-1.5 px-2.5 py-1.5 border font-sans text-[9px] font-bold tracking-widest uppercase transition-all duration-150 whitespace-nowrap"
+        style={{
+          borderColor: isActive ? "rgba(184,148,94,0.35)" : "#e8e0d5",
+          background: isActive ? "rgba(184,148,94,0.1)" : "rgba(0,0,0,0.03)",
+          color: isActive ? "#b8945e" : "#7a7068",
+        }}
+      >
+        <div
+          className="w-7 h-3.5 rounded-full relative shrink-0 transition-colors duration-200"
+          style={{ background: isActive ? "#b8945e" : "#ccc" }}
+        >
+          <div
+            className="absolute top-0.5 rounded-full w-2.5 h-2.5 bg-white transition-all duration-200"
+            style={{ left: isActive ? "14px" : "2px" }}
+          />
+        </div>
+        {isActive ? "Active" : "Inactive"}
+      </button>
+      <button
+        className="flex items-center justify-center p-1.5 border border-[#e8e0d5] text-[#7a7068] hover:border-[#c0392b] hover:text-[#c0392b] hover:bg-[rgba(192,57,43,0.08)] transition-all duration-150"
+        onClick={() =>
+          setConfirmDialog({
+            type: "delete",
+            productId: product._id!,
+            productName: product.name,
+          })
+        }
+      >
+        <Trash2 size={13} />
+      </button>
+    </div>
+  );
+};
 
-  /* ── Sidebar ── */
-  .inv-sidebar {
-    width: var(--inv-sidebar-w);
-    flex-shrink: 0;
-    background: var(--inv-surface);
-    border-right: 1px solid var(--inv-border);
-    display: flex; flex-direction: column;
-    position: sticky; top: var(--inv-header-h);
-    height: calc(100vh - var(--inv-header-h));
-    overflow-y: auto;
-  }
-  .inv-sidebar-brand {
-    padding: 20px 20px 16px;
-    border-bottom: 1px solid var(--inv-border-light);
-  }
-  .inv-sidebar-brand-label {
-    font-family: system-ui, sans-serif;
-    font-size: 9px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--inv-accent); margin-bottom: 3px;
-  }
-  .inv-sidebar-brand-title {
-    font-size: 18px; font-weight: 700; color: var(--inv-text); letter-spacing: 0.01em;
-  }
-  .inv-nav { padding: 12px 0; }
-  .inv-nav-item {
-    display: flex; align-items: center; gap: 10px;
-    width: 100%; padding: 10px 20px;
-    background: none; border: none; cursor: pointer;
-    font-family: system-ui, sans-serif;
-    font-size: 13px; font-weight: 600; color: var(--inv-muted);
-    text-align: left; transition: all 0.15s;
-    border-right: 2px solid transparent;
-    position: relative;
-  }
-  .inv-nav-item:hover { background: var(--inv-accent-faint2); color: var(--inv-text); }
-  .inv-nav-item.active {
-    background: var(--inv-accent-faint); color: var(--inv-text);
-    border-right-color: var(--inv-accent);
-  }
-  .inv-nav-item.active svg { color: var(--inv-accent); }
-  .inv-nav-badge {
-    margin-left: auto;
-    font-size: 9px; font-weight: 700; padding: 2px 6px;
-    background: rgba(184,148,94,0.15);
-    border: 1px solid rgba(184,148,94,0.25);
-    color: var(--inv-accent);
-  }
-  .inv-sidebar-divider {
-    height: 1px; background: var(--inv-border-light); margin: 4px 0;
-  }
-  .inv-sidebar-list-label {
-    padding: 12px 20px 6px;
-    font-family: system-ui, sans-serif;
-    font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
-    color: var(--inv-muted);
-  }
-  .inv-sidebar-product {
-    display: flex; align-items: center; gap: 10px;
-    width: 100%; padding: 8px 20px;
-    background: none; border: none; cursor: pointer; text-align: left;
-    transition: all 0.15s; border-right: 2px solid transparent;
-  }
-  .inv-sidebar-product:hover { background: var(--inv-accent-faint2); }
-  .inv-sidebar-product.active { background: var(--inv-accent-faint); border-right-color: var(--inv-accent); }
-  .inv-sidebar-product-icon {
-    width: 30px; height: 30px; flex-shrink: 0;
-    background: var(--inv-bg); border: 1px solid var(--inv-border);
-    display: flex; align-items: center; justify-content: center;
-    color: var(--inv-accent);
-  }
-  .inv-sidebar-product-name {
-    font-family: system-ui, sans-serif;
-    font-size: 12px; font-weight: 600; color: var(--inv-text);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .inv-sidebar-product-meta {
-    font-family: system-ui, sans-serif;
-    font-size: 10px; color: var(--inv-muted);
-  }
+// ─── MobileProductCard
+const MobileProductCard = ({
+  product,
+  onEdit,
+  activeProducts,
+  setConfirmDialog,
+}: {
+  product: Product;
+  onEdit: (p: Product) => void;
+  activeProducts: Record<string, boolean>;
+  setConfirmDialog: React.Dispatch<
+    React.SetStateAction<{
+      type: "delete" | "toggle";
+      productId: string;
+      productName: string;
+      currentActive?: boolean;
+    } | null>
+  >;
+}) => {
+  const isActive = activeProducts[product._id!] !== false;
+  const firstImage = product.variants[0]?.images[0];
 
-  /* ── Main ── */
-  .inv-main { flex: 1; overflow-y: auto; }
-
-  /* ── Products view ── */
-  .inv-page-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 28px 32px 20px;
-    border-bottom: 1px solid var(--inv-border-light);
-  }
-  .inv-page-title { font-size: 22px; font-weight: 700; color: var(--inv-text); }
-  .inv-page-subtitle {
-    font-family: system-ui, sans-serif;
-    font-size: 12px; color: var(--inv-muted); margin-top: 2px;
-  }
-  .inv-btn-primary {
-    display: flex; align-items: center; gap: 7px;
-    padding: 9px 18px;
-    background: var(--inv-accent); color: #fff;
-    border: none; cursor: pointer;
-    font-family: system-ui, sans-serif;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-    transition: background 0.15s; white-space: nowrap;
-  }
-  .inv-btn-primary:hover { background: var(--inv-accent-hover); }
-  .inv-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px;
-    padding: 24px 32px;
-  }
-  .inv-card {
-    background: var(--inv-surface);
-    border: 1px solid var(--inv-border);
-    transition: all 0.2s;
-    overflow: hidden;
-  }
-  .inv-card:hover { border-color: var(--inv-accent); box-shadow: var(--inv-shadow); }
-  .inv-card.selected { border-color: var(--inv-accent); box-shadow: 0 0 0 2px rgba(184,148,94,0.15); }
-  .inv-card-top { height: 3px; background: var(--inv-accent); opacity: 0.35; }
-  .inv-card-body { padding: 16px; }
-  .inv-card-name { font-size: 15px; font-weight: 700; color: var(--inv-text); }
-  .inv-card-cat {
-    font-family: system-ui, sans-serif;
-    font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--inv-accent); margin-top: 2px;
-  }
-  .inv-card-price {
-    font-size: 16px; font-weight: 700; color: var(--inv-text);
-  }
-  .inv-card-desc {
-    font-family: system-ui, sans-serif;
-    font-size: 12px; color: var(--inv-muted); line-height: 1.5;
-    margin: 10px 0;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-  }
-  .inv-swatches { display: flex; align-items: center; gap: 5px; margin-bottom: 14px; }
-  .inv-swatch { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--inv-border); }
-  .inv-swatch-label {
-    font-family: system-ui, sans-serif;
-    font-size: 10px; color: var(--inv-muted); margin-left: 2px;
-  }
-  .inv-card-actions {
-    display: flex; gap: 8px; padding-top: 12px;
-    border-top: 1px solid var(--inv-border-light);
-  }
-  .inv-btn-edit {
-    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 8px;
-    border: 1px solid var(--inv-border); background: none; cursor: pointer;
-    font-family: system-ui, sans-serif;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--inv-muted); transition: all 0.15s;
-  }
-  .inv-btn-edit:hover { border-color: var(--inv-accent); color: var(--inv-accent); }
-  .inv-btn-delete {
-    display: flex; align-items: center; justify-content: center;
-    padding: 8px 12px;
-    border: 1px solid var(--inv-border); background: none; cursor: pointer;
-    color: var(--inv-muted); transition: all 0.15s;
-  }
-  .inv-btn-delete:hover { border-color: var(--inv-danger); color: var(--inv-danger); background: var(--inv-danger-faint); }
-
-  /* ── Empty state ── */
-  .inv-empty {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 80px 20px; text-align: center;
-  }
-  .inv-empty-icon {
-    width: 56px; height: 56px;
-    background: var(--inv-accent-faint);
-    border: 1px solid rgba(184,148,94,0.2);
-    display: flex; align-items: center; justify-content: center;
-    color: var(--inv-accent); margin-bottom: 16px;
-  }
-  .inv-empty-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-  .inv-empty-sub { font-family: system-ui, sans-serif; font-size: 13px; color: var(--inv-muted); margin-bottom: 20px; }
-
-  /* ── Form view ── */
-  .inv-form-wrap { max-width: 680px; padding: 28px 32px 60px; }
-  .inv-form-breadcrumb {
-    display: flex; align-items: center; gap: 8px; margin-bottom: 20px;
-    font-family: system-ui, sans-serif; font-size: 11px; color: var(--inv-muted);
-  }
-  .inv-form-breadcrumb button {
-    background: none; border: none; cursor: pointer; color: var(--inv-muted);
-    font-family: system-ui, sans-serif; font-size: 11px;
-    display: flex; align-items: center; gap: 4px; padding: 0;
-    transition: color 0.15s;
-  }
-  .inv-form-breadcrumb button:hover { color: var(--inv-accent); }
-  .inv-form-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
-  .inv-section {
-    background: var(--inv-surface);
-    border: 1px solid var(--inv-border);
-    margin-bottom: 16px; overflow: hidden;
-  }
-  .inv-section-header {
-    display: flex; align-items: center; gap: 10px;
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--inv-border-light);
-    background: #fdfaf7;
-  }
-  .inv-section-icon {
-    width: 24px; height: 24px; flex-shrink: 0;
-    background: var(--inv-accent-faint);
-    border: 1px solid rgba(184,148,94,0.2);
-    display: flex; align-items: center; justify-content: center;
-    color: var(--inv-accent);
-  }
-  .inv-section-title {
-    font-family: system-ui, sans-serif;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--inv-text);
-  }
-  .inv-section-body { padding: 20px; }
-  .inv-field { margin-bottom: 16px; }
-  .inv-field:last-child { margin-bottom: 0; }
-  .inv-label {
-    display: block;
-    font-family: system-ui, sans-serif;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--inv-muted); margin-bottom: 6px;
-  }
-  .inv-input {
-    width: 100%; padding: 10px 14px;
-    border: 1px solid var(--inv-border);
-    background: var(--inv-bg);
-    font-family: system-ui, sans-serif; font-size: 13px; color: var(--inv-text);
-    outline: none; transition: border-color 0.15s;
-  }
-  .inv-input:focus { border-color: var(--inv-accent); background: #fff; }
-  .inv-input::placeholder { color: #bdb5a8; }
-  .inv-input-price { padding-left: 30px; }
-  .inv-price-wrap { position: relative; }
-  .inv-price-symbol {
-    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-    font-family: system-ui, sans-serif; font-size: 13px; font-weight: 700;
-    color: var(--inv-accent);
-  }
-  .inv-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .inv-textarea {
-    width: 100%; padding: 10px 14px; resize: none;
-    border: 1px solid var(--inv-border);
-    background: var(--inv-bg);
-    font-family: system-ui, sans-serif; font-size: 13px; color: var(--inv-text);
-    outline: none; transition: border-color 0.15s; line-height: 1.6;
-  }
-  .inv-textarea:focus { border-color: var(--inv-accent); background: #fff; }
-  .inv-textarea::placeholder { color: #bdb5a8; }
-
-  /* Variant */
-  .inv-variant-card {
-    border: 1px solid var(--inv-border); margin-bottom: 12px; overflow: hidden;
-  }
-  .inv-variant-card:last-child { margin-bottom: 0; }
-  .inv-variant-header {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 14px; background: #fdfaf7;
-    border-bottom: 1px solid var(--inv-border-light);
-  }
-  .inv-color-input {
-    width: 30px; height: 30px; border: 2px solid var(--inv-border);
-    cursor: pointer; border-radius: 2px; flex-shrink: 0; padding: 0;
-  }
-  .inv-color-name {
-    flex: 1; background: none; border: none; outline: none;
-    font-family: system-ui, sans-serif; font-size: 13px; font-weight: 600;
-    color: var(--inv-text);
-  }
-  .inv-color-name::placeholder { color: #bdb5a8; }
-  .inv-variant-remove {
-    width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
-    background: none; border: none; cursor: pointer; color: #bdb5a8; transition: color 0.15s;
-  }
-  .inv-variant-remove:hover { color: var(--inv-danger); }
-  .inv-variant-body { padding: 14px; }
-  .inv-images-label {
-    font-family: system-ui, sans-serif;
-    font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
-    color: var(--inv-muted); margin-bottom: 10px;
-  }
-  .inv-img-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 10px; }
-  .inv-img-thumb {
-    position: relative; aspect-ratio: 1;
-    border: 1px solid var(--inv-border); overflow: hidden;
-  }
-  .inv-img-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .inv-img-remove {
-    position: absolute; top: 3px; right: 3px;
-    width: 18px; height: 18px;
-    background: rgba(192,57,43,0.9); color: #fff;
-    display: flex; align-items: center; justify-content: center;
-    border: none; cursor: pointer; opacity: 0; transition: opacity 0.15s;
-  }
-  .inv-img-thumb:hover .inv-img-remove { opacity: 1; }
-  .inv-upload-zone {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 8px; padding: 24px 12px;
-    border: 2px dashed var(--inv-border);
-    cursor: pointer; transition: all 0.2s;
-  }
-  .inv-upload-zone:hover { border-color: var(--inv-accent); background: var(--inv-accent-faint2); }
-  .inv-upload-icon {
-    width: 36px; height: 36px;
-    background: var(--inv-accent-faint);
-    border: 1px solid rgba(184,148,94,0.2);
-    display: flex; align-items: center; justify-content: center;
-    color: var(--inv-accent);
-  }
-  .inv-upload-text {
-    font-family: system-ui, sans-serif; font-size: 12px; font-weight: 600; color: var(--inv-muted);
-  }
-  .inv-upload-hint {
-    font-family: system-ui, sans-serif; font-size: 10px; color: #bdb5a8;
-  }
-  .inv-add-variant-btn {
-    display: flex; align-items: center; gap: 6px;
-    padding: 7px 12px;
-    border: 1px solid rgba(184,148,94,0.3);
-    background: none; cursor: pointer;
-    font-family: system-ui, sans-serif;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--inv-accent); transition: all 0.15s;
-  }
-  .inv-add-variant-btn:hover { background: var(--inv-accent-faint); }
-
-  /* Form actions */
-  .inv-form-actions {
-    background: var(--inv-surface);
-    border: 1px solid var(--inv-border);
-    padding: 16px 20px;
-  }
-  .inv-btn-danger-text {
-    display: flex; align-items: center; gap: 6px;
-    background: none; border: none; cursor: pointer;
-    font-family: system-ui, sans-serif;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--inv-danger); padding: 0; margin-bottom: 14px; transition: opacity 0.15s;
-  }
-  .inv-btn-danger-text:hover { opacity: 0.7; }
-  .inv-form-btns { display: flex; gap: 10px; }
-  .inv-btn-secondary {
-    flex: 1; padding: 11px;
-    border: 1px solid var(--inv-border); background: none; cursor: pointer;
-    font-family: system-ui, sans-serif;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--inv-muted); transition: all 0.15s;
-  }
-  .inv-btn-secondary:hover { border-color: var(--inv-accent); color: var(--inv-text); }
-  .inv-btn-save {
-    flex: 1.5; display: flex; align-items: center; justify-content: center; gap: 7px;
-    padding: 11px;
-    background: var(--inv-accent); border: none; cursor: pointer;
-    font-family: system-ui, sans-serif;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-    color: #fff; transition: background 0.15s;
-  }
-  .inv-btn-save:hover { background: var(--inv-accent-hover); }
-  .inv-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* Toast */
-  .inv-toast {
-    position: fixed; bottom: 24px; right: 24px; z-index: 999;
-    display: flex; align-items: center; gap: 10px;
-    padding: 12px 18px;
-    background: var(--inv-surface);
-    border: 1px solid var(--inv-border);
-    box-shadow: var(--inv-shadow-lg);
-    animation: toastIn 0.3s ease;
-  }
-  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .inv-toast-text {
-    font-family: system-ui, sans-serif; font-size: 13px; font-weight: 600; color: var(--inv-text);
-  }
-
-  /* Loading */
-  .inv-loading {
-    display: flex; align-items: center; justify-content: center;
-    padding: 80px; color: var(--inv-muted);
-    font-family: system-ui, sans-serif; font-size: 13px; gap: 10px;
-  }
-  .inv-spin { animation: spin 1s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ═══════════════════════════════════════
-     MOBILE  (≤ 767px)
-  ═══════════════════════════════════════ */
-  @media (max-width: 767px) {
-    :root {
-      --inv-header-h: 52px;
-      --inv-mob-nav-h: 56px;
-    }
-
-    /* Sidebar hidden on mobile */
-    .inv-sidebar { display: none; }
-
-    /* Body takes full width */
-    .inv-body { height: auto; flex-direction: column; }
-    .inv-main { overflow-y: visible; }
-
-    /* Mobile bottom nav */
-    .inv-mob-nav {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
-      height: var(--inv-mob-nav-h);
-      background: var(--inv-surface);
-      border-top: 1px solid var(--inv-border);
-      display: flex;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
-    }
-    .inv-mob-nav-btn {
-      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 3px; background: none; border: none; cursor: pointer;
-      font-family: system-ui, sans-serif;
-      font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--inv-muted); transition: all 0.15s;
-      border-top: 2px solid transparent;
-    }
-    .inv-mob-nav-btn.active { color: var(--inv-accent); border-top-color: var(--inv-accent); }
-    .inv-mob-nav-btn svg { width: 18px; height: 18px; }
-
-    /* Page bottom padding for fixed nav */
-    .inv-main { padding-bottom: var(--inv-mob-nav-h); }
-
-    /* Form wrap adjustments */
-    .inv-form-wrap { padding: 20px 16px 80px; max-width: 100%; }
-    .inv-page-header { padding: 20px 16px 14px; }
-    .inv-grid { grid-template-columns: 1fr; padding: 16px; gap: 12px; }
-    .inv-grid-2 { grid-template-columns: 1fr 1fr; }
-    .inv-img-grid { grid-template-columns: repeat(4, 1fr); }
-
-    /* Mobile page title row */
-    .inv-mob-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 16px 12px;
-      border-bottom: 1px solid var(--inv-border-light);
-    }
-    .inv-mob-title { font-size: 18px; font-weight: 700; }
-    .inv-mob-subtitle {
-      font-family: system-ui, sans-serif; font-size: 11px; color: var(--inv-muted); margin-top: 1px;
-    }
-  }
-
-  /* Hide mobile nav on desktop */
-  @media (min-width: 768px) {
-    .inv-mob-nav { display: none; }
-  }
-`;
-
+  return (
+    <div className="bg-white border border-[#e8e0d5] overflow-hidden">
+      <div className="h-0.5 bg-[#b8945e] opacity-40" />
+      <div className="flex gap-3 p-3">
+        <div className="w-16 h-20 shrink-0 border border-[#e8e0d5] overflow-hidden bg-[#f7f3ee]">
+          {firstImage ? (
+            <img
+              src={firstImage}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Package size={18} className="text-[#b8945e] opacity-50" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-serif font-bold text-sm text-[#1c1813] leading-tight">
+            {product.name}
+          </div>
+          <div className="font-sans text-[9px] font-bold tracking-[0.14em] uppercase text-[#b8945e] mt-0.5">
+            {product.category}
+          </div>
+          <div className="font-sans text-[10px] text-[#7a7068] mt-0.5">
+            /{product.slug}
+          </div>
+          <div className="flex items-center gap-1.5 mt-1.5">
+            {product.variants.map((v, i) => (
+              <div
+                key={i}
+                title={v.colorName}
+                className="w-3.5 h-3.5 rounded-full border-2 border-[#e8e0d5]"
+                style={{ background: v.colorHex }}
+              />
+            ))}
+            <span className="font-sans text-[10px] text-[#7a7068] ml-1">
+              {product.variants.length} colour
+              {product.variants.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-col items-end justify-between shrink-0">
+          <div className="font-serif font-bold text-base text-[#1c1813]">
+            ₹{product.price}
+          </div>
+          <button
+            onClick={() =>
+              setConfirmDialog({
+                type: "toggle",
+                productId: product._id!,
+                productName: product.name,
+                currentActive: isActive,
+              })
+            }
+            className="flex items-center gap-1 px-2 py-1 border font-sans text-[8px] font-bold tracking-widest uppercase transition-all duration-150"
+            style={{
+              borderColor: isActive ? "rgba(184,148,94,0.35)" : "#e8e0d5",
+              background: isActive
+                ? "rgba(184,148,94,0.1)"
+                : "rgba(0,0,0,0.03)",
+              color: isActive ? "#b8945e" : "#7a7068",
+            }}
+          >
+            <div
+              className="w-5 h-2.5 rounded-full relative shrink-0"
+              style={{ background: isActive ? "#b8945e" : "#ccc" }}
+            >
+              <div
+                className="absolute top-0.5 rounded-full w-1.5 h-1.5 bg-white transition-all duration-200"
+                style={{ left: isActive ? "10px" : "2px" }}
+              />
+            </div>
+            {isActive ? "Live" : "Off"}
+          </button>
+        </div>
+      </div>
+      <div className="flex border-t border-[#f0ebe3]">
+        <button
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 font-sans text-[10px] font-bold tracking-widest uppercase text-[#7a7068] hover:bg-[rgba(184,148,94,0.06)] hover:text-[#b8945e] transition-all duration-150 border-r border-[#f0ebe3]"
+          onClick={() => onEdit(product)}
+        >
+          <Edit3 size={11} /> Edit Product
+        </button>
+        <button
+          className="flex items-center justify-center gap-1.5 px-5 py-2.5 font-sans text-[10px] font-bold tracking-widest uppercase text-[#7a7068] hover:bg-[rgba(192,57,43,0.06)] hover:text-[#c0392b] transition-all duration-150"
+          onClick={() =>
+            setConfirmDialog({
+              type: "delete",
+              productId: product._id!,
+              productName: product.name,
+            })
+          }
+        >
+          <Trash2 size={11} />
+        </button>
+      </div>
+    </div>
+  );
+};
 export default function InventoryPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
@@ -788,202 +532,214 @@ export default function InventoryPage() {
     router.push("/admin/login");
   };
 
-  // ─── Form JSX (shared desktop/mobile) ──────────────────────────────────────
+  const [activeProducts, setActiveProducts] = useState<Record<string, boolean>>(
+    {},
+  );
+  const toggleActive = (id: string) => {
+    setActiveProducts((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    type: "delete" | "toggle";
+    productId: string;
+    productName: string;
+    currentActive?: boolean;
+  } | null>(null);
+
+  const handleConfirmAction = () => {
+    if (!confirmDialog) return;
+    if (confirmDialog.type === "delete") {
+      handleDelete(confirmDialog.productId);
+    } else {
+      toggleActive(confirmDialog.productId);
+    }
+    setConfirmDialog(null);
+  };
+  // ─── Form View
   const FormView = () => (
-    <div className="inv-form-wrap">
+    <div className="max-w-7xl px-8 py-7 md:pb-16 pb-24">
       {/* Breadcrumb */}
-      <div className="inv-form-breadcrumb">
-        <button onClick={cancel}>
+      <div className="flex items-center gap-2 mb-5 font-sans text-[11px] text-[#7a7068]">
+        <button
+          onClick={cancel}
+          className="flex items-center gap-1 text-[#7a7068] hover:text-[#b8945e] transition-colors duration-150 bg-transparent border-none cursor-pointer p-0 font-sans text-[11px]"
+        >
           <ArrowLeft size={12} /> All Products
         </button>
         <span>/</span>
-        <span style={{ color: "var(--inv-text)" }}>
+        <span className="text-[#1c1813]">
           {editingProduct ? "Edit" : "New Product"}
         </span>
       </div>
 
-      <div className="inv-form-title">
+      <div className="font-serif text-[22px] font-bold mb-6 text-[#1c1813]">
         {editingProduct ? editingProduct.name : "Add to Inventory"}
       </div>
 
       {/* Basic Info */}
-      <div className="inv-section">
-        <div className="inv-section-header">
-          <div className="inv-section-icon">
-            <Tag size={11} />
-          </div>
-          <span className="inv-section-title">Basic Info</span>
-        </div>
-        <div className="inv-section-body">
-          <div className="inv-field">
-            <label className="inv-label">Product Name *</label>
-            <input
-              className="inv-input"
-              type="text"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder="e.g. Classic Brief"
-            />
-          </div>
-          <div className="inv-grid-2">
-            <div className="inv-field">
-              <label className="inv-label">Price (₹) *</label>
-              <div className="inv-price-wrap">
-                <span className="inv-price-symbol">₹</span>
-                <input
-                  className="inv-input inv-input-price"
-                  type="number"
-                  value={form.price || ""}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, price: Number(e.target.value) }))
-                  }
-                  placeholder="0"
-                />
-              </div>
-            </div>
-            <div className="inv-field">
-              <label className="inv-label">Category *</label>
-              <select
-                className="inv-input"
-                style={{ appearance: "none" }}
-                value={form.category}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, category: e.target.value }))
-                }
-              >
-                <option value="">Select…</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Description */}
-      <div className="inv-section">
-        <div className="inv-section-header">
-          <div className="inv-section-icon">
-            <FileText size={11} />
-          </div>
-          <span className="inv-section-title">Description</span>
-        </div>
-        <div className="inv-section-body">
-          <textarea
-            className="inv-textarea"
-            rows={3}
-            value={form.description}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, description: e.target.value }))
-            }
-            placeholder="Describe your product — fabric, comfort, use case…"
+      <FormSection icon={<Tag size={11} />} title="Basic Info">
+        <div className="mb-4">
+          <Label>Product Name *</Label>
+          <input
+            className={inputCls}
+            type="text"
+            value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            placeholder="e.g. Classic Brief"
           />
         </div>
-      </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Price (₹) *</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 font-sans text-[13px] font-bold text-[#b8945e]">
+                ₹
+              </span>
+              <input
+                className={`${inputCls} pl-7`}
+                type="number"
+                value={form.price || ""}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, price: Number(e.target.value) }))
+                }
+                placeholder="0"
+              />
+            </div>
+          </div>
+          <div>
+            <Label>Category *</Label>
+            <select
+              className={`${inputCls} appearance-none`}
+              value={form.category}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, category: e.target.value }))
+              }
+            >
+              <option value="">Select…</option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </FormSection>
+
+      {/* Description */}
+      <FormSection icon={<FileText size={11} />} title="Description">
+        <textarea
+          className={`${inputCls} resize-none leading-relaxed`}
+          rows={3}
+          value={form.description}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, description: e.target.value }))
+          }
+          placeholder="Describe your product — fabric, comfort, use case…"
+        />
+      </FormSection>
 
       {/* Variants */}
-      <div className="inv-section">
-        <div
-          className="inv-section-header"
-          style={{ justifyContent: "space-between" }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div className="inv-section-icon">
-              <Layers size={11} />
-            </div>
-            <span className="inv-section-title">Colour Variants</span>
-          </div>
-          <button className="inv-add-variant-btn" onClick={addVariant}>
+      <FormSection
+        icon={<Layers size={11} />}
+        title="Colour Variants"
+        headerRight={
+          <button
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(184,148,94,0.3)] bg-transparent cursor-pointer font-sans text-[10px] font-bold tracking-widest uppercase text-[#b8945e] hover:bg-[rgba(184,148,94,0.1)] transition-all duration-150"
+            onClick={addVariant}
+          >
             <Plus size={10} /> Add Variant
           </button>
-        </div>
-        <div className="inv-section-body">
-          {form.variants.map((variant, vi) => (
-            <div key={vi} className="inv-variant-card">
-              <div className="inv-variant-header">
-                <input
-                  type="color"
-                  className="inv-color-input"
-                  value={variant.colorHex}
-                  onChange={(e) =>
-                    updateVariant(vi, "colorHex", e.target.value)
-                  }
-                />
-                <input
-                  type="text"
-                  className="inv-color-name"
-                  value={variant.colorName}
-                  onChange={(e) =>
-                    updateVariant(vi, "colorName", e.target.value)
-                  }
-                  placeholder="Colour name (e.g. Black)"
-                />
-                {form.variants.length > 1 && (
-                  <button
-                    className="inv-variant-remove"
-                    onClick={() => removeVariant(vi)}
-                  >
-                    <X size={13} />
-                  </button>
-                )}
-              </div>
-              <div className="inv-variant-body">
-                <div className="inv-images-label">Images</div>
-                {variant.images.length > 0 && (
-                  <div className="inv-img-grid">
-                    {variant.images.map((img, ii) => (
-                      <div key={ii} className="inv-img-thumb">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={img} alt="image-preview" />
-                        <button
-                          className="inv-img-remove"
-                          onClick={() => removeImg(vi, ii)}
-                        >
-                          <X size={9} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div
-                  className="inv-upload-zone"
-                  onClick={() => fileInputRefs.current[vi]?.click()}
+        }
+      >
+        {form.variants.map((variant, vi) => (
+          <div
+            key={vi}
+            className="border border-[#e8e0d5] mb-3 last:mb-0 overflow-hidden"
+          >
+            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-[#fdfaf7] border-b border-[#f0ebe3]">
+              <input
+                type="color"
+                value={variant.colorHex}
+                onChange={(e) => updateVariant(vi, "colorHex", e.target.value)}
+                className="w-8 h-8 border-2 border-[#e8e0d5] cursor-pointer rounded-sm shrink-0 p-0"
+              />
+              <input
+                type="text"
+                className="flex-1 bg-transparent border-none outline-none font-sans text-[13px] font-semibold text-[#1c1813] placeholder-[#bdb5a8]"
+                value={variant.colorName}
+                onChange={(e) => updateVariant(vi, "colorName", e.target.value)}
+                placeholder="Colour name (e.g. Black)"
+              />
+              {form.variants.length > 1 && (
+                <button
+                  className="w-6 h-6 flex items-center justify-center bg-transparent border-none cursor-pointer text-[#bdb5a8] hover:text-[#c0392b] transition-colors duration-150"
+                  onClick={() => removeVariant(vi)}
                 >
-                  <div className="inv-upload-icon">
-                    <Upload size={14} />
-                  </div>
-                  <span className="inv-upload-text">
-                    Click to upload images
-                  </span>
-                  <span className="inv-upload-hint">
-                    JPG, PNG, WEBP · Multiple allowed
-                  </span>
-                </div>
-                <input
-                  ref={(el) => {
-                    fileInputRefs.current[vi] = el;
-                  }}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  style={{ display: "none" }}
-                  onChange={(e) => handleImageUpload(vi, e.target.files)}
-                />
-              </div>
+                  <X size={13} />
+                </button>
+              )}
             </div>
-          ))}
-        </div>
-      </div>
+            <div className="p-3.5">
+              <div className="font-sans text-[9px] font-bold tracking-[0.16em] uppercase text-[#7a7068] mb-2.5">
+                Images
+              </div>
+              {variant.images.length > 0 && (
+                <div className="grid grid-cols-5 gap-2 mb-2.5">
+                  {variant.images.map((img, ii) => (
+                    <div
+                      key={ii}
+                      className="relative aspect-square border border-[#e8e0d5] overflow-hidden group"
+                    >
+                      {/* <img
+                        src={img}
+                        alt="preview"
+                        className="w-full h-full object-cover"
+                      /> */}
+                      <button
+                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-[rgba(192,57,43,0.9)] text-white flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                        onClick={() => removeImg(vi, ii)}
+                      >
+                        <X size={9} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div
+                className="flex flex-col items-center justify-center gap-2 py-6 px-3 border-2 border-dashed border-[#e8e0d5] cursor-pointer hover:border-[#b8945e] hover:bg-[rgba(184,148,94,0.04)] transition-all duration-200"
+                onClick={() => fileInputRefs.current[vi]?.click()}
+              >
+                <div className="w-9 h-9 bg-[rgba(184,148,94,0.1)] border border-[rgba(184,148,94,0.2)] flex items-center justify-center text-[#b8945e]">
+                  <Upload size={14} />
+                </div>
+                <span className="font-sans text-[12px] font-semibold text-[#7a7068]">
+                  Click to upload images
+                </span>
+                <span className="font-sans text-[10px] text-[#bdb5a8]">
+                  JPG, PNG, WEBP · Multiple allowed
+                </span>
+              </div>
+              <input
+                ref={(el) => {
+                  fileInputRefs.current[vi] = el;
+                }}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => handleImageUpload(vi, e.target.files)}
+              />
+            </div>
+          </div>
+        ))}
+      </FormSection>
 
       {/* Actions */}
-      <div className="inv-form-actions">
+      <div className="bg-white border border-[#e8e0d5] p-5">
         {editingProduct && (
           <button
-            className="inv-btn-danger-text"
+            className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer font-sans text-[10px] font-bold tracking-widest uppercase text-[#c0392b] mb-3.5 p-0 hover:opacity-70 transition-opacity duration-150"
             onClick={() =>
               editingProduct._id && handleDelete(editingProduct._id)
             }
@@ -991,17 +747,20 @@ export default function InventoryPage() {
             <Trash2 size={11} /> Delete this product
           </button>
         )}
-        <div className="inv-form-btns">
-          <button className="inv-btn-secondary" onClick={cancel}>
+        <div className="flex gap-2.5">
+          <button
+            className="flex-1 py-3 border border-[#e8e0d5] bg-transparent cursor-pointer font-sans text-[11px] font-bold tracking-widest uppercase text-[#7a7068] hover:border-[#b8945e] hover:text-[#1c1813] transition-all duration-150"
+            onClick={cancel}
+          >
             Cancel
           </button>
           <button
-            className="inv-btn-save"
+            className="flex-[1.5] flex items-center justify-center gap-2 py-3 bg-[#b8945e] border-none cursor-pointer font-sans text-[11px] font-bold tracking-widest uppercase text-white hover:bg-[#9a7a4a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
             onClick={handleSave}
             disabled={saving}
           >
             {saving ? (
-              <Loader2 size={13} className="inv-spin" />
+              <Loader2 size={13} className="animate-spin" />
             ) : (
               <Save size={13} />
             )}
@@ -1016,269 +775,319 @@ export default function InventoryPage() {
     </div>
   );
 
-  // ─── Products grid JSX ──────────────────────────────────────────────────────
+  // ─── Products View
   const ProductsView = () => (
     <>
-      <div className="inv-page-header">
+      {/* Desktop header */}
+      <div className="hidden md:flex items-center justify-between px-8 py-7 pb-5 border-b border-[#f0ebe3]">
         <div>
-          <div className="inv-page-title">All Products</div>
-          <div className="inv-page-subtitle">
+          <div className="font-serif text-[22px] font-bold text-[#1c1813]">
+            All Products
+          </div>
+          <div className="font-sans text-[12px] text-[#7a7068] mt-0.5">
             {products.length} product{products.length !== 1 ? "s" : ""} in
             inventory
           </div>
         </div>
-        <button className="inv-btn-primary" onClick={openAdd}>
-          <Plus size={13} /> Add Product
+      </div>
+
+      {/* Mobile header */}
+      <div className="md:hidden flex items-center justify-between px-4 py-4 border-b border-[#f0ebe3]">
+        <div>
+          <div className="font-serif text-lg font-bold text-[#1c1813]">
+            All Products
+          </div>
+          <div className="font-sans text-[11px] text-[#7a7068] mt-0.5">
+            {products.length} item{products.length !== 1 ? "s" : ""}
+          </div>
+        </div>
+        <button
+          className="flex items-center gap-1.5 px-4 py-2 bg-[#b8945e] border-none cursor-pointer font-sans text-[10px] font-bold tracking-widest uppercase text-white hover:bg-[#9a7a4a] transition-colors duration-150"
+          onClick={openAdd}
+        >
+          <Plus size={12} /> Add
         </button>
       </div>
 
       {loading ? (
-        <div className="inv-loading">
-          <Loader2 size={18} className="inv-spin" /> Loading inventory…
+        <div className="flex items-center justify-center gap-2.5 py-20 font-sans text-[13px] text-[#7a7068]">
+          <Loader2 size={18} className="animate-spin" /> Loading inventory…
         </div>
       ) : products.length === 0 ? (
-        <div className="inv-empty">
-          <div className="inv-empty-icon">
+        <div className="flex flex-col items-center justify-center py-20 px-5 text-center">
+          <div className="w-14 h-14 bg-[rgba(184,148,94,0.1)] border border-[rgba(184,148,94,0.2)] flex items-center justify-center text-[#b8945e] mb-4">
             <Package size={22} />
           </div>
-          <div className="inv-empty-title">No products yet</div>
-          <div className="inv-empty-sub">
+          <div className="font-serif text-[16px] font-bold mb-1.5">
+            No products yet
+          </div>
+          <div className="font-sans text-[13px] text-[#7a7068] mb-5">
             Add your first product to get started.
           </div>
-          <button className="inv-btn-primary" onClick={openAdd}>
+          <button
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-[#b8945e] border-none cursor-pointer font-sans text-[11px] font-bold tracking-widest uppercase text-white hover:bg-[#9a7a4a] transition-colors duration-150"
+            onClick={openAdd}
+          >
             <Plus size={13} /> Add Product
           </button>
         </div>
       ) : (
-        <div className="inv-grid">
-          {products.map((product) => (
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block px-8 py-4">
             <div
-              key={product._id}
-              className={`inv-card${editingProduct?._id === product._id ? " selected" : ""}`}
+              className="grid gap-3 px-4 py-2 font-sans text-[10px] font-bold tracking-[0.14em] uppercase text-[#7a7068] border-b border-[#e8e0d5] mb-1"
+              style={{
+                gridTemplateColumns:
+                  "60px 1fr 140px 120px 80px 60px 100px 60px",
+              }}
             >
-              <div className="inv-card-top" />
-              <div className="inv-card-body">
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    marginBottom: 6,
-                  }}
-                >
-                  <div>
-                    <div className="inv-card-name">{product.name}</div>
-                    <div className="inv-card-cat">{product.category}</div>
-                  </div>
-                  <div className="inv-card-price">₹{product.price}</div>
-                </div>
-                <div className="inv-card-desc">
-                  {product.description || "No description."}
-                </div>
-                <div className="inv-swatches">
-                  {product.variants.map((v, i) => (
-                    <div
-                      key={i}
-                      className="inv-swatch"
-                      title={v.colorName}
-                      style={{ background: v.colorHex }}
-                    />
-                  ))}
-                  <span className="inv-swatch-label">
-                    {product.variants.length} colour
-                    {product.variants.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-                <div className="inv-card-actions">
-                  <button
-                    className="inv-btn-edit"
-                    onClick={() => openEdit(product)}
-                  >
-                    <Edit3 size={11} /> Edit
-                  </button>
-                  <button
-                    className="inv-btn-delete"
-                    onClick={() => product._id && handleDelete(product._id)}
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              </div>
+              <span>Image</span>
+              <span>Product Name</span>
+              <span>Category</span>
+              <span>Colours</span>
+              <span>Price</span>
+              <span>Edit</span>
+              <span>Active</span>
+              <span>Delete</span>
             </div>
-          ))}
-        </div>
+            {products.map((product) => (
+              <ProductRow
+                key={product._id}
+                product={product}
+                onEdit={openEdit}
+                onDelete={handleDelete}
+                activeProducts={activeProducts}
+                setConfirmDialog={setConfirmDialog}
+              />
+            ))}
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden px-4 py-4 pb-24 flex flex-col gap-3">
+            {products.map((product) => (
+              <MobileProductCard
+                key={product._id}
+                product={product}
+                onEdit={openEdit}
+                activeProducts={activeProducts}
+                setConfirmDialog={setConfirmDialog}
+              />
+            ))}
+          </div>
+        </>
       )}
     </>
   );
 
   return (
-    <>
-      <style>{STYLES}</style>
-      <div className="inv-root">
-        {/* ── Header ── */}
-        <header className="inv-header">
-          <div className="inv-header-left">
-            <button
-              className="inv-back-btn"
-              onClick={() => router.push("/admin/dashboard")}
-            >
-              <ChevronLeft size={13} /> Dashboard
-            </button>
-            <div
-              style={{ width: 1, height: 20, background: "var(--inv-border)" }}
-            />
-            <div className="inv-header-badge">
-              <ShieldCheck size={10} /> Inventory
-            </div>
-          </div>
-          <div className="inv-header-right">
-            {time && <span className="inv-clock">{time}</span>}
-            <button className="inv-logout" onClick={handleLogout}>
-              <LogOut size={11} /> Sign Out
-            </button>
-          </div>
-        </header>
-
-        {/* ── Body ── */}
-        <div className="inv-body">
-          {/* Desktop Sidebar */}
-          <aside className="inv-sidebar">
-            <div className="inv-sidebar-brand">
-              <div className="inv-sidebar-brand-label">Bambumm Admin</div>
-              <div className="inv-sidebar-brand-title">Inventory</div>
-            </div>
-
-            <nav className="inv-nav">
-              <button
-                className={`inv-nav-item${view === "products" ? " active" : ""}`}
-                onClick={() => {
-                  setView("products");
-                  setEditingProduct(null);
-                }}
-              >
-                <LayoutGrid size={15} /> All Products
-                <span className="inv-nav-badge">{products.length}</span>
-              </button>
-              <button
-                className={`inv-nav-item${view === "add" ? " active" : ""}`}
-                onClick={openAdd}
-              >
-                <Plus size={15} />{" "}
-                {editingProduct ? "Edit Product" : "Add Product"}
-              </button>
-            </nav>
-
-            <div className="inv-sidebar-divider" />
-            <div className="inv-sidebar-list-label">Products</div>
-
-            {loading ? (
-              <div
-                style={{
-                  padding: "12px 20px",
-                  fontFamily: "system-ui",
-                  fontSize: 12,
-                  color: "var(--inv-muted)",
-                  display: "flex",
-                  gap: 8,
-                  alignItems: "center",
-                }}
-              >
-                <Loader2 size={12} className="inv-spin" /> Loading…
-              </div>
-            ) : products.length === 0 ? (
-              <div
-                style={{
-                  padding: "12px 20px",
-                  fontFamily: "system-ui",
-                  fontSize: 12,
-                  color: "var(--inv-muted)",
-                }}
-              >
-                No products yet.
-              </div>
-            ) : (
-              products.map((p) => (
-                <button
-                  key={p._id}
-                  className={`inv-sidebar-product${editingProduct?._id === p._id ? " active" : ""}`}
-                  onClick={() => openEdit(p)}
-                >
-                  <div className="inv-sidebar-product-icon">
-                    <Package size={12} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="inv-sidebar-product-name">{p.name}</div>
-                    <div className="inv-sidebar-product-meta">
-                      ₹{p.price} · {p.variants.length} variant
-                      {p.variants.length !== 1 ? "s" : ""}
-                    </div>
-                  </div>
-                </button>
-              ))
-            )}
-          </aside>
-
-          {/* Main Content */}
-          <main className="inv-main">
-            {view === "products" && <ProductsView />}
-            {view === "add" && <FormView />}
-          </main>
-        </div>
-
-        {/* Mobile Bottom Nav */}
-        <nav className="inv-mob-nav">
+    <div className="font-serif bg-[#f7f3ee] min-h-screen text-[#1c1813]">
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-50 h-15 bg-white border-b border-[#e8e0d5] flex items-center justify-between px-5 shadow-[0_1px_0_#e8e0d5]">
+        <div className="flex items-center gap-3">
           <button
-            className={`inv-mob-nav-btn${view === "products" ? " active" : ""}`}
-            onClick={() => {
-              setView("products");
-              setEditingProduct(null);
-            }}
-          >
-            <LayoutGrid size={18} />
-            Products
-          </button>
-          <button
-            className={`inv-mob-nav-btn${view === "add" ? " active" : ""}`}
-            onClick={openAdd}
-          >
-            <Plus size={18} />
-            Add
-          </button>
-          <button
-            className="inv-mob-nav-btn"
+            className="flex items-center gap-1.5 font-sans text-[11px] font-bold tracking-widest uppercase text-[#7a7068] bg-transparent border-none cursor-pointer px-2.5 py-1.5 hover:text-[#1c1813] transition-colors duration-150"
             onClick={() => router.push("/admin/dashboard")}
           >
-            <ChevronLeft size={18} />
-            Dashboard
+            <ChevronLeft size={13} />{" "}
+            <span className="hidden sm:inline">Dashboard</span>
           </button>
-        </nav>
-
-        {/* Toast */}
-        {toast && (
-          <div
-            className="inv-toast"
-            style={{
-              borderColor:
-                toast.type === "success"
-                  ? "var(--inv-accent)"
-                  : "var(--inv-danger)",
-            }}
-          >
-            {toast.type === "success" ? (
-              <CheckCircle2
-                size={15}
-                style={{ color: "var(--inv-accent)", flexShrink: 0 }}
-              />
-            ) : (
-              <AlertCircle
-                size={15}
-                style={{ color: "var(--inv-danger)", flexShrink: 0 }}
-              />
-            )}
-            <span className="inv-toast-text">{toast.msg}</span>
+          <div className="w-px h-5 bg-[#e8e0d5]" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[rgba(184,148,94,0.1)] border border-[rgba(184,148,94,0.25)] font-sans text-[10px] font-bold tracking-[0.14em] uppercase text-[#b8945e]">
+            <ShieldCheck size={10} /> Inventory
           </div>
-        )}
+        </div>
+        <div className="flex items-center gap-4">
+          {time && (
+            <span className="hidden sm:block font-sans text-[11px] text-[#7a7068] tracking-[0.04em]">
+              {time}
+            </span>
+          )}
+          <button
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-[#e8e0d5] bg-transparent cursor-pointer font-sans text-[10px] font-bold tracking-[0.12em] uppercase text-[#7a7068] hover:border-[#c0392b] hover:text-[#c0392b] hover:bg-[rgba(192,57,43,0.08)] transition-all duration-150"
+            onClick={handleLogout}
+          >
+            <LogOut size={11} />{" "}
+            <span className="hidden sm:inline">Sign Out</span>
+          </button>
+        </div>
+      </header>
+
+      {/* ── Body ── */}
+      <div className="flex" style={{ height: "calc(100vh - 60px)" }}>
+        {/* Desktop Sidebar */}
+        <aside className="hidden md:flex w-65 shrink-0 bg-white border-r border-[#e8e0d5] flex-col sticky top-15 h-[calc(100vh-60px)] overflow-y-auto">
+          <div className="px-5 py-5 pb-4 border-b border-[#f0ebe3]">
+            <div className="font-sans text-[9px] font-bold tracking-widest uppercase text-[#b8945e] mb-1">
+              Bambumm Admin
+            </div>
+            <div className="font-serif text-[18px] font-bold text-[#1c1813]">
+              Inventory
+            </div>
+          </div>
+
+          <nav className="py-3">
+            <button
+              className={`flex items-center gap-2.5 w-full px-5 py-2.5 bg-transparent border-none cursor-pointer font-sans text-[13px] font-semibold text-left transition-all duration-150 border-r-2 ${view === "add" && !editingProduct ? "bg-[rgba(184,148,94,0.1)] text-[#1c1813] border-[#b8945e]" : "text-[#7a7068] border-transparent hover:bg-[rgba(184,148,94,0.06)] hover:text-[#1c1813]"}`}
+              onClick={openAdd}
+            >
+              <Plus size={15} /> Add Product
+            </button>
+            <button
+              className={`flex items-center gap-2.5 w-full px-5 py-2.5 bg-transparent border-none cursor-pointer font-sans text-[13px] font-semibold text-left transition-all duration-150 border-r-2 ${view === "products" ? "bg-[rgba(184,148,94,0.1)] text-[#1c1813] border-[#b8945e]" : "text-[#7a7068] border-transparent hover:bg-[rgba(184,148,94,0.06)] hover:text-[#1c1813]"}`}
+              onClick={() => {
+                setView("products");
+                setEditingProduct(null);
+              }}
+            >
+              <LayoutGrid size={15} /> All Products
+              <span className="ml-auto font-sans text-[9px] font-bold px-1.5 py-0.5 bg-[rgba(184,148,94,0.15)] border border-[rgba(184,148,94,0.25)] text-[#b8945e]">
+                {products.length}
+              </span>
+            </button>
+          </nav>
+
+          <div className="h-px bg-[#f0ebe3] my-1" />
+          <div className="px-5 py-3 pb-1.5 font-sans text-[9px] font-bold tracking-[0.18em] uppercase text-[#7a7068]">
+            Products
+          </div>
+
+          {loading ? (
+            <div className="px-5 py-3 font-sans text-[12px] text-[#7a7068] flex items-center gap-2">
+              <Loader2 size={12} className="animate-spin" /> Loading…
+            </div>
+          ) : products.length === 0 ? (
+            <div className="px-5 py-3 font-sans text-[12px] text-[#7a7068]">
+              No products yet.
+            </div>
+          ) : (
+            products.map((p) => (
+              <button
+                key={p._id}
+                className={`flex items-center gap-2.5 w-full px-5 py-2 bg-transparent border-none cursor-pointer text-left transition-all duration-150 border-r-2 ${editingProduct?._id === p._id ? "bg-[rgba(184,148,94,0.1)] border-[#b8945e]" : "border-transparent hover:bg-[rgba(184,148,94,0.06)]"}`}
+                onClick={() => openEdit(p)}
+              >
+                <div className="w-8 h-8 shrink-0 bg-[#f7f3ee] border border-[#e8e0d5] flex items-center justify-center text-[#b8945e]">
+                  <Package size={12} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-sans text-[12px] font-semibold text-[#1c1813] truncate">
+                    {p.name}
+                  </div>
+                  <div className="font-sans text-[10px] text-[#7a7068]">
+                    ₹{p.price} · {p.variants.length} variant
+                    {p.variants.length !== 1 ? "s" : ""}
+                  </div>
+                </div>
+              </button>
+            ))
+          )}
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto">
+          {view === "products" && <ProductsView />}
+          {view === "add" && (
+            <div className="md:px-0 px-0">
+              <FormView />
+            </div>
+          )}
+        </main>
       </div>
-    </>
+
+      {/* ── Mobile Bottom Nav ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 h-14 bg-white border-t border-[#e8e0d5] flex shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <button
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 bg-transparent border-none cursor-pointer font-sans text-[9px] font-bold tracking-widest uppercase transition-all duration-150 border-t-2 ${view === "add" && !editingProduct ? "text-[#b8945e] border-[#b8945e]" : "text-[#7a7068] border-transparent"}`}
+          onClick={openAdd}
+        >
+          <Plus size={18} /> Add
+        </button>
+        <button
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 bg-transparent border-none cursor-pointer font-sans text-[9px] font-bold tracking-widest uppercase transition-all duration-150 border-t-2 ${view === "products" ? "text-[#b8945e] border-[#b8945e]" : "text-[#7a7068] border-transparent"}`}
+          onClick={() => {
+            setView("products");
+            setEditingProduct(null);
+          }}
+        >
+          <LayoutGrid size={18} /> Products
+        </button>
+        <button
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 bg-transparent border-none cursor-pointer font-sans text-[9px] font-bold tracking-widest uppercase text-[#7a7068] border-t-2 border-transparent transition-all duration-150"
+          onClick={() => router.push("/admin/dashboard")}
+        >
+          <ChevronLeft size={18} /> Back
+        </button>
+      </nav>
+
+      {/* ── Toast ── */}
+      {toast && (
+        <div
+          className="fixed bottom-6 right-6 z-999 flex items-center gap-2.5 px-4 py-3 bg-white border shadow-[0_4px_24px_rgba(0,0,0,0.10)] animate-[toastIn_0.3s_ease]"
+          style={{
+            borderColor: toast.type === "success" ? "#b8945e" : "#c0392b",
+          }}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle2 size={15} className="text-[#b8945e] shrink-0" />
+          ) : (
+            <AlertCircle size={15} className="text-[#c0392b] shrink-0" />
+          )}
+          <span className="font-sans text-[13px] font-semibold text-[#1c1813]">
+            {toast.msg}
+          </span>
+        </div>
+      )}
+
+      {/* ── Confirm Dialog ── */}
+      {confirmDialog && (
+        <div className="fixed inset-0 z-1000 bg-black/40 flex items-center justify-center p-5">
+          <div className="bg-white border border-[#e8e0d5] p-7 max-w-90 w-full shadow-[0_8px_40px_rgba(0,0,0,0.15)]">
+            <h3 className="font-serif text-[16px] font-bold mb-2 text-[#1c1813]">
+              {confirmDialog.type === "delete"
+                ? "Delete Product?"
+                : confirmDialog.currentActive
+                  ? "Deactivate Product?"
+                  : "Activate Product?"}
+            </h3>
+            <p className="font-sans text-[13px] text-[#7a7068] leading-relaxed mb-5">
+              {confirmDialog.type === "delete"
+                ? `Are you sure you want to permanently delete "${confirmDialog.productName}"? This cannot be undone.`
+                : `${confirmDialog.currentActive ? "Deactivate" : "Activate"} "${confirmDialog.productName}"?`}
+            </p>
+            <div className="flex gap-2.5">
+              <button
+                className="flex-1 py-2.5 border border-[#e8e0d5] bg-transparent cursor-pointer font-sans text-[11px] font-bold tracking-widest uppercase text-[#7a7068] hover:border-[#b8945e] hover:text-[#1c1813] transition-all duration-150"
+                onClick={() => setConfirmDialog(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="flex-[1.5] py-2.5 border-none cursor-pointer font-sans text-[11px] font-bold tracking-widest uppercase text-white hover:opacity-90 transition-opacity duration-150"
+                style={{
+                  background:
+                    confirmDialog.type === "delete" ? "#c0392b" : "#b8945e",
+                }}
+                onClick={handleConfirmAction}
+              >
+                {confirmDialog.type === "delete"
+                  ? "Yes, Delete"
+                  : confirmDialog.currentActive
+                    ? "Yes, Deactivate"
+                    : "Yes, Activate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* keyframe for toast */}
+      <style>{`
+        @keyframes toastIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </div>
   );
 }
