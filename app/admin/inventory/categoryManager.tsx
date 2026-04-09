@@ -140,6 +140,7 @@ export default function CategoryManager({
       } catch {
         setToast({ type: "error", msg: "Failed to delete." });
       }
+
       setConfirmDelete(null);
     },
     [fetchCategories],
@@ -157,18 +158,7 @@ export default function CategoryManager({
 
   // ── Render
   return (
-    <div className="max-w-3xl px-8 py-7 md:pb-16 pb-24">
-      {/* Page title */}
-      <div className="mb-6">
-        <div className="font-serif text-[22px] font-bold text-[#1c1813]">
-          Categories
-        </div>
-        <div className="font-sans text-[12px] text-[#7a7068] mt-0.5">
-          Manage product categories stored in your database. Changes reflect
-          immediately in the Add / Edit product form.
-        </div>
-      </div>
-
+    <div className="max-w-3xl px-2 py-7 md:pb-16 pb-24">
       {/* ── ADD FORM ── */}
       <div className="bg-white border border-[#e8e0d5] mb-5 overflow-hidden">
         {/* Header */}
@@ -183,16 +173,13 @@ export default function CategoryManager({
 
         <div className="p-5 flex gap-3">
           <div className="flex-1 relative">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-              <Tag size={13} className="text-[#b8945e]" />
-            </div>
             <input
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-              placeholder="e.g. Men's Brief, Women's Bra…"
-              className="w-full pl-9 pr-4 py-2.5 border border-[#e8e0d5] bg-[#f7f3ee] font-sans text-[13px] text-[#1c1813] outline-none transition-all duration-150 placeholder-[#bdb5a8] focus:border-[#b8945e] focus:bg-white"
+              placeholder=""
+              className="w-full pl-9 pr -5 py-2.5 border border-[#e8e0d5] bg-[#f7f3ee] font-sans text-[13px] text-[#1c1813] outline-none transition-all duration-150 placeholder-[#bdb5a8] focus:border-[#b8945e] focus:bg-white"
             />
           </div>
           <button
@@ -215,9 +202,6 @@ export default function CategoryManager({
         {/* Header */}
         <div className="flex items-center justify-between gap-2.5 px-5 py-3.5 border-b border-[#f0ebe3] bg-[#fdfaf7]">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 shrink-0 bg-[rgba(184,148,94,0.1)] border border-[rgba(184,148,94,0.2)] flex items-center justify-center text-[#b8945e]">
-              <FolderOpen size={11} />
-            </div>
             <span className="font-sans text-[10px] font-bold tracking-[0.14em] uppercase text-[#1c1813]">
               All Categories
             </span>
@@ -270,9 +254,11 @@ export default function CategoryManager({
                     className="flex-1 px-3 py-1.5 border border-[#b8945e] bg-white font-sans text-[13px] text-[#1c1813] outline-none"
                   />
                 ) : (
-                  <span className="flex-1 font-sans text-[13px] font-semibold text-[#1c1813]">
-                    {cat.name}
-                  </span>
+                  <>
+                    <span className="flex-1 font-sans text-[13px] font-semibold text-[#1c1813]">
+                      {cat.name}
+                    </span>
+                  </>
                 )}
 
                 {/* Action buttons */}
@@ -302,7 +288,7 @@ export default function CategoryManager({
                     <>
                       <button
                         onClick={() => startEdit(cat)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 border border-[#e8e0d5] font-sans text-[9px] font-bold tracking-widest uppercase text-[#7a7068] hover:border-[#b8945e] hover:text-[#b8945e] transition-all duration-150 cursor-pointer opacity-0 group-hover:opacity-100"
+                        className="flex items-center gap-1 px-2.5 py-1.5 border border-[#e8e0d5] font-sans text-[9px] font-bold tracking-widest uppercase text-[#7a7068] hover:border-[#b8945e] hover:text-[#b8945e] transition-all duration-150 cursor-pointer"
                       >
                         <Edit3 size={10} /> Edit
                       </button>
@@ -310,7 +296,7 @@ export default function CategoryManager({
                         onClick={() =>
                           setConfirmDelete({ id: cat._id, name: cat.name })
                         }
-                        className="flex items-center justify-center p-1.5 border border-[#e8e0d5] text-[#7a7068] hover:border-[#c0392b] hover:text-[#c0392b] hover:bg-[rgba(192,57,43,0.08)] transition-all duration-150 cursor-pointer opacity-0 group-hover:opacity-100"
+                        className="flex items-center justify-center p-1.5 border border-[#e8e0d5] text-[#7a7068] hover:border-[#c0392b] hover:text-[#c0392b] hover:bg-[rgba(192,57,43,0.08)] transition-all duration-150 cursor-pointer "
                       >
                         <Trash2 size={11} />
                       </button>
@@ -321,22 +307,12 @@ export default function CategoryManager({
             ))}
           </div>
         )}
-
-        {/* Footer note */}
-        {categories.length > 0 && (
-          <div className="px-5 py-3 border-t border-[#f0ebe3] bg-[#fdfaf7]">
-            <p className="font-sans text-[10px] text-[#bdb5a8]">
-              Hover over a row to reveal edit and delete actions. These
-              categories appear in the product form dropdown.
-            </p>
-          </div>
-        )}
       </div>
 
       {/* ── Toast ── */}
       {toast && (
         <div
-          className="fixed bottom-6 right-6 z-[999] flex items-center gap-2.5 px-4 py-3 bg-white border shadow-[0_4px_24px_rgba(0,0,0,0.10)] animate-[toastIn_0.3s_ease]"
+          className="fixed bottom-6 right-6 z-999 flex items-center gap-2.5 px-4 py-3 bg-white border shadow-[0_4px_24px_rgba(0,0,0,0.10)] animate-[toastIn_0.3s_ease]"
           style={{
             borderColor: toast.type === "success" ? "#b8945e" : "#c0392b",
           }}
@@ -354,8 +330,8 @@ export default function CategoryManager({
 
       {/* ── Confirm Delete Dialog ── */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-[1000] bg-black/40 flex items-center justify-center p-5">
-          <div className="bg-white border border-[#e8e0d5] p-7 max-w-[340px] w-full shadow-[0_8px_40px_rgba(0,0,0,0.15)]">
+        <div className="fixed inset-0 z-1000 bg-black/40 flex items-center justify-center p-5">
+          <div className="bg-white border border-[#e8e0d5] p-7 max-w-85 w-full shadow-[0_8px_40px_rgba(0,0,0,0.15)]">
             <h3 className="font-serif text-[16px] font-bold mb-2 text-[#1c1813]">
               Delete Category?
             </h3>
@@ -385,13 +361,6 @@ export default function CategoryManager({
           </div>
         </div>
       )}
-
-      <style>{`
-        @keyframes toastIn {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
