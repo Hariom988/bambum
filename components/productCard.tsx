@@ -3,28 +3,47 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Product } from "@/lib/types/product";
+
+interface ProductVariant {
+  colorName: string;
+  colorHex: string;
+  images: string[];
+}
+
+interface Product {
+  _id?: string;
+  id?: string;
+  slug: string;
+  name: string;
+  description?: string;
+  price: number;
+  category: string;
+  variants: ProductVariant[];
+}
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const [hoveredVariant, setHoveredVariant] = useState(0);
+  const [activeVariant, setActiveVariant] = useState(0);
 
-  const activeVariant = product.variants[hoveredVariant];
+  const variant = product.variants[activeVariant];
+  const firstImage = variant?.images?.[0];
+
+  if (!variant || !firstImage) return null;
 
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group block"
-      style={{ textDecoration: "none", color: "inherit" }}
+      className="group block no-underline"
+      style={{ color: "inherit" }}
     >
       <div
+        className="transition-all duration-300"
         style={{
           background: "#fff",
           border: "1px solid var(--nav-border)",
-          transition: "box-shadow 0.25s ease, border-color 0.25s ease",
           fontFamily: "var(--nav-font-ui)",
         }}
         onMouseEnter={(e) => {
@@ -39,31 +58,20 @@ export default function ProductCard({ product }: ProductCardProps) {
             "var(--nav-border)";
         }}
       >
-        {/* ── IMAGE ── */}
+        {/* ── Image ── */}
         <div
-          className="relative overflow-hidden"
-          style={{ aspectRatio: "3/4", background: "var(--nav-bg)" }}
+          className="relative overflow-hidden aspect-3/4"
+          style={{ background: "var(--nav-bg)" }}
         >
           <Image
-            src={activeVariant.images[0]}
-            alt={`${product.name} – ${activeVariant.colorName}`}
+            src={firstImage}
+            alt={`${product.name} – ${variant.colorName}`}
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover object-center"
-            style={{
-              transition: "transform 0.5s cubic-bezier(0.25,1,0.5,1)",
-            }}
-            onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLImageElement).style.transform =
-                "scale(1.05)")
-            }
-            onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLImageElement).style.transform =
-                "scale(1)")
-            }
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
           />
 
-          {/* category badge */}
+          {/* Category badge */}
           <div
             className="absolute top-3 left-3 px-2 py-1 text-[0.6rem] font-bold tracking-[0.14em] uppercase"
             style={{
@@ -76,52 +84,24 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.category}
           </div>
 
-          {/* view detail hint on hover */}
-          <div
-            className="absolute inset-0 flex items-end justify-center pb-4"
-            style={{ pointerEvents: "none" }}
-          >
+          {/* View detail hint */}
+          <div className="absolute inset-0 flex items-end justify-center pb-4 pointer-events-none">
             <span
-              className="px-4 py-2 text-[0.65rem] font-bold tracking-[0.16em] uppercase"
-              style={{
-                background: "var(--nav-accent)",
-                color: "#fff",
-                opacity: 0,
-                transform: "translateY(8px)",
-                transition: "opacity 0.25s ease, transform 0.25s ease",
-              }}
-              // We control this via group hover via inline class trick below
-              ref={(el) => {
-                if (!el) return;
-                const card = el.closest("a");
-                if (!card) return;
-                const show = () => {
-                  el.style.opacity = "1";
-                  el.style.transform = "translateY(0)";
-                };
-                const hide = () => {
-                  el.style.opacity = "0";
-                  el.style.transform = "translateY(8px)";
-                };
-                card.addEventListener("mouseenter", show);
-                card.addEventListener("mouseleave", hide);
-              }}
+              className="px-4 py-2 text-[0.65rem] font-bold tracking-[0.16em] uppercase opacity-0 translate-y-2 transition-all duration-250 group-hover:opacity-100 group-hover:translate-y-0"
+              style={{ background: "var(--nav-accent)", color: "#fff" }}
             >
               View Details →
             </span>
           </div>
         </div>
 
-        {/* ── INFO ── */}
+        {/* ── Info ── */}
         <div className="p-4 flex flex-col gap-3">
-          {/* name + price */}
+          {/* Name + Price */}
           <div className="flex items-start justify-between gap-2">
             <h3
               className="text-sm font-bold uppercase tracking-widest leading-snug"
-              style={{
-                fontFamily: "var(--nav-font)",
-                color: "var(--nav-fg)",
-              }}
+              style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
             >
               {product.name}
             </h3>
@@ -133,45 +113,44 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
 
-          {/* selected colour label */}
+          {/* Active colour label */}
           <p
             className="text-[0.65rem] tracking-[0.12em] uppercase"
             style={{ color: "var(--nav-fg-muted)" }}
           >
-            {activeVariant.colorName}
+            {variant.colorName}
           </p>
 
-          {/* colour swatches */}
+          {/* Colour swatches */}
           <div className="flex items-center gap-2 flex-wrap">
-            {product.variants.map((variant, idx) => (
+            {product.variants.map((v, idx) => (
               <button
-                key={variant.colorName}
-                title={variant.colorName}
-                onMouseEnter={() => setHoveredVariant(idx)}
-                onMouseLeave={() => setHoveredVariant(hoveredVariant)}
+                key={`${v.colorName}-${idx}`}
+                title={v.colorName}
                 onClick={(e) => {
-                  e.preventDefault(); // don't navigate on swatch click — just preview
-                  setHoveredVariant(idx);
+                  e.preventDefault();
+                  setActiveVariant(idx);
                 }}
+                aria-label={v.colorName}
+                aria-pressed={activeVariant === idx}
+                className="transition-all duration-150 shrink-0"
                 style={{
                   width: 18,
                   height: 18,
                   borderRadius: "50%",
-                  background: variant.colorHex,
+                  background: v.colorHex,
                   border:
-                    hoveredVariant === idx
+                    activeVariant === idx
                       ? "2px solid var(--nav-accent)"
                       : "2px solid var(--nav-border)",
                   outline:
-                    hoveredVariant === idx
+                    activeVariant === idx
                       ? "1.5px solid var(--nav-accent)"
                       : "none",
                   outlineOffset: 2,
                   cursor: "pointer",
-                  transition: "border 0.15s ease, outline 0.15s ease",
-                  flexShrink: 0,
+                  padding: 0,
                 }}
-                aria-label={variant.colorName}
               />
             ))}
           </div>

@@ -1,8 +1,8 @@
-import BambooProcess from "@/components/(mobilePage)/bambooProcess";
-import HeroSection from "@/components/(mobilePage)/heroSection";
+import BambooProcess from "@/components/(homePage)/bambooProcess";
+import HeroSection from "@/components/(homePage)/heroSection";
 import ProductsSection from "@/components/productsSection";
-import Testimonials from "@/components/(mobilePage)/testimonial";
-import WhyUs from "@/components/(mobilePage)/why";
+import Testimonials from "@/components/(homePage)/testimonial";
+import WhyUs from "@/components/(homePage)/why";
 
 export default function Home() {
   return (
