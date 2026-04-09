@@ -1,28 +1,131 @@
 "use client";
-import { use } from "react";
-import { useState } from "react";
+
+import { use, useState, useEffect } from "react";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getProductBySlug } from "@/lib/data/products";
+
+interface ProductVariant {
+  colorName: string;
+  colorHex: string;
+  images: string[];
+}
+
+interface Product {
+  _id?: string;
+  id?: string;
+  slug: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  variants: ProductVariant[];
+}
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+function Skeleton() {
+  return (
+    <main
+      className="min-h-screen"
+      style={{ background: "var(--nav-bg)", fontFamily: "var(--nav-font-ui)" }}
+    >
+      <div
+        className="h-0.5 w-full"
+        style={{ background: "var(--nav-accent)" }}
+      />
+      <div className="max-w-6xl mx-auto px-4 py-10 md:py-16">
+        <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-start animate-pulse">
+          {/* Image placeholder */}
+          <div
+            className="aspect-3/4 w-full"
+            style={{ background: "var(--nav-border)" }}
+          />
+          {/* Info placeholder */}
+          <div className="flex flex-col gap-6 pt-4">
+            <div
+              className="h-3 w-24 rounded"
+              style={{ background: "var(--nav-border)" }}
+            />
+            <div
+              className="h-8 w-3/4 rounded"
+              style={{ background: "var(--nav-border)" }}
+            />
+            <div
+              className="h-6 w-1/4 rounded"
+              style={{ background: "var(--nav-border)" }}
+            />
+            <div className="h-px" style={{ background: "var(--nav-border)" }} />
+            <div className="flex gap-2">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="w-7 h-7 rounded-full"
+                  style={{ background: "var(--nav-border)" }}
+                />
+              ))}
+            </div>
+            <div className="h-px" style={{ background: "var(--nav-border)" }} />
+            <div className="flex flex-col gap-2">
+              <div
+                className="h-3 w-full rounded"
+                style={{ background: "var(--nav-border)" }}
+              />
+              <div
+                className="h-3 w-5/6 rounded"
+                style={{ background: "var(--nav-border)" }}
+              />
+              <div
+                className="h-3 w-4/6 rounded"
+                style={{ background: "var(--nav-border)" }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 export default function ProductPage({ params }: Props) {
   const { slug } = use(params);
-  const product = getProductBySlug(slug);
-  if (!product) notFound();
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound404, setNotFound404] = useState(false);
 
   const [activeVariantIdx, setActiveVariantIdx] = useState(0);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+
+  useEffect(() => {
+    fetch(`/api/products/${encodeURIComponent(slug)}`)
+      .then((r) => {
+        if (r.status === 404) {
+          setNotFound404(true);
+          return null;
+        }
+        return r.json();
+      })
+      .then((d) => {
+        if (d?.product) setProduct(d.product);
+        else if (d !== null) setNotFound404(true);
+      })
+      .catch(() => setNotFound404(true))
+      .finally(() => setLoading(false));
+  }, [slug]);
+
+  if (loading) return <Skeleton />;
+  if (notFound404 || !product) return notFound();
 
   const variant = product.variants[activeVariantIdx];
 
   const switchVariant = (idx: number) => {
     setActiveVariantIdx(idx);
-    setActiveImageIdx(0); // reset to first image on colour change
+    setActiveImageIdx(0);
   };
 
   const prevImage = () =>
@@ -42,9 +145,7 @@ export default function ProductPage({ params }: Props) {
         .thumb-btn:hover { opacity: 1; }
         .thumb-btn.active { opacity: 1; border-color: var(--nav-accent) !important; }
 
-        .swatch-btn {
-          transition: outline 0.15s ease, border-color 0.15s ease;
-        }
+        .swatch-btn { transition: outline 0.15s ease, border-color 0.15s ease; }
         .swatch-btn:hover { outline: 2px solid var(--nav-accent); outline-offset: 2px; }
         .swatch-btn.active {
           border-color: var(--nav-accent) !important;
@@ -52,9 +153,7 @@ export default function ProductPage({ params }: Props) {
           outline-offset: 2px;
         }
 
-        .nav-arrow {
-          transition: background 0.18s ease, color 0.18s ease;
-        }
+        .nav-arrow { transition: background 0.18s ease, color 0.18s ease; }
         .nav-arrow:hover {
           background: var(--nav-accent) !important;
           color: #fff !important;
@@ -69,14 +168,14 @@ export default function ProductPage({ params }: Props) {
           fontFamily: "var(--nav-font-ui)",
         }}
       >
-        {/* thin top accent */}
+        {/* Thin top accent */}
         <div
           className="h-0.5 w-full"
           style={{ background: "var(--nav-accent)" }}
         />
 
-        <div className="max-w-6xl mx-auto px-4  py-10 md:py-16">
-          {/* ── BREADCRUMB ── */}
+        <div className="max-w-6xl mx-auto px-4 py-10 md:py-16">
+          {/* ── Breadcrumb ── */}
           <nav
             className="flex items-center gap-2 mb-8 text-[0.7rem] font-semibold tracking-[0.12em] uppercase"
             style={{ color: "var(--nav-fg-muted)" }}
@@ -97,11 +196,11 @@ export default function ProductPage({ params }: Props) {
             <span style={{ color: "var(--nav-fg)" }}>{product.name}</span>
           </nav>
 
-          {/* ── MAIN LAYOUT ── */}
+          {/* ── Main layout ── */}
           <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-start">
-            {/* ══ LEFT — GALLERY ══ */}
+            {/* ══ LEFT — Gallery ══ */}
             <div className="flex gap-3">
-              {/* Thumbnails — vertical strip on left */}
+              {/* Thumbnails — vertical strip */}
               <div
                 className="hidden sm:flex flex-col gap-2"
                 style={{ width: 72 }}
@@ -109,6 +208,8 @@ export default function ProductPage({ params }: Props) {
                 {variant.images.map((src, idx) => (
                   <button
                     key={idx}
+                    onClick={() => setActiveImageIdx(idx)}
+                    aria-label={`View image ${idx + 1}`}
                     className={`thumb-btn relative overflow-hidden shrink-0 ${activeImageIdx === idx ? "active" : ""}`}
                     style={{
                       width: 72,
@@ -118,8 +219,6 @@ export default function ProductPage({ params }: Props) {
                       padding: 0,
                       cursor: "pointer",
                     }}
-                    onClick={() => setActiveImageIdx(idx)}
-                    aria-label={`View image ${idx + 1}`}
                   >
                     <Image
                       src={src}
@@ -149,10 +248,11 @@ export default function ProductPage({ params }: Props) {
                     style={{ transition: "opacity 0.3s ease" }}
                   />
 
-                  {/* Prev / Next arrows */}
+                  {/* Arrows */}
                   <button
                     className="nav-arrow absolute left-2 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-9 h-9"
                     onClick={prevImage}
+                    aria-label="Previous image"
                     style={{
                       background: "rgba(255,255,255,0.85)",
                       border: "1px solid var(--nav-border)",
@@ -160,13 +260,13 @@ export default function ProductPage({ params }: Props) {
                       cursor: "pointer",
                       backdropFilter: "blur(4px)",
                     }}
-                    aria-label="Previous image"
                   >
                     <ChevronLeft size={18} />
                   </button>
                   <button
                     className="nav-arrow absolute right-2 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-9 h-9"
                     onClick={nextImage}
+                    aria-label="Next image"
                     style={{
                       background: "rgba(255,255,255,0.85)",
                       border: "1px solid var(--nav-border)",
@@ -174,12 +274,11 @@ export default function ProductPage({ params }: Props) {
                       cursor: "pointer",
                       backdropFilter: "blur(4px)",
                     }}
-                    aria-label="Next image"
                   >
                     <ChevronRight size={18} />
                   </button>
 
-                  {/* Image counter */}
+                  {/* Counter */}
                   <div
                     className="absolute bottom-3 right-3 px-2 py-1 text-[0.6rem] font-bold tracking-widest"
                     style={{
@@ -192,11 +291,12 @@ export default function ProductPage({ params }: Props) {
                   </div>
                 </div>
 
-                {/* Mobile thumbnails — horizontal strip below */}
+                {/* Mobile thumbnails */}
                 <div className="flex sm:hidden gap-2 mt-2 overflow-x-auto pb-1">
                   {variant.images.map((src, idx) => (
                     <button
                       key={idx}
+                      onClick={() => setActiveImageIdx(idx)}
                       className={`thumb-btn relative overflow-hidden shrink-0 ${activeImageIdx === idx ? "active" : ""}`}
                       style={{
                         width: 56,
@@ -206,7 +306,6 @@ export default function ProductPage({ params }: Props) {
                         padding: 0,
                         cursor: "pointer",
                       }}
-                      onClick={() => setActiveImageIdx(idx)}
                     >
                       <Image
                         src={src}
@@ -221,7 +320,7 @@ export default function ProductPage({ params }: Props) {
               </div>
             </div>
 
-            {/* ══ RIGHT — PRODUCT INFO ══ */}
+            {/* ══ RIGHT — Info ══ */}
             <div className="flex flex-col gap-7">
               {/* Category */}
               <p
@@ -265,7 +364,6 @@ export default function ProductPage({ params }: Props) {
                 </span>
               </p>
 
-              {/* Divider */}
               <div
                 className="h-px"
                 style={{ background: "var(--nav-border)" }}
@@ -285,10 +383,12 @@ export default function ProductPage({ params }: Props) {
                 <div className="flex items-center gap-3 flex-wrap">
                   {product.variants.map((v, idx) => (
                     <button
-                      key={v.colorName}
+                      key={`${v.colorName}-${idx}`}
                       className={`swatch-btn ${activeVariantIdx === idx ? "active" : ""}`}
                       title={v.colorName}
                       onClick={() => switchVariant(idx)}
+                      aria-label={v.colorName}
+                      aria-pressed={activeVariantIdx === idx}
                       style={{
                         width: 28,
                         height: 28,
@@ -297,15 +397,13 @@ export default function ProductPage({ params }: Props) {
                         border: "2px solid var(--nav-border)",
                         cursor: "pointer",
                         flexShrink: 0,
+                        padding: 0,
                       }}
-                      aria-label={v.colorName}
-                      aria-pressed={activeVariantIdx === idx}
                     />
                   ))}
                 </div>
               </div>
 
-              {/* Divider */}
               <div
                 className="h-px"
                 style={{ background: "var(--nav-border)" }}
