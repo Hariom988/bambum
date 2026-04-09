@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/productCard";
 
@@ -20,15 +21,22 @@ interface Product {
 }
 
 const CARDS_PER_VIEW = { mobile: 2, tablet: 3, desktop: 4 };
+const SS_PAGE = "ps_page";
+const SS_SCROLL = "ps_scroll";
 
 export default function ProductsSection() {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [visibleCount, setVisibleCount] = useState(CARDS_PER_VIEW.desktop);
-  const trackRef = useRef<HTMLDivElement>(null);
 
-  // Responsive visible count
+  // Track whether we are in a "restore" flow so we can scroll after render
+  const pendingScrollRef = useRef<number | null>(null);
+  // Tracks if the grid has been rendered with products so we know when to scroll
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  // ── Responsive visible count ──────────────────────────────────────────────
   useEffect(() => {
     const update = () => {
       const w = window.innerWidth;
@@ -45,12 +53,28 @@ export default function ProductsSection() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // Reset page on resize so we never land on an out-of-range page
+  // ── Read saved state immediately (before fetch) ───────────────────────────
+  // We read the page synchronously on first render so the correct page slice
+  // is requested from the very first render — no flicker.
+  const [initialised, setInitialised] = useState(false);
   useEffect(() => {
-    setPage(0);
-  }, [visibleCount]);
+    if (initialised) return;
+    setInitialised(true);
 
-  // Fetch products once
+    const savedPage = sessionStorage.getItem(SS_PAGE);
+    const savedScroll = sessionStorage.getItem(SS_SCROLL);
+
+    if (savedPage !== null) {
+      setPage(Number(savedPage));
+      sessionStorage.removeItem(SS_PAGE);
+    }
+    if (savedScroll !== null) {
+      pendingScrollRef.current = Number(savedScroll);
+      sessionStorage.removeItem(SS_SCROLL);
+    }
+  }, [initialised]);
+
+  // ── Fetch products ────────────────────────────────────────────────────────
   useEffect(() => {
     fetch("/api/products")
       .then((r) => r.json())
@@ -59,17 +83,57 @@ export default function ProductsSection() {
       .finally(() => setLoading(false));
   }, []);
 
+  // ── Scroll restoration — fires after products are rendered ────────────────
+  // We watch `loading` → when it becomes false and there is a pending scroll
+  // target, we wait for the grid to actually paint (3 rAF frames = safe) then
+  // smooth-scroll to the saved position.
+  useEffect(() => {
+    if (loading) return;
+    if (pendingScrollRef.current === null) return;
+
+    const target = pendingScrollRef.current;
+    pendingScrollRef.current = null;
+
+    // Use a small timeout as belt-and-suspenders after rAF to ensure images
+    // have started laying out (they are lazy-loaded so they take up space
+    // immediately via the fixed aspect ratio, so this is reliable).
+    let frame1: number, frame2: number, frame3: number;
+    frame1 = requestAnimationFrame(() => {
+      frame2 = requestAnimationFrame(() => {
+        frame3 = requestAnimationFrame(() => {
+          window.scrollTo({ top: target, behavior: "smooth" });
+        });
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(frame1);
+      cancelAnimationFrame(frame2);
+      cancelAnimationFrame(frame3);
+    };
+  }, [loading]);
+
+  // ── Navigate to product — save state first ────────────────────────────────
+  const saveStateAndNavigate = useCallback(
+    (slug: string) => {
+      sessionStorage.setItem(SS_PAGE, String(page));
+      sessionStorage.setItem(SS_SCROLL, String(window.scrollY));
+      router.push(`/products/${slug}`);
+    },
+    [page, router],
+  );
+
+  // ── Pagination ────────────────────────────────────────────────────────────
   const totalPages = Math.ceil(products.length / visibleCount);
   const canPrev = page > 0;
   const canNext = page < totalPages - 1;
-
   const prev = useCallback(() => setPage((p) => Math.max(0, p - 1)), []);
   const next = useCallback(
     () => setPage((p) => Math.min(totalPages - 1, p + 1)),
     [totalPages],
   );
 
-  // Touch swipe
+  // ── Touch swipe ───────────────────────────────────────────────────────────
   const touchStartX = useRef<number | null>(null);
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -87,13 +151,14 @@ export default function ProductsSection() {
     page * visibleCount + visibleCount,
   );
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <section
       className="w-full"
       style={{ background: "var(--nav-bg)", fontFamily: "var(--nav-font-ui)" }}
     >
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-16 md:py-20">
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="flex flex-col items-center text-center mb-12">
           <p
             className="text-[0.65rem] font-bold tracking-[0.2em] uppercase mb-3"
@@ -123,10 +188,10 @@ export default function ProductsSection() {
           </div>
         </div>
 
-        {/* ── Loading skeleton ── */}
+        {/* Loading skeleton */}
         {loading && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: visibleCount }).map((_, i) => (
               <div
                 key={i}
                 className="animate-pulse"
@@ -154,35 +219,36 @@ export default function ProductsSection() {
           </div>
         )}
 
-        {/* ── Empty state ── */}
+        {/* Empty state */}
         {!loading && products.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <div className="flex flex-col items-center justify-center py-20">
             <p className="text-sm" style={{ color: "var(--nav-fg-muted)" }}>
               No products available right now.
             </p>
           </div>
         )}
 
-        {/* ── Carousel ── */}
+        {/* Product grid */}
         {!loading && products.length > 0 && (
           <div>
-            {/* Track */}
             <div
-              ref={trackRef}
+              ref={gridRef}
               onTouchStart={onTouchStart}
               onTouchEnd={onTouchEnd}
               className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
-              style={{ minHeight: 300 }}
             >
               {visibleProducts.map((product) => (
-                <ProductCard key={product._id} product={product as any} />
+                <ProductCard
+                  key={product._id}
+                  product={product as any}
+                  onNavigate={saveStateAndNavigate}
+                />
               ))}
             </div>
 
-            {/* ── Controls ── */}
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-4 mt-10">
-                {/* Prev */}
                 <button
                   onClick={prev}
                   disabled={!canPrev}
@@ -209,7 +275,6 @@ export default function ProductsSection() {
                   <ChevronLeft size={18} />
                 </button>
 
-                {/* Dots */}
                 <div className="flex items-center gap-2">
                   {Array.from({ length: totalPages }).map((_, i) => (
                     <button
@@ -233,7 +298,6 @@ export default function ProductsSection() {
                   ))}
                 </div>
 
-                {/* Next */}
                 <button
                   onClick={next}
                   disabled={!canNext}
@@ -262,7 +326,6 @@ export default function ProductsSection() {
               </div>
             )}
 
-            {/* Page counter */}
             {totalPages > 1 && (
               <p
                 className="text-center text-[0.65rem] tracking-widest uppercase mt-4"
