@@ -12,12 +12,12 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const SLIDES = [
   {
-    id: 1,
-    image: banner1,
-    cta: { label: "SHOP BOXERS", href: "/" },
+    id: 5,
+    image: banner6,
+    cta: { label: "UPCOMING", href: "/" },
   },
   {
-    id: 2,
+    id: 1,
     image: banner2,
     cta: { label: "UPCOMING", href: "/" },
   },
@@ -32,9 +32,9 @@ const SLIDES = [
     cta: { label: "UPCOMING", href: "/" },
   },
   {
-    id: 5,
-    image: banner6,
-    cta: { label: "UPCOMING", href: "/" },
+    id: 2,
+    image: banner1,
+    cta: { label: "SHOP BOXERS", href: "/" },
   },
 ];
 

@@ -66,7 +66,7 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
       >
         {/* Image */}
         <div
-          className="relative overflow-hidden aspect-[3/4]"
+          className="relative overflow-hidden aspect-3/4"
           style={{ background: "var(--nav-bg)" }}
         >
           <Image
