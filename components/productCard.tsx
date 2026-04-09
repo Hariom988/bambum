@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 
 interface ProductVariant {
   colorName: string;
@@ -23,19 +22,26 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
+  onNavigate?: (slug: string) => void;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, onNavigate }: ProductCardProps) {
   const [activeVariant, setActiveVariant] = useState(0);
-
   const variant = product.variants[activeVariant];
   const firstImage = variant?.images?.[0];
 
   if (!variant || !firstImage) return null;
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (!onNavigate) return;
+    e.preventDefault();
+    onNavigate(product.slug);
+  };
+
   return (
-    <Link
+    <a
       href={`/products/${product.slug}`}
+      onClick={handleCardClick}
       className="group block no-underline"
       style={{ color: "inherit" }}
     >
@@ -58,9 +64,9 @@ export default function ProductCard({ product }: ProductCardProps) {
             "var(--nav-border)";
         }}
       >
-        {/* ── Image ── */}
+        {/* Image */}
         <div
-          className="relative overflow-hidden aspect-3/4"
+          className="relative overflow-hidden aspect-[3/4]"
           style={{ background: "var(--nav-bg)" }}
         >
           <Image
@@ -84,7 +90,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.category}
           </div>
 
-          {/* View detail hint */}
+          {/* View hint */}
           <div className="absolute inset-0 flex items-end justify-center pb-4 pointer-events-none">
             <span
               className="px-4 py-2 text-[0.65rem] font-bold tracking-[0.16em] uppercase opacity-0 translate-y-2 transition-all duration-250 group-hover:opacity-100 group-hover:translate-y-0"
@@ -95,9 +101,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
 
-        {/* ── Info ── */}
+        {/* Info */}
         <div className="p-4 flex flex-col gap-3">
-          {/* Name + Price */}
           <div className="flex items-start justify-between gap-2">
             <h3
               className="text-sm font-bold uppercase tracking-widest leading-snug"
@@ -113,7 +118,6 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
 
-          {/* Active colour label */}
           <p
             className="text-[0.65rem] tracking-[0.12em] uppercase"
             style={{ color: "var(--nav-fg-muted)" }}
@@ -121,7 +125,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {variant.colorName}
           </p>
 
-          {/* Colour swatches */}
+          {/* Swatches */}
           <div className="flex items-center gap-2 flex-wrap">
             {product.variants.map((v, idx) => (
               <button
@@ -129,6 +133,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 title={v.colorName}
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   setActiveVariant(idx);
                 }}
                 aria-label={v.colorName}
@@ -156,6 +161,6 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
       </div>
-    </Link>
+    </a>
   );
 }
