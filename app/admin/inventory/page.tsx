@@ -22,6 +22,7 @@ import {
   LayoutGrid,
   ArrowLeft,
 } from "lucide-react";
+import CategoryManager from "./categoryManager";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -53,19 +54,9 @@ type ConfirmDialog = {
   currentActive?: boolean;
 } | null;
 
-type View = "products" | "add";
+type View = "products" | "add" | "categories";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-
-const CATEGORIES = [
-  "Men's Brief",
-  "Men's Trunk",
-  "Men's Boxer",
-  "Women's Panty",
-  "Women's Bra",
-  "Accessories",
-  "Other",
-];
 
 const EMPTY_PRODUCT: FormProduct = {
   name: "",
@@ -360,6 +351,25 @@ export default function InventoryPage() {
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>(null);
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  // DB-driven categories for the product form dropdown
+  const [dbCategories, setDbCategories] = useState<string[]>([]);
+
+  const fetchDbCategories = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/category");
+      if (res.ok) {
+        const d = await res.json();
+        setDbCategories(
+          (d.categories || []).map((c: { name: string }) => c.name),
+        );
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchDbCategories();
+  }, [fetchDbCategories]);
+
   // ── Clock ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     const tick = () => {
@@ -404,7 +414,6 @@ export default function InventoryPage() {
         const d = await res.json();
         const list: Product[] = d.products || [];
         setProducts(list);
-        // Sync active state from DB
         const activeMap: Record<string, boolean> = {};
         list.forEach((p) => {
           activeMap[p._id!] = p.isActive !== false;
@@ -486,16 +495,27 @@ export default function InventoryPage() {
     (vi: number, files: FileList | null) => {
       if (!files) return;
       const arr = Array.from(files);
-      Promise.all(
-        arr.map(
-          (f) =>
-            new Promise<string>((res) => {
-              const r = new FileReader();
-              r.onload = () => res(r.result as string);
-              r.readAsDataURL(f);
-            }),
-        ),
-      ).then((b64s) => {
+
+      // Compress each image before storing
+      const compressImage = (file: File): Promise<string> =>
+        new Promise((resolve) => {
+          const img = new window.Image();
+          const url = URL.createObjectURL(file);
+          img.onload = () => {
+            const maxWidth = 800;
+            const scale = Math.min(1, maxWidth / img.width);
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            const ctx = canvas.getContext("2d")!;
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            resolve(canvas.toDataURL("image/jpeg", 0.75));
+          };
+          img.src = url;
+        });
+
+      Promise.all(arr.map(compressImage)).then((b64s) => {
         setForm((f) => {
           const v = [...f.variants];
           v[vi] = {
@@ -575,7 +595,7 @@ export default function InventoryPage() {
     [editingProduct, fetchProducts, cancel],
   );
 
-  // ── Toggle active — sends a PATCH so it won't wipe other fields ────────────
+  // ── Toggle active ──────────────────────────────────────────────────────────
   const toggleActive = useCallback(
     async (id: string) => {
       const newVal = !activeProducts[id];
@@ -587,7 +607,6 @@ export default function InventoryPage() {
           body: JSON.stringify({ isActive: newVal }),
         });
       } catch {
-        // Revert optimistic update on failure
         setActiveProducts((prev) => ({ ...prev, [id]: !newVal }));
         setToast({ type: "error", msg: "Failed to update status." });
       }
@@ -659,12 +678,15 @@ export default function InventoryPage() {
           </div>
 
           <nav className="py-3">
+            {/* Add Product */}
             <button
               className={`flex items-center gap-2.5 w-full px-5 py-2.5 bg-transparent border-none cursor-pointer font-sans text-[13px] font-semibold text-left transition-all duration-150 border-r-2 ${view === "add" && !editingProduct ? "bg-[rgba(184,148,94,0.1)] text-[#1c1813] border-[#b8945e]" : "text-[#7a7068] border-transparent hover:bg-[rgba(184,148,94,0.06)] hover:text-[#1c1813]"}`}
               onClick={openAdd}
             >
               <Plus size={15} /> Add Product
             </button>
+
+            {/* All Products */}
             <button
               className={`flex items-center gap-2.5 w-full px-5 py-2.5 bg-transparent border-none cursor-pointer font-sans text-[13px] font-semibold text-left transition-all duration-150 border-r-2 ${view === "products" ? "bg-[rgba(184,148,94,0.1)] text-[#1c1813] border-[#b8945e]" : "text-[#7a7068] border-transparent hover:bg-[rgba(184,148,94,0.06)] hover:text-[#1c1813]"}`}
               onClick={() => {
@@ -676,6 +698,17 @@ export default function InventoryPage() {
               <span className="ml-auto font-sans text-[9px] font-bold px-1.5 py-0.5 bg-[rgba(184,148,94,0.15)] border border-[rgba(184,148,94,0.25)] text-[#b8945e]">
                 {products.length}
               </span>
+            </button>
+
+            {/* Categories */}
+            <button
+              className={`flex items-center gap-2.5 w-full px-5 py-2.5 bg-transparent border-none cursor-pointer font-sans text-[13px] font-semibold text-left transition-all duration-150 border-r-2 ${view === "categories" ? "bg-[rgba(184,148,94,0.1)] text-[#1c1813] border-[#b8945e]" : "text-[#7a7068] border-transparent hover:bg-[rgba(184,148,94,0.06)] hover:text-[#1c1813]"}`}
+              onClick={() => {
+                setView("categories");
+                setEditingProduct(null);
+              }}
+            >
+              <Tag size={15} /> Categories
             </button>
           </nav>
 
@@ -721,7 +754,6 @@ export default function InventoryPage() {
           {/* ══ PRODUCTS VIEW ══ */}
           {view === "products" && (
             <>
-              {/* Desktop header */}
               <div className="hidden md:flex items-center justify-between px-8 py-7 pb-5 border-b border-[#f0ebe3]">
                 <div>
                   <div className="font-serif text-[22px] font-bold text-[#1c1813]">
@@ -734,7 +766,6 @@ export default function InventoryPage() {
                 </div>
               </div>
 
-              {/* Mobile header */}
               <div className="md:hidden flex items-center justify-between px-4 py-4 border-b border-[#f0ebe3]">
                 <div>
                   <div className="font-serif text-lg font-bold text-[#1c1813]">
@@ -823,6 +854,14 @@ export default function InventoryPage() {
             </>
           )}
 
+          {/* ══ CATEGORIES VIEW ══ */}
+          {view === "categories" && (
+            <CategoryManager
+              key="category-manager"
+              onCategoriesChange={fetchDbCategories}
+            />
+          )}
+
           {/* ══ FORM VIEW ══ */}
           {view === "add" && (
             <div className="max-w-7xl px-8 py-7 md:pb-16 pb-24">
@@ -889,11 +928,17 @@ export default function InventoryPage() {
                       }
                     >
                       <option value="">Select…</option>
-                      {CATEGORIES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
+                      {dbCategories.length === 0 ? (
+                        <option value="" disabled>
+                          No categories — add via Categories tab
                         </option>
-                      ))}
+                      ) : (
+                        dbCategories.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
                 </div>
@@ -964,7 +1009,6 @@ export default function InventoryPage() {
                       {variant.images.length > 0 && (
                         <div className="grid grid-cols-5 gap-2 mb-2.5">
                           {variant.images.map((img, ii) =>
-                            // add a guard on the img tag itself
                             img ? (
                               <div
                                 key={ii}
@@ -997,7 +1041,7 @@ export default function InventoryPage() {
                           Click to upload images
                         </span>
                         <span className="font-sans text-[10px] text-[#bdb5a8]">
-                          JPG, PNG, WEBP · Multiple allowed
+                          JPG, PNG, WEBP · Compressed automatically
                         </span>
                       </div>
                       <input
@@ -1079,6 +1123,15 @@ export default function InventoryPage() {
           <LayoutGrid size={18} /> Products
         </button>
         <button
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 bg-transparent border-none cursor-pointer font-sans text-[9px] font-bold tracking-widest uppercase transition-all duration-150 border-t-2 ${view === "categories" ? "text-[#b8945e] border-[#b8945e]" : "text-[#7a7068] border-transparent"}`}
+          onClick={() => {
+            setView("categories");
+            setEditingProduct(null);
+          }}
+        >
+          <Tag size={18} /> Categories
+        </button>
+        <button
           className="flex-1 flex flex-col items-center justify-center gap-0.5 bg-transparent border-none cursor-pointer font-sans text-[9px] font-bold tracking-widest uppercase text-[#7a7068] border-t-2 border-transparent transition-all duration-150"
           onClick={() => router.push("/admin/dashboard")}
         >
@@ -1129,7 +1182,7 @@ export default function InventoryPage() {
                 Cancel
               </button>
               <button
-                className="flex-[1.5] py-2.5 border-none cursor-pointer font-sans text-[11px] font-bold tracking-widest uppercase text-white hover:opacity-90 transition-opacity duration-150"
+                className="flex-[1.5] py-2.5 border-none cursor-pointer font-sans text-[11px] font-bold tracking-widests uppercase text-white hover:opacity-90 transition-opacity duration-150"
                 style={{
                   background:
                     confirmDialog.type === "delete" ? "#c0392b" : "#b8945e",
