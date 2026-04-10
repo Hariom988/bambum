@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import CategoryManager from "./categoryManager";
 
-// ─── Types 
+// ─── Types
 
 interface ProductVariant {
   colorName: string;
@@ -544,37 +544,93 @@ export default function InventoryPage() {
   );
 
   const handleImageUpload = useCallback(
-    (vi: number, files: FileList | null) => {
+    async (vi: number, files: FileList | null) => {
       if (!files) return;
       const arr = Array.from(files);
-      const compressImage = (file: File): Promise<string> =>
-        new Promise((resolve) => {
-          const img = new window.Image();
-          const url = URL.createObjectURL(file);
-          img.onload = () => {
-            const scale = Math.min(1, 800 / img.width);
-            const canvas = document.createElement("canvas");
-            canvas.width = img.width * scale;
-            canvas.height = img.height * scale;
-            canvas
-              .getContext("2d")!
-              .drawImage(img, 0, 0, canvas.width, canvas.height);
-            URL.revokeObjectURL(url);
-            resolve(canvas.toDataURL("image/jpeg", 0.75));
-          };
-          img.src = url;
+
+      // Show a temporary uploading state using object URLs for preview
+      const previews = arr.map((f) => URL.createObjectURL(f));
+      setForm((f) => {
+        const v = [...f.variants];
+        v[vi] = {
+          ...v[vi],
+          images: [...v[vi].images, ...previews],
+          imageFiles: [...(v[vi].imageFiles || []), ...arr],
+        };
+        return { ...f, variants: v };
+      });
+
+      const uploadFile = async (
+        file: File,
+        previewUrl: string,
+      ): Promise<string> => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
         });
-      Promise.all(arr.map(compressImage)).then((b64s) => {
+
+        if (!res.ok) throw new Error("Upload failed");
+        const data = await res.json();
+        return data.url; // Cloudinary CDN URL
+      };
+
+      try {
+        const cloudinaryUrls = await Promise.all(
+          arr.map((file, i) => uploadFile(file, previews[i])),
+        );
+
+        // Replace preview blob URLs with real Cloudinary URLs
         setForm((f) => {
           const v = [...f.variants];
+
+          // Guard: if variant no longer exists at this index, bail out
+          if (!v[vi]) return f;
+
+          const existingImages = (v[vi].images || []).filter(
+            (img) => !img.startsWith("blob:"),
+          );
+          const blobImages = (v[vi].images || []).filter((img) =>
+            img.startsWith("blob:"),
+          );
+
+          // Revoke blob URLs to free memory
+          blobImages.forEach((url) => URL.revokeObjectURL(url));
+
           v[vi] = {
             ...v[vi],
-            images: [...v[vi].images, ...b64s],
-            imageFiles: [...(v[vi].imageFiles || []), ...arr],
+            images: [...existingImages, ...cloudinaryUrls],
+            imageFiles: [],
           };
           return { ...f, variants: v };
         });
-      });
+
+        setToast({
+          type: "success",
+          msg: `${arr.length} image(s) uploaded successfully.`,
+        });
+      } catch (err) {
+        // Remove the preview images if upload failed
+        setForm((f) => {
+          const v = [...f.variants];
+          if (!v[vi]) return f;
+          v[vi] = {
+            ...v[vi],
+            images: (v[vi].images || []).filter(
+              (img) => !img.startsWith("blob:"),
+            ),
+            imageFiles: [],
+          };
+          return { ...f, variants: v };
+        });
+        previews.forEach((url) => URL.revokeObjectURL(url));
+        setToast({
+          type: "error",
+          msg: "Image upload failed. Please try again.",
+        });
+      }
     },
     [],
   );
@@ -583,10 +639,21 @@ export default function InventoryPage() {
     (vi: number, ii: number) =>
       setForm((f) => {
         const v = [...f.variants];
+
+        // Guard: if variant no longer exists at this index, bail out
+        if (!v[vi]) return f;
+
+        // Revoke the blob URL if the removed image is a blob to free memory
+        const removedImage = v[vi].images[ii];
+        if (removedImage && removedImage.startsWith("blob:")) {
+          URL.revokeObjectURL(removedImage);
+        }
+
+        // Remove the image at the specified index
         v[vi] = {
           ...v[vi],
-          images: v[vi].images.filter((_, i) => i !== ii),
-          imageFiles: (v[vi].imageFiles || []).filter((_, i) => i !== ii),
+          images: v[vi].images.filter((_, index) => index !== ii),
+          imageFiles: [],
         };
         return { ...f, variants: v };
       }),
