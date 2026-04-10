@@ -659,7 +659,6 @@ export default function InventoryPage() {
       }),
     [],
   );
-
   const handleSave = useCallback(async () => {
     if (!form.name || !form.category || form.price <= 0) {
       setToast({
@@ -668,6 +667,19 @@ export default function InventoryPage() {
       });
       return;
     }
+
+    // ── BLOCK SAVE IF ANY BLOB URLS STILL EXIST ──
+    const hasBlobUrls = form.variants.some((v) =>
+      v.images.some((img) => img.startsWith("blob:")),
+    );
+    if (hasBlobUrls) {
+      setToast({
+        type: "error",
+        msg: "Images are still uploading. Please wait and try again.",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const body = editingProduct ? { ...form, _id: editingProduct._id } : form;
