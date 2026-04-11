@@ -203,7 +203,7 @@ export default function CartDrawer() {
 
         {/* ── Gold accent line ── */}
         <div
-          className="h-0.5 flex-shrink-0"
+          className="h-0.5 shrink-0"
           style={{ background: "var(--nav-accent)" }}
         />
 
@@ -273,7 +273,7 @@ export default function CartDrawer() {
                 >
                   {/* Image */}
                   <div
-                    className="w-18 h-22 flex-shrink-0 overflow-hidden relative"
+                    className="w-18 h-22 shrink-0 overflow-hidden relative"
                     style={{
                       width: 72,
                       height: 88,
