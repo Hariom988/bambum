@@ -17,13 +17,8 @@ export async function GET(
       { slug, isActive: { $ne: false } },
       {
         projection: {
-          _id: 1,
-          name: 1,
-          slug: 1,
-          description: 1,
-          price: 1,
-          category: 1,
-          variants: 1,
+          _id: 1, name: 1, slug: 1, description: 1,
+          price: 1, category: 1, variants: 1, stock: 1,
         },
       }
     );
@@ -34,7 +29,7 @@ export async function GET(
     }
 
     return NextResponse.json({
-      product: { ...product, _id: product._id.toString() },
+      product: { ...product, _id: product._id.toString(), stock: product.stock ?? 0 },
     });
   } catch (err) {
     console.error("[/api/products/[slug] GET]", err);

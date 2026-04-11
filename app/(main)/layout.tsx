@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "@/app/globals.css";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
+import { CartProvider } from "@/context/cartContext";
+import CartDrawer from "@/components/cartDrawer";
 
 export const metadata: Metadata = {
   title: "Bambumm",
@@ -16,9 +18,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Header />
-        {children}
-        <Footer />
+        <CartProvider>
+          <Header />
+          {children}
+          <Footer />
+          <CartDrawer />
+        </CartProvider>
       </body>
     </html>
   );

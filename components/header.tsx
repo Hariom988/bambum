@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import "@/app/globals.css";
 import Link from "next/link";
+import { useCart } from "@/context/cartContext";
 
 const NAV_ITEMS = [
   {
@@ -46,7 +47,7 @@ const NAV_ITEMS = [
     categories: [
       { title: "Balaclava", links: ["SAMPLE", "SAMPLE", "SAMPLE"] },
       { title: "Multi Purpose Band", links: ["SAMPLE", "SAMPLE", "SAMPLE"] },
-      { title: " Snood Cap", links: ["SAMPLE", "SAMPLE", "SAMPLE"] },
+      { title: "Snood Cap", links: ["SAMPLE", "SAMPLE", "SAMPLE"] },
       { title: "Utility Pouch", links: ["SAMPLE", "SAMPLE", "SAMPLE"] },
     ],
     featured: [],
@@ -54,6 +55,8 @@ const NAV_ITEMS = [
 ];
 
 export default function Navbar() {
+  const { totalItems, openCart } = useCart();
+
   const [activeNav, setActiveNav] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<string | null>(null);
@@ -92,6 +95,17 @@ export default function Navbar() {
 
   return (
     <>
+      <style>{`
+        /* Cart badge pop animation */
+        @keyframes badgePop {
+          0%   { transform: translate(30%, -30%) scale(1); }
+          40%  { transform: translate(30%, -30%) scale(1.4); }
+          70%  { transform: translate(30%, -30%) scale(0.9); }
+          100% { transform: translate(30%, -30%) scale(1); }
+        }
+        .cart-badge-pop { animation: badgePop 0.35s cubic-bezier(0.22,1,0.36,1); }
+      `}</style>
+
       <header className="nav-root">
         <div
           className="max-w-7xl mx-auto h-full flex items-center gap-8 px-6"
@@ -189,10 +203,21 @@ export default function Navbar() {
               </button>
             </div>
 
-            <button className="icon-btn" style={{ marginLeft: 8 }}>
+            {/* ── Cart button — now connected to context ── */}
+            <button
+              className="icon-btn"
+              style={{ marginLeft: 8 }}
+              onClick={openCart}
+              aria-label={`Open cart, ${totalItems} items`}
+            >
               <ShoppingBag size={20} />
-              <span className="cart-badge">2</span>
+              {totalItems > 0 && (
+                <span key={totalItems} className="cart-badge cart-badge-pop">
+                  {totalItems > 99 ? "99+" : totalItems}
+                </span>
+              )}
             </button>
+
             <button className="icon-btn">
               <User size={20} />
             </button>
@@ -217,10 +242,21 @@ export default function Navbar() {
                 </button>
               )}
             </div>
-            <button className="icon-btn">
+
+            {/* ── Mobile cart button ── */}
+            <button
+              className="icon-btn"
+              onClick={openCart}
+              aria-label={`Open cart, ${totalItems} items`}
+            >
               <ShoppingBag size={20} />
-              <span className="cart-badge">2</span>
+              {totalItems > 0 && (
+                <span key={totalItems} className="cart-badge cart-badge-pop">
+                  {totalItems > 99 ? "99+" : totalItems}
+                </span>
+              )}
             </button>
+
             <button
               className="icon-btn"
               onClick={() => setDrawerOpen(true)}
@@ -239,12 +275,7 @@ export default function Navbar() {
           >
             <div className="max-w-7xl mx-auto px-6 py-8 flex gap-12">
               <div
-                style={{
-                  display: "flex",
-                  gap: 48,
-                  flex: 1,
-                  flexWrap: "wrap",
-                }}
+                style={{ display: "flex", gap: 48, flex: 1, flexWrap: "wrap" }}
               >
                 {activeItem.categories.map((cat) => (
                   <div key={cat.title} style={{ minWidth: 110 }}>
@@ -350,20 +381,28 @@ export default function Navbar() {
               <button className="drawer-footer-btn">
                 <User size={16} /> Account
               </button>
-              <button className="drawer-footer-btn">
+              <button
+                className="drawer-footer-btn"
+                onClick={() => {
+                  closeDrawer();
+                  openCart();
+                }}
+              >
                 <ShoppingBag size={16} /> Cart
-                <span
-                  style={{
-                    background: "var(--nav-accent)",
-                    color: "#fff",
-                    borderRadius: "99px",
-                    fontSize: "0.65rem",
-                    fontWeight: 700,
-                    padding: "1px 6px",
-                  }}
-                >
-                  2
-                </span>
+                {totalItems > 0 && (
+                  <span
+                    style={{
+                      background: "var(--nav-accent)",
+                      color: "#fff",
+                      borderRadius: "99px",
+                      fontSize: "0.65rem",
+                      fontWeight: 700,
+                      padding: "1px 6px",
+                    }}
+                  >
+                    {totalItems}
+                  </span>
+                )}
               </button>
             </div>
           </div>
