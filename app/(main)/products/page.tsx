@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import {
   SlidersHorizontal,
   X,
@@ -71,7 +72,7 @@ function FilterSection({
   );
 }
 
-export default function ProductsPage() {
+export function ProductsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -908,5 +909,12 @@ export default function ProductsPage() {
         )}
       </main>
     </>
+  );
+}
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProductsPageContent />
+    </Suspense>
   );
 }
