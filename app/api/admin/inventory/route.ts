@@ -26,7 +26,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, slug, description, price, category, variants, isActive } = body;
+    const { name, slug, description, price, category, variants, isActive, stock } = body;
 
     if (!name || !category || !price) {
       return NextResponse.json(
@@ -44,7 +44,8 @@ export async function POST(req: NextRequest) {
       price: Number(price),
       category,
       variants: variants || [],
-      isActive: isActive !== false, // default true
+      isActive: isActive !== false,
+      stock: typeof stock === "number" && stock >= 0 ? Math.floor(stock) : 0, // ← stock stored here
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -59,11 +60,11 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT — full product update (all fields)
+// PUT — full product update (all fields including stock)
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { _id, name, slug, description, price, category, variants, isActive } = body;
+    const { _id, name, slug, description, price, category, variants, isActive, stock } = body;
 
     if (!_id) {
       return NextResponse.json({ error: "Product ID required." }, { status: 400 });
@@ -82,6 +83,7 @@ export async function PUT(req: NextRequest) {
           category,
           variants,
           isActive: isActive !== false,
+          stock: typeof stock === "number" && stock >= 0 ? Math.floor(stock) : 0, // ← stock updated
           updatedAt: new Date(),
         },
       }
@@ -95,7 +97,7 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// PATCH — partial update (e.g. toggle isActive only, without touching other fields)
+// PATCH — partial update (isActive toggle OR stock adjustment)
 export async function PATCH(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -107,11 +109,13 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json();
 
-    // Only allow safe partial fields through PATCH
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const allowed: Record<string, any> = {};
     if (typeof body.isActive === "boolean") allowed.isActive = body.isActive;
-    // Add more patchable fields here as needed
+    // Allow direct stock patch (e.g. from a quick-edit or restock action)
+    if (typeof body.stock === "number" && body.stock >= 0) {
+      allowed.stock = Math.floor(body.stock);
+    }
 
     if (Object.keys(allowed).length === 0) {
       return NextResponse.json({ error: "No valid fields to update." }, { status: 400 });

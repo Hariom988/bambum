@@ -18,6 +18,9 @@ import {
   LayoutGrid,
   ArrowLeft,
   SlidersHorizontal,
+  Boxes,
+  TrendingDown,
+  AlertTriangle,
 } from "lucide-react";
 import CategoryManager from "./categoryManager";
 
@@ -39,6 +42,7 @@ interface Product {
   price: number;
   category: string;
   variants: ProductVariant[];
+  stock: number; // ← new field, stored in same products document
   createdAt?: string;
 }
 
@@ -61,11 +65,57 @@ const EMPTY_PRODUCT: FormProduct = {
   description: "",
   price: 0,
   category: "",
+  stock: 0, // ← default
   variants: [
     { colorName: "", colorHex: "#c8a97e", images: [], imageFiles: [] },
   ],
   isActive: true,
 };
+
+// ─── Stock badge helper ───────────────────────────────────────────────────────
+
+function StockBadge({ stock }: { stock: number }) {
+  if (stock === 0) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-2 py-0.5 font-sans text-[9px] font-bold tracking-widest uppercase"
+        style={{
+          background: "rgba(192,57,43,0.1)",
+          border: "1px solid rgba(192,57,43,0.25)",
+          color: "#c0392b",
+        }}
+      >
+        <AlertTriangle size={9} /> Out of Stock
+      </span>
+    );
+  }
+  if (stock <= 10) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-2 py-0.5 font-sans text-[9px] font-bold tracking-widest uppercase"
+        style={{
+          background: "rgba(230,126,34,0.1)",
+          border: "1px solid rgba(230,126,34,0.25)",
+          color: "#e67e22",
+        }}
+      >
+        <TrendingDown size={9} /> Low: {stock}
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 font-sans text-[9px] font-bold tracking-widest uppercase"
+      style={{
+        background: "rgba(39,174,96,0.08)",
+        border: "1px solid rgba(39,174,96,0.2)",
+        color: "#27ae60",
+      }}
+    >
+      <Boxes size={9} /> {stock} in stock
+    </span>
+  );
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -112,7 +162,7 @@ const FieldLabel = ({ children }: { children: React.ReactNode }) => (
 const inputCls =
   "w-full px-3.5 py-2.5 border font-sans text-[13px] outline-none transition-all duration-150 adm-input";
 
-// ─── ProductRow ───────────────────────────────────────────────────────────────
+// ─── ProductRow (desktop) ─────────────────────────────────────────────────────
 
 const ProductRow = ({
   product,
@@ -127,12 +177,14 @@ const ProductRow = ({
 }) => {
   const isActive = activeProducts[product._id!] !== false;
   const firstImage = product.variants[0]?.images[0];
+  const stock = product.stock ?? 0;
 
   return (
     <div
       className="adm-table-row grid gap-3 px-4 py-3 items-center border-b"
       style={{
-        gridTemplateColumns: "60px 1fr 140px 120px 80px 60px 100px 60px",
+        // Added stock column (110px) after price
+        gridTemplateColumns: "60px 1fr 120px 100px 70px 110px 60px 100px 60px",
         borderColor: "var(--adm-border-soft)",
       }}
     >
@@ -183,6 +235,10 @@ const ProductRow = ({
       </div>
       <div className="font-bold text-[13px]" style={{ color: "var(--adm-fg)" }}>
         ₹{product.price}
+      </div>
+      {/* ── Stock cell ── */}
+      <div>
+        <StockBadge stock={stock} />
       </div>
       <button
         className="adm-btn-ghost flex items-center justify-center gap-1.5 px-2.5 py-1.5"
@@ -244,6 +300,7 @@ const MobileProductCard = ({
 }) => {
   const isActive = activeProducts[product._id!] !== false;
   const firstImage = product.variants[0]?.images[0];
+  const stock = product.stock ?? 0;
 
   return (
     <div className="adm-card overflow-hidden adm-card-enter">
@@ -293,7 +350,7 @@ const MobileProductCard = ({
           >
             /{product.slug}
           </div>
-          <div className="flex items-center gap-1.5 mt-1.5">
+          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
             {product.variants.map((v, i) => (
               <div
                 key={i}
@@ -305,13 +362,10 @@ const MobileProductCard = ({
                 }}
               />
             ))}
-            <span
-              className="font-sans text-[10px] ml-1"
-              style={{ color: "var(--adm-fg-muted)" }}
-            >
-              {product.variants.length} colour
-              {product.variants.length !== 1 ? "s" : ""}
-            </span>
+          </div>
+          {/* Stock badge on mobile */}
+          <div className="mt-1.5">
+            <StockBadge stock={stock} />
           </div>
         </div>
         <div className="flex flex-col items-end justify-between shrink-0">
@@ -395,7 +449,6 @@ export default function InventoryPage() {
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>(null);
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Category state
   const [dbCategories, setDbCategories] = useState<string[]>([]);
   const [activeCategoryFilter, setActiveCategoryFilter] =
     useState<string>("all");
@@ -416,7 +469,6 @@ export default function InventoryPage() {
     fetchDbCategories();
   }, [fetchDbCategories]);
 
-  // Filtered products
   const filteredProducts =
     activeCategoryFilter === "all"
       ? products
@@ -439,14 +491,12 @@ export default function InventoryPage() {
     return () => clearInterval(id);
   }, []);
 
-  // Toast auto-dismiss
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 3500);
     return () => clearTimeout(t);
   }, [toast]);
 
-  // Slug auto-gen
   useEffect(() => {
     setForm((f) => ({
       ...f,
@@ -457,7 +507,6 @@ export default function InventoryPage() {
     }));
   }, [form.name]);
 
-  // Fetch products
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
@@ -480,7 +529,6 @@ export default function InventoryPage() {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Nav helpers
   const openAdd = useCallback(() => {
     setEditingProduct(null);
     setForm(EMPTY_PRODUCT);
@@ -495,6 +543,7 @@ export default function InventoryPage() {
       description: p.description,
       price: p.price,
       category: p.category,
+      stock: p.stock ?? 0,
       variants: p.variants.map((v) => ({
         ...v,
         images: v.images.filter(Boolean),
@@ -511,7 +560,6 @@ export default function InventoryPage() {
     setView("products");
   }, []);
 
-  // Form handlers
   const addVariant = useCallback(
     () =>
       setForm((f) => ({
@@ -547,8 +595,6 @@ export default function InventoryPage() {
     async (vi: number, files: FileList | null) => {
       if (!files) return;
       const arr = Array.from(files);
-
-      // Show a temporary uploading state using object URLs for preview
       const previews = arr.map((f) => URL.createObjectURL(f));
       setForm((f) => {
         const v = [...f.variants];
@@ -560,45 +606,32 @@ export default function InventoryPage() {
         return { ...f, variants: v };
       });
 
-      const uploadFile = async (
-        file: File,
-        previewUrl: string,
-      ): Promise<string> => {
+      const uploadFile = async (file: File): Promise<string> => {
         const formData = new FormData();
         formData.append("file", file);
-
         const res = await fetch("/api/admin/upload", {
           method: "POST",
           body: formData,
         });
-
         if (!res.ok) throw new Error("Upload failed");
         const data = await res.json();
-        return data.url; // Cloudinary CDN URL
+        return data.url;
       };
 
       try {
         const cloudinaryUrls = await Promise.all(
-          arr.map((file, i) => uploadFile(file, previews[i])),
+          arr.map((file) => uploadFile(file)),
         );
-
-        // Replace preview blob URLs with real Cloudinary URLs
         setForm((f) => {
           const v = [...f.variants];
-
-          // Guard: if variant no longer exists at this index, bail out
           if (!v[vi]) return f;
-
           const existingImages = (v[vi].images || []).filter(
             (img) => !img.startsWith("blob:"),
           );
           const blobImages = (v[vi].images || []).filter((img) =>
             img.startsWith("blob:"),
           );
-
-          // Revoke blob URLs to free memory
           blobImages.forEach((url) => URL.revokeObjectURL(url));
-
           v[vi] = {
             ...v[vi],
             images: [...existingImages, ...cloudinaryUrls],
@@ -606,13 +639,11 @@ export default function InventoryPage() {
           };
           return { ...f, variants: v };
         });
-
         setToast({
           type: "success",
           msg: `${arr.length} image(s) uploaded successfully.`,
         });
-      } catch (err) {
-        // Remove the preview images if upload failed
+      } catch {
         setForm((f) => {
           const v = [...f.variants];
           if (!v[vi]) return f;
@@ -639,17 +670,10 @@ export default function InventoryPage() {
     (vi: number, ii: number) =>
       setForm((f) => {
         const v = [...f.variants];
-
-        // Guard: if variant no longer exists at this index, bail out
         if (!v[vi]) return f;
-
-        // Revoke the blob URL if the removed image is a blob to free memory
         const removedImage = v[vi].images[ii];
-        if (removedImage && removedImage.startsWith("blob:")) {
+        if (removedImage && removedImage.startsWith("blob:"))
           URL.revokeObjectURL(removedImage);
-        }
-
-        // Remove the image at the specified index
         v[vi] = {
           ...v[vi],
           images: v[vi].images.filter((_, index) => index !== ii),
@@ -659,6 +683,7 @@ export default function InventoryPage() {
       }),
     [],
   );
+
   const handleSave = useCallback(async () => {
     if (!form.name || !form.category || form.price <= 0) {
       setToast({
@@ -667,8 +692,6 @@ export default function InventoryPage() {
       });
       return;
     }
-
-    // ── BLOCK SAVE IF ANY BLOB URLS STILL EXIST ──
     const hasBlobUrls = form.variants.some((v) =>
       v.images.some((img) => img.startsWith("blob:")),
     );
@@ -751,15 +774,20 @@ export default function InventoryPage() {
     router.push("/admin/login");
   };
 
-  // Count products per category for badge
   const categoryCount = (cat: string) =>
     products.filter((p) => p.category === cat).length;
+
+  // ── Stock summary stats ────────────────────────────────────────────────────
+  const totalStock = products.reduce((sum, p) => sum + (p.stock ?? 0), 0);
+  const outOfStock = products.filter((p) => (p.stock ?? 0) === 0).length;
+  const lowStock = products.filter(
+    (p) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= 10,
+  ).length;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
       <style>{`
-        /* ── CSS variable shorthands for Tailwind arbitrary-value pain ── */
         .adm-card {
           background: var(--adm-bg-white);
           border: 1px solid var(--adm-border);
@@ -775,241 +803,120 @@ export default function InventoryPage() {
           border-color: var(--adm-accent);
           background: var(--adm-bg-white);
         }
-
-        /* ── Buttons ── */
         .adm-btn-primary {
-          background: var(--adm-accent);
-          color: #fff;
-          border: none;
-          cursor: pointer;
-          font-family: sans-serif;
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
+          background: var(--adm-accent); color: #fff; border: none;
+          cursor: pointer; font-family: sans-serif; font-size: 10px;
+          font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
           transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
         }
         .adm-btn-primary:hover:not(:disabled) {
-          background: var(--adm-accent-hover);
-          transform: translateY(-1px);
+          background: var(--adm-accent-hover); transform: translateY(-1px);
           box-shadow: 0 4px 12px rgba(184,148,94,0.25);
         }
         .adm-btn-primary:active:not(:disabled) { transform: translateY(0); }
         .adm-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
         .adm-btn-ghost {
-          border: 1px solid var(--adm-border);
-          background: transparent;
-          color: var(--adm-fg-muted);
-          cursor: pointer;
-          font-family: sans-serif;
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          transition: border-color 0.15s, color 0.15s, transform 0.12s;
+          border: 1px solid var(--adm-border); background: transparent;
+          color: var(--adm-fg-muted); cursor: pointer; font-family: sans-serif;
+          font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+          text-transform: uppercase; transition: border-color 0.15s, color 0.15s, transform 0.12s;
         }
-        .adm-btn-ghost:hover {
-          border-color: var(--adm-accent);
-          color: var(--adm-accent);
-          transform: translateY(-1px);
-        }
+        .adm-btn-ghost:hover { border-color: var(--adm-accent); color: var(--adm-accent); transform: translateY(-1px); }
         .adm-btn-ghost:active { transform: translateY(0); }
-
         .adm-btn-danger {
-          border: 1px solid var(--adm-border);
-          background: transparent;
-          color: var(--adm-fg-muted);
-          cursor: pointer;
+          border: 1px solid var(--adm-border); background: transparent;
+          color: var(--adm-fg-muted); cursor: pointer;
           transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.12s;
         }
         .adm-btn-danger:hover {
-          border-color: var(--adm-danger);
-          color: var(--adm-danger);
-          background: var(--adm-bg-danger-lt);
-          transform: translateY(-1px);
+          border-color: var(--adm-danger); color: var(--adm-danger);
+          background: var(--adm-bg-danger-lt); transform: translateY(-1px);
         }
         .adm-btn-danger-ghost {
-          background: transparent;
-          color: var(--adm-fg-muted);
-          cursor: pointer;
-          transition: background 0.15s, color 0.15s;
-          font-family: sans-serif;
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
+          background: transparent; color: var(--adm-fg-muted); cursor: pointer;
+          transition: background 0.15s, color 0.15s; font-family: sans-serif;
+          font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
         }
-        .adm-btn-danger-ghost:hover {
-          background: var(--adm-bg-danger-lt);
-          color: var(--adm-danger);
-        }
+        .adm-btn-danger-ghost:hover { background: var(--adm-bg-danger-lt); color: var(--adm-danger); }
         .adm-btn-row {
-          background: transparent;
-          color: var(--adm-fg-muted);
-          border: none;
-          cursor: pointer;
-          transition: background 0.15s, color 0.15s;
+          background: transparent; color: var(--adm-fg-muted); border: none;
+          cursor: pointer; transition: background 0.15s, color 0.15s;
         }
-        .adm-btn-row:hover {
-          background: var(--adm-bg-active);
-          color: var(--adm-accent);
-        }
-
-        /* ── Toggle button ── */
+        .adm-btn-row:hover { background: var(--adm-bg-active); color: var(--adm-accent); }
         .adm-toggle-btn {
-          border: 1px solid var(--adm-border);
-          background: rgba(0,0,0,0.03);
-          color: var(--adm-fg-muted);
-          cursor: pointer;
-          font-family: sans-serif;
-          font-size: 9px;
-          font-weight: 700;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
+          border: 1px solid var(--adm-border); background: rgba(0,0,0,0.03);
+          color: var(--adm-fg-muted); cursor: pointer; font-family: sans-serif;
+          font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
           transition: border-color 0.2s, background 0.2s, color 0.2s;
         }
         .adm-toggle-btn[data-active="true"] {
-          border-color: var(--adm-accent-border-md);
-          background: var(--adm-bg-active);
-          color: var(--adm-accent);
+          border-color: var(--adm-accent-border-md); background: var(--adm-bg-active); color: var(--adm-accent);
         }
-        .adm-toggle-track {
-          background: #ccc;
-          transition: background 0.2s;
-        }
+        .adm-toggle-track { background: #ccc; transition: background 0.2s; }
         .adm-toggle-track[data-active="true"] { background: var(--adm-accent); }
-        .adm-toggle-thumb {
-          left: 2px;
-          transition: left 0.2s;
-        }
+        .adm-toggle-thumb { left: 2px; transition: left 0.2s; }
         .adm-toggle-thumb[data-active="true"] { left: 14px; }
-
-        /* ── Nav items ── */
         .adm-nav-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          width: 100%;
-          padding: 10px 20px;
-          background: transparent;
-          border: none;
-          border-right: 2px solid transparent;
-          color: var(--adm-fg-muted);
-          cursor: pointer;
-          font-family: sans-serif;
-          font-size: 13px;
-          font-weight: 600;
-          text-align: left;
+          display: flex; align-items: center; gap: 10px; width: 100%;
+          padding: 10px 20px; background: transparent; border: none;
+          border-right: 2px solid transparent; color: var(--adm-fg-muted);
+          cursor: pointer; font-family: sans-serif; font-size: 13px;
+          font-weight: 600; text-align: left;
           transition: background 0.15s, color 0.15s, border-color 0.15s;
         }
-        .adm-nav-item:hover {
-          background: var(--adm-bg-hover);
-          color: var(--adm-fg);
-        }
+        .adm-nav-item:hover { background: var(--adm-bg-hover); color: var(--adm-fg); }
         .adm-nav-item[data-active="true"] {
-          background: var(--adm-bg-active);
-          color: var(--adm-fg);
-          border-right-color: var(--adm-accent);
+          background: var(--adm-bg-active); color: var(--adm-fg); border-right-color: var(--adm-accent);
         }
-
-        /* Category nav items in sidebar */
         .adm-cat-item {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          width: 100%;
-          padding: 8px 20px 8px 28px;
-          background: transparent;
-          border: none;
-          border-right: 2px solid transparent;
-          color: var(--adm-fg-muted);
-          cursor: pointer;
-          font-family: sans-serif;
-          font-size: 12px;
-          font-weight: 500;
-          text-align: left;
-          transition: background 0.15s, color 0.15s, border-color 0.15s;
+          display: flex; align-items: center; justify-content: space-between;
+          width: 100%; padding: 8px 20px 8px 28px; background: transparent;
+          border: none; border-right: 2px solid transparent; color: var(--adm-fg-muted);
+          cursor: pointer; font-family: sans-serif; font-size: 12px; font-weight: 500;
+          text-align: left; transition: background 0.15s, color 0.15s, border-color 0.15s;
         }
-        .adm-cat-item:hover {
-          background: var(--adm-bg-hover);
-          color: var(--adm-fg);
-        }
+        .adm-cat-item:hover { background: var(--adm-bg-hover); color: var(--adm-fg); }
         .adm-cat-item[data-active="true"] {
-          background: var(--adm-bg-active);
-          color: var(--adm-accent);
-          border-right-color: var(--adm-accent);
-          font-weight: 600;
+          background: var(--adm-bg-active); color: var(--adm-accent);
+          border-right-color: var(--adm-accent); font-weight: 600;
         }
-
-        /* ── Table row hover ── */
-        .adm-table-row {
-          background: var(--adm-bg-white);
-          transition: background 0.15s;
-        }
+        .adm-table-row { background: var(--adm-bg-white); transition: background 0.15s; }
         .adm-table-row:hover { background: var(--adm-bg-hover); }
-
-        /* ── Card entrance animation ── */
         @keyframes admCardIn {
           from { opacity: 0; transform: translateY(10px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        .adm-card-enter {
-          animation: admCardIn 0.3s cubic-bezier(0.22,1,0.36,1) both;
-        }
-
-        /* stagger mobile cards */
+        .adm-card-enter { animation: admCardIn 0.3s cubic-bezier(0.22,1,0.36,1) both; }
         .adm-card-enter:nth-child(1) { animation-delay: 0.03s; }
         .adm-card-enter:nth-child(2) { animation-delay: 0.07s; }
         .adm-card-enter:nth-child(3) { animation-delay: 0.11s; }
         .adm-card-enter:nth-child(4) { animation-delay: 0.15s; }
         .adm-card-enter:nth-child(5) { animation-delay: 0.19s; }
         .adm-card-enter:nth-child(n+6) { animation-delay: 0.22s; }
-
-        /* desktop table row entrance */
         @keyframes admRowIn {
           from { opacity: 0; transform: translateX(-6px); }
           to   { opacity: 1; transform: translateX(0); }
         }
-        .adm-table-row {
-          animation: admRowIn 0.25s cubic-bezier(0.22,1,0.36,1) both;
-        }
+        .adm-table-row { animation: admRowIn 0.25s cubic-bezier(0.22,1,0.36,1) both; }
         .adm-table-row:nth-child(1) { animation-delay: 0.04s; }
         .adm-table-row:nth-child(2) { animation-delay: 0.08s; }
         .adm-table-row:nth-child(3) { animation-delay: 0.12s; }
         .adm-table-row:nth-child(n+4) { animation-delay: 0.15s; }
-
-        /* ── Mobile category filter pills ── */
         .adm-pill {
-          flex-shrink: 0;
-          padding: 5px 14px;
-          border: 1px solid var(--adm-border);
-          background: var(--adm-bg-white);
-          color: var(--adm-fg-muted);
-          font-family: sans-serif;
-          font-size: 11px;
-          font-weight: 600;
-          white-space: nowrap;
-          cursor: pointer;
-          border-radius: 999px;
+          flex-shrink: 0; padding: 5px 14px; border: 1px solid var(--adm-border);
+          background: var(--adm-bg-white); color: var(--adm-fg-muted);
+          font-family: sans-serif; font-size: 11px; font-weight: 600;
+          white-space: nowrap; cursor: pointer; border-radius: 999px;
           transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.12s;
         }
         .adm-pill:hover { border-color: var(--adm-accent); color: var(--adm-accent); }
         .adm-pill:active { transform: scale(0.96); }
-        .adm-pill[data-active="true"] {
-          background: var(--adm-accent);
-          border-color: var(--adm-accent);
-          color: #fff;
-        }
-
-        /* ── Toast slide-up ── */
+        .adm-pill[data-active="true"] { background: var(--adm-accent); border-color: var(--adm-accent); color: #fff; }
         @keyframes toastIn {
           from { opacity: 0; transform: translateY(10px) scale(0.97); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
         }
         .adm-toast { animation: toastIn 0.28s cubic-bezier(0.22,1,0.36,1) both; }
-
-        /* ── Modal backdrop fade ── */
         @keyframes admFadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes admModalIn {
           from { opacity: 0; transform: scale(0.96) translateY(8px); }
@@ -1017,24 +924,31 @@ export default function InventoryPage() {
         }
         .adm-backdrop { animation: admFadeIn 0.2s ease both; }
         .adm-modal    { animation: admModalIn 0.25s cubic-bezier(0.22,1,0.36,1) both; }
-
-        /* ── View transition ── */
         @keyframes admViewIn {
           from { opacity: 0; transform: translateY(8px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         .adm-view { animation: admViewIn 0.3s cubic-bezier(0.22,1,0.36,1) both; }
-
-        /* ── Sidebar category section label ── */
         .adm-section-label {
-          padding: 12px 20px 4px;
-          font-family: sans-serif;
-          font-size: 9px;
-          font-weight: 700;
-          letter-spacing: 0.18em;
-          text-transform: uppercase;
-          color: var(--adm-fg-muted);
+          padding: 12px 20px 4px; font-family: sans-serif; font-size: 9px;
+          font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--adm-fg-muted);
         }
+
+        /* Stock number input spinner remove */
+        .adm-stock-input::-webkit-inner-spin-button,
+        .adm-stock-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .adm-stock-input { -moz-appearance: textfield; }
+
+        /* Stock stepper buttons */
+        .stock-stepper-btn {
+          width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+          border: 1px solid var(--adm-border); background: var(--adm-bg-soft);
+          cursor: pointer; font-size: 16px; font-weight: 700; color: var(--adm-fg-muted);
+          transition: background 0.15s, border-color 0.15s, color 0.15s; user-select: none;
+          flex-shrink: 0;
+        }
+        .stock-stepper-btn:hover { background: var(--adm-bg-active); border-color: var(--adm-accent); color: var(--adm-accent); }
+        .stock-stepper-btn:active { transform: scale(0.95); }
       `}</style>
 
       <div
@@ -1122,7 +1036,6 @@ export default function InventoryPage() {
               borderRight: "1px solid var(--adm-border)",
             }}
           >
-            {/* Sidebar header */}
             <div
               className="px-5 py-5 pb-4"
               style={{ borderBottom: "1px solid var(--adm-border-soft)" }}
@@ -1141,7 +1054,67 @@ export default function InventoryPage() {
               </div>
             </div>
 
-            {/* Primary nav */}
+            {/* ── Stock summary in sidebar ── */}
+            <div
+              className="px-4 py-3"
+              style={{ borderBottom: "1px solid var(--adm-border-soft)" }}
+            >
+              <p
+                className="font-sans text-[9px] font-bold tracking-[0.16em] uppercase mb-2"
+                style={{ color: "var(--adm-fg-muted)" }}
+              >
+                Stock Overview
+              </p>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span
+                    className="font-sans text-[11px]"
+                    style={{ color: "var(--adm-fg-muted)" }}
+                  >
+                    Total units
+                  </span>
+                  <span
+                    className="font-sans text-[11px] font-bold"
+                    style={{ color: "var(--adm-fg)" }}
+                  >
+                    {totalStock}
+                  </span>
+                </div>
+                {outOfStock > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span
+                      className="font-sans text-[11px] flex items-center gap-1"
+                      style={{ color: "#c0392b" }}
+                    >
+                      <AlertTriangle size={10} /> Out of stock
+                    </span>
+                    <span
+                      className="font-sans text-[11px] font-bold"
+                      style={{ color: "#c0392b" }}
+                    >
+                      {outOfStock}
+                    </span>
+                  </div>
+                )}
+                {lowStock > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span
+                      className="font-sans text-[11px] flex items-center gap-1"
+                      style={{ color: "#e67e22" }}
+                    >
+                      <TrendingDown size={10} /> Low stock
+                    </span>
+                    <span
+                      className="font-sans text-[11px] font-bold"
+                      style={{ color: "#e67e22" }}
+                    >
+                      {lowStock}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <nav className="py-2">
               <button
                 className="adm-nav-item"
@@ -1150,7 +1123,6 @@ export default function InventoryPage() {
               >
                 <Plus size={15} /> Add Product
               </button>
-
               <button
                 className="adm-nav-item"
                 data-active={
@@ -1174,7 +1146,6 @@ export default function InventoryPage() {
                   {products.length}
                 </span>
               </button>
-
               <button
                 className="adm-nav-item"
                 data-active={view === "categories"}
@@ -1187,7 +1158,6 @@ export default function InventoryPage() {
               </button>
             </nav>
 
-            {/* Category filter section */}
             {view === "products" && dbCategories.length > 0 && (
               <>
                 <div
@@ -1195,7 +1165,6 @@ export default function InventoryPage() {
                   style={{ background: "var(--adm-border-soft)" }}
                 />
                 <div className="adm-section-label">Filter by Category</div>
-
                 <div className="pb-3">
                   <button
                     className="adm-cat-item"
@@ -1254,7 +1223,6 @@ export default function InventoryPage() {
             {/* ══ PRODUCTS VIEW ══ */}
             {view === "products" && (
               <div className="adm-view">
-                {/* Desktop header */}
                 <div
                   className="hidden md:flex items-center justify-between px-8 py-6 border-b"
                   style={{ borderColor: "var(--adm-border-soft)" }}
@@ -1279,7 +1247,6 @@ export default function InventoryPage() {
                   </div>
                 </div>
 
-                {/* Mobile header */}
                 <div
                   className="md:hidden flex items-center justify-between px-4 py-3 border-b"
                   style={{ borderColor: "var(--adm-border-soft)" }}
@@ -1307,7 +1274,6 @@ export default function InventoryPage() {
                   </button>
                 </div>
 
-                {/* ── Mobile category filter pills ── */}
                 {dbCategories.length > 0 && (
                   <div
                     className="md:hidden flex items-center gap-2 px-4 py-3 overflow-x-auto border-b"
@@ -1397,7 +1363,7 @@ export default function InventoryPage() {
                         className="grid gap-3 px-4 py-2 font-sans text-[10px] font-bold tracking-[0.14em] uppercase border-b mb-1"
                         style={{
                           gridTemplateColumns:
-                            "60px 1fr 140px 120px 80px 60px 100px 60px",
+                            "60px 1fr 120px 100px 70px 110px 60px 100px 60px",
                           color: "var(--adm-fg-muted)",
                           borderColor: "var(--adm-border)",
                         }}
@@ -1407,6 +1373,7 @@ export default function InventoryPage() {
                         <span>Category</span>
                         <span>Colours</span>
                         <span>Price</span>
+                        <span>Stock</span>
                         <span>Edit</span>
                         <span>Active</span>
                         <span>Delete</span>
@@ -1452,7 +1419,6 @@ export default function InventoryPage() {
             {/* ══ FORM VIEW ══ */}
             {view === "add" && (
               <div className="adm-view max-w-4xl px-8 py-7 md:pb-16 pb-24">
-                {/* Breadcrumb */}
                 <div
                   className="flex items-center gap-2 mb-5 font-sans text-[11px]"
                   style={{ color: "var(--adm-fg-muted)" }}
@@ -1483,7 +1449,7 @@ export default function InventoryPage() {
                   {editingProduct ? editingProduct.name : "Add to Inventory"}
                 </div>
 
-                {/* Basic Info */}
+                {/* Basic Info — now includes stock */}
                 <FormSection title="Basic Info">
                   <div className="mb-4">
                     <FieldLabel>Product Name *</FieldLabel>
@@ -1497,7 +1463,9 @@ export default function InventoryPage() {
                       placeholder=""
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+
+                  {/* Price + Category row */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
                     <div>
                       <FieldLabel>Price (₹) *</FieldLabel>
                       <div className="relative">
@@ -1543,6 +1511,95 @@ export default function InventoryPage() {
                           ))
                         )}
                       </select>
+                    </div>
+                  </div>
+
+                  {/* ── Stock field ── */}
+                  <div>
+                    <FieldLabel>Stock Quantity</FieldLabel>
+                    <div
+                      className="flex items-stretch gap-0"
+                      style={{
+                        border: "1px solid var(--adm-border)",
+                        background: "var(--adm-bg-input)",
+                      }}
+                    >
+                      {/* Decrement */}
+                      <button
+                        type="button"
+                        className="stock-stepper-btn"
+                        style={{
+                          borderRight: "1px solid var(--adm-border)",
+                          borderLeft: "none",
+                          borderTop: "none",
+                          borderBottom: "none",
+                        }}
+                        onClick={() =>
+                          setForm((f) => ({
+                            ...f,
+                            stock: Math.max(0, f.stock - 1),
+                          }))
+                        }
+                        tabIndex={-1}
+                      >
+                        −
+                      </button>
+                      {/* Input */}
+                      <input
+                        type="number"
+                        min={0}
+                        className="adm-stock-input flex-1 bg-transparent outline-none font-sans text-[14px] font-bold text-center"
+                        style={{
+                          color: "var(--adm-fg)",
+                          padding: "10px 8px",
+                          border: "none",
+                        }}
+                        value={form.stock}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setForm((f) => ({
+                            ...f,
+                            stock: isNaN(val) || val < 0 ? 0 : val,
+                          }));
+                        }}
+                      />
+                      {/* Increment */}
+                      <button
+                        type="button"
+                        className="stock-stepper-btn"
+                        style={{
+                          borderLeft: "1px solid var(--adm-border)",
+                          borderRight: "none",
+                          borderTop: "none",
+                          borderBottom: "none",
+                        }}
+                        onClick={() =>
+                          setForm((f) => ({ ...f, stock: f.stock + 1 }))
+                        }
+                        tabIndex={-1}
+                      >
+                        +
+                      </button>
+                    </div>
+                    {/* Stock status hint */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <StockBadge stock={form.stock} />
+                      {form.stock > 0 && form.stock <= 10 && (
+                        <span
+                          className="font-sans text-[10px]"
+                          style={{ color: "var(--adm-fg-muted)" }}
+                        >
+                          Consider restocking soon
+                        </span>
+                      )}
+                      {form.stock === 0 && (
+                        <span
+                          className="font-sans text-[10px]"
+                          style={{ color: "#c0392b" }}
+                        >
+                          Product will appear as out of stock on the storefront
+                        </span>
+                      )}
                     </div>
                   </div>
                 </FormSection>
