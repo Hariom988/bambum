@@ -5,7 +5,6 @@
 // });
 import type { Metadata } from "next";
 import "./globals.css";
-
 export const metadata: Metadata = {
   title: "Bambumm",
   description: "Undergarments for men and women",
@@ -14,12 +13,11 @@ export const metadata: Metadata = {
     apple: "/favicon.ico",
   },
 };
-
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body>{children}</body>
