@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import type { Metadata } from "next";
 import "@/app/globals.css";
 import Footer from "@/components/footer";
@@ -27,21 +26,5 @@ export default function RootLayout({
         </CartProvider>
       </body>
     </html>
-=======
-import Header from "@/components/header";
-import Footer from "@/components/footer";
-
-export default function MainLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <>
-      <Header />
-      {children}
-      <Footer />
-    </>
->>>>>>> userLogin
   );
 }
