@@ -100,7 +100,9 @@ export function ProductsPageContent() {
   // Init from URL params
   useEffect(() => {
     const cat = searchParams.get("category");
+    const q = searchParams.get("q");
     if (cat) setSelectedCategories([cat]);
+    if (q) setSearchQuery(q);
   }, [searchParams]);
 
   // Fetch products

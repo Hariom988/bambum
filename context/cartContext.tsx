@@ -6,11 +6,10 @@ import {
   useState,
   useEffect,
   useCallback,
-  useRef,
   ReactNode,
 } from "react";
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+// ─── Types
 
 export interface CartItem {
   productId: string;
@@ -22,7 +21,7 @@ export interface CartItem {
   colorHex: string;
   image: string;
   quantity: number;
-  stock: number; // max they can add
+  stock: number;
 }
 
 interface CartContextValue {
@@ -46,6 +45,30 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 const CART_KEY = "bambumm_cart";
 
+// Safe sessionStorage accessor — SSR-safe
+const ssGet = (): CartItem[] => {
+  try {
+    const raw = window.sessionStorage.getItem(CART_KEY);
+    return raw ? (JSON.parse(raw) as CartItem[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const ssSet = (items: CartItem[]): void => {
+  try {
+    window.sessionStorage.setItem(CART_KEY, JSON.stringify(items));
+  } catch {
+    // sessionStorage quota exceeded or blocked — fail silently
+  }
+};
+
+const ssClear = (): void => {
+  try {
+    window.sessionStorage.removeItem(CART_KEY);
+  } catch {}
+};
+
 function itemKey(productId: string, colorName: string) {
   return `${productId}__${colorName}`;
 }
@@ -57,21 +80,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
-  // Load from localStorage on mount
+  // Hydrate from sessionStorage once on mount (client only)
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(CART_KEY);
-      if (raw) setItems(JSON.parse(raw));
-    } catch {}
+    setItems(ssGet());
     setHydrated(true);
   }, []);
 
-  // Persist to localStorage on change
+  // Persist to sessionStorage whenever items change (after hydration)
   useEffect(() => {
     if (!hydrated) return;
-    try {
-      localStorage.setItem(CART_KEY, JSON.stringify(items));
-    } catch {}
+    ssSet(items);
   }, [items, hydrated]);
 
   const openCart = useCallback(() => setIsOpen(true), []);
@@ -121,7 +139,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [removeItem],
   );
 
-  const clearCart = useCallback(() => setItems([]), []);
+  const clearCart = useCallback(() => {
+    setItems([]);
+    ssClear();
+  }, []);
 
   const isInCart = useCallback(
     (productId: string, colorName: string) =>
