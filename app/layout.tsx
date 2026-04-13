@@ -1,11 +1,6 @@
-// import { Geist, Geist_Mono } from "next/font/google";
-// const geistSans = Geist({
-//   variable: "--font-geist-sans",
-//   subsets: ["latin"],
-// });
 import type { Metadata } from "next";
 import "./globals.css";
-
+import { Analytics } from "@vercel/analytics/next";
 export const metadata: Metadata = {
   title: "Bambumm",
   description: "Undergarments for men and women",
