@@ -188,10 +188,10 @@ export default function AuthPage() {
 
   // ─── Render
   const titles: Record<Mode, { heading: string; sub: string }> = {
-    login: { heading: "Welcome", sub: "Sign in to your Bambum account" },
+    login: { heading: "Welcome Back", sub: "Sign in to your Bambum account" },
     register: {
       heading: "Create account",
-      sub: "Join Bambum — it only takes a moment",
+      sub: "Join Bambum - it only takes a moment",
     },
     forgot: {
       heading: "Forgot password",
@@ -214,7 +214,10 @@ export default function AuthPage() {
           }}
         >
           {/* Heading */}
-          <div className="flex items-center justify-between gap-3 mb-1">
+          <div className="flex items-center justify-between gap-3">
+            <Link href="/">
+              <img src="/logo.png" alt="Bambum" className="w-20 mx-auto" />
+            </Link>
             <h1
               className="text-xl font-semibold"
               style={{
@@ -225,13 +228,6 @@ export default function AuthPage() {
             >
               {titles[mode].heading}
             </h1>
-            <Link href="/">
-              <img
-                src="/logo-removebg-preview.png"
-                alt="Bambum"
-                className="w-16 mx-auto"
-              />
-            </Link>
           </div>
 
           {/* Feedback */}
@@ -272,7 +268,7 @@ export default function AuthPage() {
                 type="email"
                 value={email}
                 onChange={setEmail}
-                placeholder="you@example.com"
+                placeholder="your@email.com"
                 autoComplete="email"
               />
               <PasswordField
@@ -314,7 +310,7 @@ export default function AuthPage() {
                 type="text"
                 value={name}
                 onChange={setName}
-                placeholder="Jane Doe"
+                placeholder="Your Name"
                 autoComplete="name"
               />
               <Field
@@ -322,7 +318,7 @@ export default function AuthPage() {
                 type="email"
                 value={email}
                 onChange={setEmail}
-                placeholder="you@example.com"
+                placeholder="your@email.com"
                 autoComplete="email"
               />
               <div className="flex flex-col gap-1">
@@ -383,7 +379,7 @@ export default function AuthPage() {
                 type="email"
                 value={email}
                 onChange={setEmail}
-                placeholder="you@example.com"
+                placeholder="your@email.com"
                 autoComplete="email"
               />
               <SubmitBtn loading={loading}>Send reset link</SubmitBtn>
@@ -609,17 +605,18 @@ function SubmitBtn({
       disabled={loading}
       className="flex items-center justify-center gap-2 w-full py-3 mt-1 text-[0.82rem] font-semibold tracking-widest uppercase transition-all"
       style={{
-        background: loading ? "var(--nav-border)" : "var(--nav-fg)",
+        background: loading ? "var(--nav-accent)" : "var(--nav-accent-hover)",
         color: loading ? "var(--nav-fg-muted)" : "var(--nav-drodown-bg)",
         border: "none",
         cursor: loading ? "not-allowed" : "pointer",
         letterSpacing: "0.1em",
       }}
       onMouseEnter={(e) => {
-        if (!loading) e.currentTarget.style.background = "var(--nav-accent)";
+        if (!loading)
+          e.currentTarget.style.background = "var(--nav-accent-hover)";
       }}
       onMouseLeave={(e) => {
-        if (!loading) e.currentTarget.style.background = "var(--nav-fg)";
+        if (!loading) e.currentTarget.style.background = "var(--nav-accent)";
       }}
     >
       {loading ? (
