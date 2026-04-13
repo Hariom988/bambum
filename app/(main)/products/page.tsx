@@ -72,7 +72,7 @@ function FilterSection({
   );
 }
 
-export function ProductsPageContent() {
+function ProductsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
