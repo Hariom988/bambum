@@ -8,6 +8,7 @@ export async function POST() {
     sameSite: "strict",
     path: "/",
     maxAge: 0,
+    expires: new Date(0), 
   });
   return response;
 }

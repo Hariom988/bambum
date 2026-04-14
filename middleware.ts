@@ -57,9 +57,6 @@ export async function middleware(req: NextRequest) {
       return response;
     }
   }
-
-  // ── USER AUTH ROUTES ──────────────────────────────────────────────────────
-  // Redirect logged-in users away from /auth page
   if (pathname === "/auth") {
     const token = req.cookies.get("user_token")?.value;
     if (token) {
@@ -72,7 +69,7 @@ export async function middleware(req: NextRequest) {
     }
     return NextResponse.next();
   }
-  
+
   return NextResponse.next();
 }
 

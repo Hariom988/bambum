@@ -7,10 +7,10 @@ import { useAuth } from "@/context/authContext";
 
 export default function UserMenu() {
   const { user, loading, logout } = useAuth();
+
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -20,7 +20,6 @@ export default function UserMenu() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
   const handleLogout = async () => {
     setOpen(false);
     await logout();

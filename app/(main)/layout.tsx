@@ -1,3 +1,4 @@
+// app/(main)/layout.tsx
 import type { Metadata } from "next";
 import "@/app/globals.css";
 import Footer from "@/components/footer";
@@ -18,15 +19,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
-        <CartProvider>
-          <Header />
-          {children}
-          <Footer />
-          <CartDrawer />
-        </CartProvider>
-      </body>
-    </html>
+    <CartProvider>
+      <Header />
+      {children}
+      <Footer />
+      <CartDrawer />
+    </CartProvider>
   );
 }

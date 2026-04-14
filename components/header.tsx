@@ -1,9 +1,8 @@
 "use client";
-
+import { useAuth } from "@/context/authContext";
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   ShoppingBag,
-  User,
   Search,
   X,
   Menu,
@@ -11,15 +10,18 @@ import {
   ArrowLeft,
   ArrowRight,
   Package,
+  LogOut,
   Loader2,
+  User,
 } from "lucide-react";
 import "@/app/globals.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/cartContext";
 import Image from "next/image";
+import UserMenu from "@/components/userMenu";
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// ── Types
 interface ProductVariant {
   colorName: string;
   colorHex: string;
@@ -34,7 +36,7 @@ interface SearchProduct {
   variants: ProductVariant[];
 }
 
-// ── Nav config ─────────────────────────────────────────────────────────────────
+// ── Nav config
 const NAV_ITEMS = [
   {
     label: "Men",
@@ -78,12 +80,11 @@ const NAV_ITEMS = [
 const DEBOUNCE_MS = 280;
 const MAX_RESULTS = 6;
 
-// ── Main component ─────────────────────────────────────────────────────────────
+// ── Main component
 export default function Navbar() {
   const { totalItems, openCart } = useCart();
   const router = useRouter();
-
-  // nav state
+  const { user, logout } = useAuth();
   const [activeNav, setActiveNav] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<string | null>(null);
@@ -103,7 +104,7 @@ export default function Navbar() {
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── nav hover ────────────────────────────────────────────────────────────────
+  // ── nav hover
   const enter = (label: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setActiveNav(label);
@@ -118,7 +119,7 @@ export default function Navbar() {
     [],
   );
 
-  // ── drawer body lock ─────────────────────────────────────────────────────────
+  // ── drawer body lock
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? "hidden" : "";
     return () => {
@@ -126,7 +127,7 @@ export default function Navbar() {
     };
   }, [drawerOpen]);
 
-  // ── fetch suggestions ─────────────────────────────────────────────────────────
+  // ── fetch suggestions
   const fetchSuggestions = useCallback(async (q: string) => {
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
@@ -148,7 +149,7 @@ export default function Navbar() {
     }
   }, []);
 
-  // ── debounce search ──────────────────────────────────────────────────────────
+  // ── debounce search
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     const trimmed = searchValue.trim();
@@ -167,7 +168,7 @@ export default function Navbar() {
     };
   }, [searchValue, fetchSuggestions]);
 
-  // ── close suggestions on outside click ───────────────────────────────────────
+  // ── close suggestions on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (
@@ -181,7 +182,7 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // ── keyboard nav in suggestions ───────────────────────────────────────────────
+  // ── keyboard nav in suggestions
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
       setSuggestionsOpen(false);
@@ -612,9 +613,7 @@ export default function Navbar() {
               )}
             </button>
 
-            <button className="icon-btn">
-              <User size={20} />
-            </button>
+            <UserMenu />
           </div>
 
           {/* ── Mobile right icons ── */}
@@ -781,33 +780,183 @@ export default function Navbar() {
               )}
             </nav>
 
-            <div className="drawer-footer">
-              <button className="drawer-footer-btn">
-                <User size={16} /> Account
-              </button>
-              <button
-                className="drawer-footer-btn"
-                onClick={() => {
-                  closeDrawer();
-                  openCart();
-                }}
-              >
-                <ShoppingBag size={16} /> Cart
-                {totalItems > 0 && (
-                  <span
+            {/* ── Mobile Drawer Footer ── */}
+            <div
+              className="drawer-footer"
+              style={{ flexDirection: "column", gap: 0, padding: 0 }}
+            >
+              {user ? (
+                <>
+                  {/* User info row */}
+                  <div
                     style={{
-                      background: "var(--nav-accent)",
-                      color: "#fff",
-                      borderRadius: "99px",
-                      fontSize: "0.65rem",
-                      fontWeight: 700,
-                      padding: "1px 6px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "14px 20px",
+                      borderBottom: "1px solid var(--nav-border)",
+                      background: "var(--nav-bg)",
                     }}
                   >
-                    {totalItems}
-                  </span>
-                )}
-              </button>
+                    {/* Avatar */}
+                    <div
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: "50%",
+                        background: "var(--nav-accent)",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "0.85rem",
+                        fontWeight: 700,
+                        fontFamily: "var(--nav-font)",
+                        flexShrink: 0,
+                        border: "2px solid rgba(200,169,126,0.3)",
+                      }}
+                    >
+                      {user.picture ? (
+                        <img
+                          src={user.picture}
+                          alt={user.name}
+                          referrerPolicy="no-referrer"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderRadius: "50%",
+                          }}
+                        />
+                      ) : (
+                        user.name.charAt(0).toUpperCase()
+                      )}
+                    </div>
+
+                    {/* Name + email */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: "0.85rem",
+                          fontWeight: 700,
+                          color: "var(--nav-fg)",
+                          fontFamily: "var(--nav-font-ui)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {user.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "0.68rem",
+                          color: "var(--nav-fg-muted)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          marginTop: 1,
+                        }}
+                      >
+                        {user.email}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions row */}
+                  <div
+                    style={{ display: "flex", gap: 0, padding: "10px 16px" }}
+                  >
+                    <button
+                      className="drawer-footer-btn"
+                      onClick={() => {
+                        closeDrawer();
+                        openCart();
+                      }}
+                      style={{ flex: 1 }}
+                    >
+                      <ShoppingBag size={16} />
+                      Cart
+                      {totalItems > 0 && (
+                        <span
+                          style={{
+                            background: "var(--nav-accent)",
+                            color: "#fff",
+                            borderRadius: "99px",
+                            fontSize: "0.65rem",
+                            fontWeight: 700,
+                            padding: "1px 6px",
+                          }}
+                        >
+                          {totalItems}
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={logout}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                        padding: "10px 16px",
+                        background: "rgba(217,79,61,0.06)",
+                        border: "1px solid rgba(217,79,61,0.2)",
+                        borderRadius: 2,
+                        color: "var(--nav-sale)",
+                        fontSize: "0.8rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        fontFamily: "var(--nav-font-ui)",
+                        marginLeft: 8,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <LogOut size={15} />
+                      Sign Out
+                    </button>
+                  </div>
+                </>
+              ) : (
+                /* Not logged in */
+                <div style={{ display: "flex", gap: 12, padding: "10px 16px" }}>
+                  <button
+                    className="drawer-footer-btn"
+                    onClick={() => {
+                      closeDrawer();
+                      router.push("/auth");
+                    }}
+                    style={{ flex: 1 }}
+                  >
+                    <User size={16} /> Sign In
+                  </button>
+                  <button
+                    className="drawer-footer-btn"
+                    onClick={() => {
+                      closeDrawer();
+                      openCart();
+                    }}
+                    style={{ flex: 1 }}
+                  >
+                    <ShoppingBag size={16} /> Cart
+                    {totalItems > 0 && (
+                      <span
+                        style={{
+                          background: "var(--nav-accent)",
+                          color: "#fff",
+                          borderRadius: "99px",
+                          fontSize: "0.65rem",
+                          fontWeight: 700,
+                          padding: "1px 6px",
+                        }}
+                      >
+                        {totalItems}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </>
