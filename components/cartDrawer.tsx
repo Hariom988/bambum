@@ -9,8 +9,11 @@ import {
   ShoppingBag,
   ArrowRight,
   Package,
+  LogIn,
 } from "lucide-react";
 import { useCart } from "@/context/cartContext";
+import { useAuth } from "@/context/authContext";
+import { useRouter } from "next/navigation";
 
 export default function CartDrawer() {
   const {
@@ -22,6 +25,8 @@ export default function CartDrawer() {
     removeItem,
     updateQty,
   } = useCart();
+  const { user } = useAuth();
+  const router = useRouter();
 
   const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -42,9 +47,15 @@ export default function CartDrawer() {
     };
   }, [isOpen]);
 
-  if (!isOpen && typeof window !== "undefined") {
-    // Still render for animation but hidden
-  }
+  const handleCheckout = () => {
+    closeCart();
+    if (!user) {
+      // Save returnUrl so we come back after login
+      router.push("/auth?returnUrl=/checkout");
+    } else {
+      router.push("/checkout");
+    }
+  };
 
   return (
     <>
@@ -123,6 +134,14 @@ export default function CartDrawer() {
           transition: background 0.2s ease;
         }
         .cart-checkout-btn:hover { background: var(--nav-accent-hover); }
+
+        .cart-login-note {
+          display: flex; align-items: center; gap: 6px;
+          padding: 8px 12px; margin-bottom: 12px;
+          background: rgba(200,169,126,0.08);
+          border: 1px solid var(--nav-border);
+          font-size: 11px; color: var(--nav-fg-muted);
+        }
 
         @keyframes cartItemIn {
           from { opacity: 0; transform: translateX(12px); }
@@ -456,9 +475,9 @@ export default function CartDrawer() {
                 </span>
                 <span
                   className="text-xs font-semibold"
-                  style={{ color: "var(--nav-accent)" }}
+                  style={{ color: "#27ae60" }}
                 >
-                  Calculated at checkout
+                  Free
                 </span>
               </div>
 
@@ -490,16 +509,27 @@ export default function CartDrawer() {
               </div>
             </div>
 
+            {/* Login hint if not authenticated */}
+            {!user && (
+              <div className="cart-login-note">
+                <LogIn
+                  size={11}
+                  style={{ color: "var(--nav-accent)", flexShrink: 0 }}
+                />
+                <span>You&apos;ll be asked to sign in before checkout</span>
+              </div>
+            )}
+
             {/* Tax note */}
             <p
               className="text-[10px] text-center mb-4"
               style={{ color: "var(--nav-fg-muted)" }}
             >
-              Inclusive of all taxes · Free returns on eligible orders
+              Inclusive of all taxes · Free shipping on all orders
             </p>
 
             {/* Checkout CTA */}
-            <button className="cart-checkout-btn">
+            <button className="cart-checkout-btn" onClick={handleCheckout}>
               Proceed to Checkout
               <ArrowRight size={14} />
             </button>
