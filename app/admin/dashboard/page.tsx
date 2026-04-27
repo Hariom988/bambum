@@ -77,8 +77,6 @@ export default function AdminDashboardPage() {
       sub: "All services running",
     },
   ];
-
-  // Don't render anything while checking session or redirecting
   if (checking) return null;
 
   return (
