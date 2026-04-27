@@ -257,7 +257,7 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Action Cards */}
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid gap-4">
             {/* Inventory */}
             <div
               className="action-card p-8 overflow-hidden"
@@ -323,7 +323,6 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             </div>
-
             {/* Orders */}
             <div
               className="action-card p-8 overflow-hidden"
@@ -382,6 +381,71 @@ export default function AdminDashboardPage() {
                   }
                 >
                   Open Orders
+                  <ArrowRight
+                    size={13}
+                    className="group-hover:translate-x-0.5 transition-transform"
+                  />
+                </button>
+              </div>
+            </div>
+            {/* Content */}
+            <div
+              className="action-card p-8 overflow-hidden"
+              style={{
+                background: "rgba(200,169,126,0.04)",
+                border: "1px solid var(--nav-border)",
+              }}
+            >
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div
+                      className="w-8 h-8 flex items-center justify-center"
+                      style={{
+                        background: "rgba(200,169,126,0.1)",
+                        border: "1px solid var(--nav-border)",
+                      }}
+                    >
+                      <ShoppingCart
+                        size={14}
+                        style={{ color: "var(--nav-accent)" }}
+                      />
+                    </div>
+                    <h2
+                      className="text-base font-bold"
+                      style={{
+                        fontFamily: "var(--nav-font)",
+                        color: "var(--nav-fg)",
+                      }}
+                    >
+                      Content Management
+                    </h2>
+                  </div>
+                  <p
+                    className="text-sm leading-relaxed"
+                    style={{ color: "var(--nav-fg-muted)" }}
+                  >
+                    View, filter, and manage all Content.
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push("/admin/content")}
+                  className="group flex items-center gap-2.5 px-6 py-3 text-[0.65rem] font-bold tracking-[0.18em] uppercase transition-colors duration-200 shrink-0"
+                  style={{
+                    background: "var(--nav-accent)",
+                    color: "#fff",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background =
+                      "var(--nav-accent-hover)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "var(--nav-accent)")
+                  }
+                >
+                  Open Contents
                   <ArrowRight
                     size={13}
                     className="group-hover:translate-x-0.5 transition-transform"
