@@ -105,7 +105,6 @@ export default function AdminDashboardPage() {
       accent: true,
     },
   ];
-
   if (checking) return null;
 
   return (
