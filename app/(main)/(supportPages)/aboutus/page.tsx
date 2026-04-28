@@ -27,7 +27,20 @@ const PILLARS = [
   },
 ];
 
-function useFadeIn(threshold = 0.15) {
+const MARQUEE_ITEMS = [
+  "Wear the Comfort",
+  "·",
+  "Wear Bambumm",
+  "·",
+  "Bamboo Fabric",
+  "·",
+  "Eco-Friendly",
+  "·",
+  "Premium Quality",
+  "·",
+];
+
+function useInView(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -35,7 +48,7 @@ function useFadeIn(threshold = 0.15) {
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          el.classList.add("is-visible");
+          el.classList.add("in-view");
           obs.disconnect();
         }
       },
@@ -49,234 +62,426 @@ function useFadeIn(threshold = 0.15) {
 
 export default function AboutUsPage() {
   const heroRef = useRef<HTMLDivElement>(null);
-  const visionRef = useFadeIn();
-  const pillarsRef = useFadeIn(0.1);
-  const closingRef = useFadeIn();
+  const visionRef = useInView(0.1);
+  const pillarsRef = useInView(0.05);
+  const closingRef = useInView(0.1);
 
-  // Hero entrance on mount
   useEffect(() => {
     const el = heroRef.current;
     if (!el) return;
-    const t = setTimeout(() => el.classList.add("is-visible"), 80);
+    const t = setTimeout(() => el.classList.add("hero-ready"), 100);
     return () => clearTimeout(t);
   }, []);
 
   return (
     <>
       <style>{`
-        /* ── Fade-up base ── */
-        .fade-up {
+        /* ═══ HERO ANIMATIONS ═══ */
+        .hero-badge {
           opacity: 0;
-          transform: translateY(28px);
-          transition: opacity 0.75s cubic-bezier(0.22,1,0.36,1),
-                      transform 0.75s cubic-bezier(0.22,1,0.36,1);
+          transform: translateY(12px);
+          transition: opacity 0.6s 0.1s ease, transform 0.6s 0.1s ease;
         }
-        .fade-up.is-visible { opacity: 1; transform: translateY(0); }
-
-        /* Stagger children */
-        .stagger-children > * { opacity: 0; transform: translateY(24px); }
-        .stagger-children.is-visible > *:nth-child(1) { animation: fadeUp 0.65s 0.05s cubic-bezier(0.22,1,0.36,1) forwards; }
-        .stagger-children.is-visible > *:nth-child(2) { animation: fadeUp 0.65s 0.18s cubic-bezier(0.22,1,0.36,1) forwards; }
-        .stagger-children.is-visible > *:nth-child(3) { animation: fadeUp 0.65s 0.31s cubic-bezier(0.22,1,0.36,1) forwards; }
-        .stagger-children.is-visible > *:nth-child(4) { animation: fadeUp 0.65s 0.44s cubic-bezier(0.22,1,0.36,1) forwards; }
-
-        @keyframes fadeUp {
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Hero lines stagger */
-        .hero-line {
+        .hero-line-wrap {
           display: block;
-          overflow: hidden;
         }
-        .hero-line span {
+        .hero-line-inner {
           display: block;
-          transform: translateY(105%);
-          transition: transform 0.8s cubic-bezier(0.22,1,0.36,1);
+          transform: translateY(110%);
+          transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .hero-block.is-visible .hero-line:nth-child(1) span { transform: translateY(0); transition-delay: 0.05s; }
-        .hero-block.is-visible .hero-line:nth-child(2) span { transform: translateY(0); transition-delay: 0.2s; }
-        .hero-block.is-visible .hero-line:nth-child(3) span { transform: translateY(0); transition-delay: 0.35s; }
-        .hero-block.is-visible .hero-meta { opacity: 1; transform: translateY(0); }
-
-        .hero-meta {
+        .hero-line-wrap:nth-child(1) .hero-line-inner { transition-delay: 0.2s; }
+        .hero-line-wrap:nth-child(2) .hero-line-inner { transition-delay: 0.38s; }
+        .hero-line-wrap:nth-child(3) .hero-line-inner { transition-delay: 0.54s; }
+        .hero-sub {
           opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 0.7s 0.55s ease, transform 0.7s 0.55s ease;
+          transform: translateY(14px);
+          transition: opacity 0.7s 0.72s ease, transform 0.7s 0.72s ease;
+        }
+        .hero-cta {
+          opacity: 0;
+          transform: translateY(10px);
+          transition: opacity 0.6s 0.88s ease, transform 0.6s 0.88s ease;
+        }
+        .hero-img {
+          opacity: 0;
+          transform: scale(0.96) translateY(20px);
+          transition: opacity 0.9s 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* Pillar card hover */
-        .pillar-card {
-          transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-        }
-        .pillar-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 36px rgba(200,169,126,0.14);
-          border-color: var(--nav-accent) !important;
-        }
+        .hero-ready .hero-badge { opacity: 1; transform: translateY(0); }
+        .hero-ready .hero-line-inner { transform: translateY(0); }
+        .hero-ready .hero-sub { opacity: 1; transform: translateY(0); }
+        .hero-ready .hero-cta { opacity: 1; transform: translateY(0); }
+        .hero-ready .hero-img { opacity: 1; transform: scale(1) translateY(0); }
 
-        /* Accent line grow */
-        .line-grow {
-          width: 0;
-          transition: width 1.1s 0.3s cubic-bezier(0.22,1,0.36,1);
-        }
-        .fade-up.is-visible .line-grow,
-        .stagger-children.is-visible .line-grow { width: 64px; }
-
-        /* Marquee */
-        @keyframes marquee {
+        /* ═══ MARQUEE ═══ */
+        @keyframes marquee-ltr {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
         }
-        .marquee-track {
+        @keyframes marquee-rtl {
+          from { transform: translateX(-50%); }
+          to { transform: translateX(0); }
+        }
+        .marquee-track-ltr {
           display: flex;
           width: max-content;
-          animation: marquee 18s linear infinite;
+          animation: marquee-ltr 22s linear infinite;
         }
-        .marquee-track:hover { animation-play-state: paused; }
+        .marquee-track-rtl {
+          display: flex;
+          width: max-content;
+          animation: marquee-rtl 26s linear infinite;
+        }
+        .marquee-track-ltr:hover,
+        .marquee-track-rtl:hover {
+          animation-play-state: paused;
+        }
+
+        /* ═══ SCROLL REVEALS ═══ */
+        .fade-up {
+          opacity: 0;
+          transform: translateY(32px);
+          transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+                      transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .fade-up.in-view { opacity: 1; transform: translateY(0); }
+
+        .stagger > * {
+          opacity: 0;
+          transform: translateY(28px);
+        }
+        .stagger.in-view > *:nth-child(1) { animation: revealUp 0.7s 0.05s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .stagger.in-view > *:nth-child(2) { animation: revealUp 0.7s 0.18s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .stagger.in-view > *:nth-child(3) { animation: revealUp 0.7s 0.31s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .stagger.in-view > *:nth-child(4) { animation: revealUp 0.7s 0.44s cubic-bezier(0.16,1,0.3,1) forwards; }
+        @keyframes revealUp {
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ═══ PILLAR CARDS ═══ */
+        .pillar-card {
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                      box-shadow 0.3s ease,
+                      border-color 0.3s ease;
+        }
+        .pillar-card:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 20px 48px rgba(0, 0, 0, 0.25);
+          border-color: var(--about-teal) !important;
+        }
+        .pillar-icon {
+          transition: background 0.3s ease, transform 0.3s ease;
+        }
+        .pillar-card:hover .pillar-icon {
+          background: rgba(42, 122, 114, 0.22) !important;
+          transform: scale(1.08);
+        }
+
+        /* ═══ VISION IMAGE ═══ */
+        .vision-img-wrap {
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .vision-img-wrap:hover {
+          transform: scale(1.02);
+        }
+
+        /* ═══ CTA BUTTON ═══ */
+        .about-cta-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 16px 40px;
+          font-family: var(--nav-font-ui);
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          text-decoration: none;
+          background-color: var(--about-teal-light);
+          color: #fff;
+          border: none;
+          cursor: pointer;
+          position: relative;
+          transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+        }
+        .about-cta-btn::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: rgba(255,255,255,0.1);
+          transform: translateX(-100%);
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .about-cta-btn:hover {
+          background: var(--about-teal-light, #3d9c93);
+          transform: translateY(-2px);
+          box-shadow: 0 12px 32px rgba(42, 122, 114, 0.35);
+        }
+        .about-cta-btn:hover::before {
+          transform: translateX(100%);
+        }
+
+        /* ═══ DECORATIVE LINE ═══ */
+        .accent-line {
+          height: 2px;
+          background: var(--about-teal);
+          width: 0;
+          transition: width 1.2s 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .in-view .accent-line { width: 64px; }
+
+        /* ═══ STAT COUNTERS ═══ */
+        @keyframes countUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .stat-item.in-view {
+          animation: countUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .stat-item:nth-child(2).in-view { animation-delay: 0.12s; }
+        .stat-item:nth-child(3).in-view { animation-delay: 0.24s; }
       `}</style>
 
       <main
-        className="min-h-screen overflow-hidden"
         style={{
-          background: "var(--nav-bg)",
+          background: "var(--about-hero-bg)",
           color: "var(--nav-fg)",
           fontFamily: "var(--nav-font-ui)",
         }}
       >
-        {/* ── HERO ── */}
+        {/* ══════════════ HERO ══════════════ */}
         <section
-          className="relative border-b overflow-hidden"
-          style={{ borderColor: "var(--nav-border)" }}
+          style={{
+            background: "var(--about-hero-bg)",
+            borderBottom: "1px solid var(--nav-border)",
+          }}
         >
           <div
-            className="absolute top-0 left-0 right-0 h-0.75"
-            style={{ background: "var(--nav-accent)" }}
-          />
-
-          {/* Radial glow */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                "radial-gradient(ellipse 70% 60% at 60% 50%, rgba(200,169,126,0.1) 0%, transparent 70%)",
-            }}
-          />
-
-          {/* Soft grid lines */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-40"
-            style={{
-              backgroundImage: `
-                linear-gradient(var(--nav-border) 1px, transparent 1px),
-                linear-gradient(90deg, var(--nav-border) 1px, transparent 1px)
-              `,
-              backgroundSize: "80px 80px",
-            }}
-          />
-
-          <div className="relative max-w-6xl mx-auto px-6 py-24 md:py-36 grid md:grid-cols-[1fr_auto] gap-12 items-end">
-            {/* Title */}
-            <div ref={heroRef} className="hero-block">
-              <div className="hero-meta mb-6">
-                <div
-                  className="inline-flex items-center gap-2 px-4 py-1.5 text-xs font-semibold tracking-[0.14em] uppercase"
+            ref={heroRef}
+            className="max-w-7xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 md:gap-16 items-center"
+          >
+            {/* Left: text */}
+            <div>
+              <div
+                className="hero-badge inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full"
+                style={{
+                  backgroundColor: "rgba(42,122,114,0.1)",
+                  border: "1px solid rgba(42,122,114,0.25)",
+                }}
+              >
+                <Leaf
+                  size={12}
+                  strokeWidth={2.5}
+                  style={{ color: "var(--about-teal)" }}
+                />
+                <span
                   style={{
-                    background: "rgba(200,169,126,0.12)",
-                    border: "1px solid var(--nav-border)",
-                    color: "var(--nav-accent)",
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    color: "var(--about-teal)",
                   }}
                 >
-                  <Leaf size={11} strokeWidth={2.5} />
                   Our Story
-                </div>
+                </span>
               </div>
 
               <h1
-                className="text-6xl md:text-[7rem] font-bold uppercase leading-[0.9] tracking-tight mb-8"
-                style={{ fontFamily: "var(--nav-font)" }}
+                style={{
+                  fontFamily: "var(--nav-font)",
+                  lineHeight: 1,
+                  marginBottom: "2rem",
+                }}
               >
-                <span className="hero-line">
-                  <span>About</span>
-                </span>
-                <span
-                  className="hero-line"
-                  style={
-                    {
-                      color: "transparent",
-                      WebkitTextStroke: "1.5px var(--nav-accent)",
-                    } as React.CSSProperties
-                  }
-                >
-                  <span>Bambumm</span>
-                </span>
-                <span className="hero-line">
+                <span className="hero-line-wrap">
                   <span
+                    className="hero-line-inner"
                     style={{
-                      fontSize: "0.42em",
-                      letterSpacing: "0.25em",
-                      color: "var(--nav-fg-muted)",
+                      fontSize: "86px",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      color: "var(--nav-fg)",
+                      display: "block",
+                    }}
+                  >
+                    About
+                  </span>
+                </span>
+                <span className="hero-line-wrap">
+                  <span
+                    className="hero-line-inner"
+                    style={{
+                      fontSize: "86px",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      color: "var(--about-teal)",
+                      display: "block",
+                    }}
+                  >
+                    Bambumm
+                  </span>
+                </span>
+                <span className="hero-line-wrap">
+                  <span
+                    className="hero-line-inner"
+                    style={{
+                      fontSize: "clamp(1rem, 2vw, 1.25rem)",
                       fontWeight: 400,
+                      letterSpacing: "0.28em",
+                      color: "var(--nav-fg-muted)",
+                      display: "block",
+                      marginTop: "0.5rem",
                     }}
                   >
                     EST. IN INDIA
                   </span>
                 </span>
               </h1>
+
+              <p
+                className="hero-sub max-w-md"
+                style={{
+                  fontSize: "1rem",
+                  lineHeight: 1.75,
+                  color: "var(--nav-fg-muted)",
+                  marginBottom: "2.5rem",
+                }}
+              >
+                Premium bamboo essentials for everyday wear. Experience the
+                perfect blend of luxury, comfort, and sustainability.
+              </p>
+
+              <div className="hero-cta">
+                <a href="/products" className="about-cta-btn">
+                  Shop the Collection
+                  <span style={{ fontSize: "1rem" }}>→</span>
+                </a>
+              </div>
             </div>
 
-            {/* Side rotated label */}
-            <div
-              className="hidden md:flex items-center justify-center self-center"
-              style={{
-                writingMode: "vertical-rl",
-                textOrientation: "mixed",
-                transform: "rotate(180deg)",
-                fontSize: "0.65rem",
-                letterSpacing: "0.2em",
-                color: "var(--nav-fg-muted)",
-                textTransform: "uppercase",
-                fontWeight: 600,
-                opacity: 0.5,
-              }}
-            >
-              Comfort · Sustainability · Innovation
+            {/* Right: image */}
+            <div className="hero-img flex justify-center md:justify-end">
+              <div
+                className="vision-img-wrap relative "
+                style={{
+                  width: "100%",
+                  maxWidth: 380,
+                  aspectRatio: "5/5",
+                }}
+              >
+                <img
+                  src="/about_banner_image.png"
+                  alt="Bambumm about"
+                  style={{
+                    width: "100%",
+                    objectFit: "contain",
+                    objectPosition: "center",
+                  }}
+                />
+                {/* Corner accents */}
+                {(
+                  [
+                    "top-0 left-0",
+                    "top-0 right-0",
+                    "bottom-0 left-0",
+                    "bottom-0 right-0",
+                  ] as const
+                ).map((pos, i) => (
+                  <div
+                    key={i}
+                    className={`absolute ${pos} w-8 h-8 pointer-events-none`}
+                    style={{
+                      borderTop: i < 2 ? `2px solid var(--about-teal)` : "none",
+                      borderBottom:
+                        i >= 2 ? `2px solid var(--about-teal)` : "none",
+                      borderLeft:
+                        i % 2 === 0 ? `2px solid var(--about-teal)` : "none",
+                      borderRight:
+                        i % 2 === 1 ? `2px solid var(--about-teal)` : "none",
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </section>
-
-        {/* ── MARQUEE BAND ── */}
+        {/* ══════════════ MARQUEE BAND (RTL) — bottom of dark section ══════════════ */}
         <div
-          className="overflow-hidden border-b py-3"
           style={{
-            borderColor: "var(--nav-border)",
-            background: "rgba(200,169,126,0.06)",
+            background: "#0d0f0d",
+            overflow: "hidden",
+            padding: "14px 0",
+            borderTop: "1px solid rgba(42,122,114,0.15)",
           }}
         >
-          <div className="marquee-track">
-            {[...Array(2)].map((_, i) => (
-              <div key={i} className="flex items-center gap-0">
+          <div className="marquee-track-rtl">
+            {[0, 1].map((_, rep) => (
+              <div key={rep} className="flex items-center">
                 {[
-                  "Wear the Comfort",
-                  "·",
-                  "Wear Bambumm",
-                  "·",
                   "Bamboo Fabric",
                   "·",
-                  "Eco-Friendly",
+                  "100% Natural",
+                  "·",
+                  "Made in India",
                   "·",
                   "Premium Quality",
                   "·",
-                ].map((t, j) => (
+                  "Eco-Friendly",
+                  "·",
+                ].map((item, j) => (
                   <span
                     key={j}
-                    className="px-8 text-xs font-semibold tracking-[0.18em] uppercase whitespace-nowrap"
                     style={{
+                      padding: "0 28px",
+                      fontSize: "0.72rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.2em",
+                      textTransform: "uppercase",
+                      whiteSpace: "nowrap",
                       color:
-                        t === "·" ? "var(--nav-accent)" : "var(--nav-fg-muted)",
+                        item === "·"
+                          ? "rgba(42,122,114,0.4)"
+                          : "rgba(42,122,114,0.7)",
                     }}
                   >
-                    {t}
+                    {item}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* ══════════════ MARQUEE BAND (LTR) ══════════════ */}
+        <div
+          style={{
+            background: "var(--about-teal)",
+            overflow: "hidden",
+            padding: "14px 0",
+          }}
+        >
+          <div className="marquee-track-ltr">
+            {[0, 1].map((_, rep) => (
+              <div key={rep} className="flex items-center">
+                {MARQUEE_ITEMS.map((item, j) => (
+                  <span
+                    key={j}
+                    style={{
+                      padding: "0 28px",
+                      fontSize: "0.72rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.2em",
+                      textTransform: "uppercase",
+                      whiteSpace: "nowrap",
+                      color:
+                        item === "·"
+                          ? "rgba(255,255,255,0.45)"
+                          : "rgba(255,255,255,0.95)",
+                    }}
+                  >
+                    {item}
                   </span>
                 ))}
               </div>
@@ -284,158 +489,183 @@ export default function AboutUsPage() {
           </div>
         </div>
 
-        {/* ── VISION ── */}
-        <section className="max-w-6xl mx-auto px-6 py-20 md:py-28">
-          <div
-            ref={visionRef}
-            className="fade-up grid md:grid-cols-2 gap-12 md:gap-20 items-center"
-          >
-            {/* Text */}
-            <div>
-              <p
-                className="text-xs font-bold tracking-[0.18em] uppercase mb-4"
-                style={{ color: "var(--nav-accent)" }}
-              >
-                Our Vision
-              </p>
-              <div
-                className="line-grow h-0.5 mb-8"
-                style={{ background: "var(--nav-accent)" }}
-              />
-              <p
-                className="text-2xl md:text-3xl font-light leading-relaxed mb-6"
-                style={{
-                  fontFamily: "var(--nav-font)",
-                  color: "var(--nav-fg)",
-                  letterSpacing: "0.01em",
-                }}
-              >
-                Created to redefine everyday comfort through{" "}
-                <em style={{ color: "var(--nav-accent)", fontStyle: "italic" }}>
-                  innovation
-                </em>{" "}
-                and{" "}
-                <em style={{ color: "var(--nav-accent)", fontStyle: "italic" }}>
-                  sustainability.
-                </em>
-              </p>
-              <p
-                className="text-sm md:text-base leading-relaxed"
-                style={{ color: "var(--nav-fg-muted)" }}
-              >
-                We specialize in premium products made from bamboo fabric —
-                known for its softness, breathability, and eco-friendly
-                properties. Our goal is to deliver comfort that feels good on
-                your skin and is better for the planet.
-              </p>
-            </div>
+        {/* ══════════════ OUR VISION ══════════════ */}
+        <section
+          style={{ background: "var(--about-hero-bg)", padding: "80px 0 96px" }}
+        >
+          <div className="max-w-6xl mx-auto px-6">
+            <div
+              ref={visionRef}
+              className="fade-up grid  gap-16 md:gap-24 items-center"
+            >
+              {/* Text */}
+              <div className="text-centre">
+                <p
+                  style={{
+                    fontSize: "4rem",
+                    fontWeight: 600,
+                    letterSpacing: "0.22em",
+                    textTransform: "uppercase",
+                    color: "var(--about-teal)",
+                    marginBottom: "1.25rem",
+                    textAlign: "center",
+                  }}
+                >
+                  Our Vision
+                </p>
+                <div className="accent-line" style={{ marginBottom: "2rem" }} />
+                <h2
+                  style={{
+                    fontFamily: "var(--nav-font)",
+                    fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
+                    lineHeight: 1.2,
+                    color: "var(--nav-fg)",
+                    marginBottom: "1.5rem",
+                    textAlign: "center",
+                  }}
+                >
+                  Created to redefine everyday comfort through{" "}
+                  <em
+                    style={{ color: "var(--about-teal)", fontStyle: "italic" }}
+                  >
+                    innovation
+                  </em>{" "}
+                  and{" "}
+                  <em
+                    style={{ color: "var(--about-teal)", fontStyle: "italic" }}
+                  >
+                    sustainability.
+                  </em>
+                </h2>
+                <p
+                  style={{
+                    fontSize: "0.9375rem",
+                    lineHeight: 1.8,
+                    color: "var(--nav-fg-muted)",
+                    marginBottom: "2.5rem",
+                  }}
+                >
+                  We specialize in premium products made from bamboo fabric —
+                  known for its softness, breathability, and eco-friendly
+                  properties. Our goal is to deliver comfort that feels good on
+                  your skin and is better for the planet.
+                </p>
 
-            {/* Visual block */}
-            <div className="relative">
-              <div
-                className="w-full aspect-square max-w-sm mx-auto flex flex-col items-center justify-center gap-3 text-center"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #fff 0%, rgba(200,169,126,0.08) 100%)",
-                  border: "1px solid var(--nav-border)",
-                  boxShadow: "0 4px 40px rgba(200,169,126,0.1)",
-                }}
-              >
-                {[
-                  "top-0 left-0",
-                  "top-0 right-0",
-                  "bottom-0 left-0",
-                  "bottom-0 right-0",
-                ].map((pos, i) => (
-                  <div
-                    key={i}
-                    className={`absolute ${pos} w-6 h-6 pointer-events-none`}
-                    style={{
-                      borderTop: i < 2 ? "2px solid var(--nav-accent)" : "none",
-                      borderBottom:
-                        i >= 2 ? "2px solid var(--nav-accent)" : "none",
-                      borderLeft:
-                        i % 2 === 0 ? "2px solid var(--nav-accent)" : "none",
-                      borderRight:
-                        i % 2 === 1 ? "2px solid var(--nav-accent)" : "none",
-                    }}
-                  />
-                ))}
-                <img
-                  className="w-full"
-                  src="/about_banner_image.png"
-                  alt="about_banner_image"
-                />
-              </div>
-
-              {/* Floating label */}
-              <div
-                className="absolute -bottom-4 -right-4 px-4 py-2 text-xs font-bold tracking-widest uppercase"
-                style={{
-                  background: "var(--nav-accent)",
-                  color: "#fff",
-                }}
-              >
-                Eco-First
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-6">
+                  {[
+                    { val: "100%", label: "Bamboo Fabric" },
+                    { val: "3×", label: "Softer than Cotton" },
+                    { val: "0", label: "Synthetic Additives" },
+                  ].map((stat, i) => (
+                    <div key={i} className="stat-item">
+                      <p
+                        style={{
+                          fontFamily: "var(--nav-font)",
+                          fontSize: "2rem",
+                          fontWeight: 700,
+                          color: "var(--about-teal)",
+                          lineHeight: 1,
+                        }}
+                      >
+                        {stat.val}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: "0.7rem",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                          color: "var(--nav-fg-muted)",
+                          marginTop: "0.4rem",
+                        }}
+                      >
+                        {stat.label}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── PILLARS ── */}
-        <section
-          className="border-y"
-          style={{
-            borderColor: "var(--nav-border)",
-            background: "rgba(200,169,126,0.04)",
-          }}
-        >
-          <div className="max-w-6xl mx-auto px-6 py-16 md:py-20">
-            <p
-              className="text-xs font-bold tracking-[0.18em] uppercase mb-10 text-center"
-              style={{ color: "var(--nav-accent)" }}
-            >
-              What We Stand For
-            </p>
+        {/* ══════════════ WHAT WE STAND FOR (dark section) ══════════════ */}
+        <section style={{ background: "#141614", padding: "96px 0" }}>
+          <div className="max-w-6xl mx-auto px-6">
+            <div style={{ textAlign: "center", marginBottom: "64px" }}>
+              <p
+                style={{
+                  fontSize: "0.65rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  color: "var(--about-teal)",
+                  marginBottom: "1rem",
+                }}
+              >
+                Our Values
+              </p>
+              <h2
+                style={{
+                  fontFamily: "var(--nav-font)",
+                  fontSize: "clamp(2rem, 5vw, 3rem)",
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  lineHeight: 1.15,
+                }}
+              >
+                What We Stand For
+              </h2>
+            </div>
 
             <div
               ref={pillarsRef}
-              className="stagger-children grid grid-cols-2 md:grid-cols-4 gap-5"
+              className="stagger grid grid-cols-1 md:grid-cols-2 gap-4"
             >
               {PILLARS.map((p) => {
                 const Icon = p.icon;
                 return (
                   <div
                     key={p.title}
-                    className="pillar-card flex flex-col gap-4 p-6"
+                    className="pillar-card flex items-start gap-5 p-8"
                     style={{
-                      background: "#fff",
-                      border: "1px solid var(--nav-border)",
+                      background: "#1d201d",
+                      border: "rgba(42, 122, 114, 0.22)",
                     }}
                   >
                     <div
-                      className="w-10 h-10 flex items-center justify-center"
+                      className="pillar-icon flex items-center justify-center shrink-0"
                       style={{
-                        background: "rgba(200,169,126,0.1)",
-                        border: "1px solid var(--nav-border)",
+                        width: 52,
+                        height: 52,
+                        background: "rgba(42,122,114,0.12)",
+                        border: "1px solid rgba(42,122,114,0.25)",
                       }}
                     >
                       <Icon
-                        size={17}
-                        style={{ color: "var(--nav-accent)" }}
+                        size={20}
+                        style={{ color: "var(--about-teal-light, #3d9c93)" }}
                         strokeWidth={1.75}
                       />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <h3
-                        className="text-xs font-bold uppercase tracking-[0.12em] mb-2"
-                        style={{ color: "var(--nav-fg)" }}
+                        style={{
+                          fontFamily: "var(--nav-font)",
+                          fontSize: "1.1rem",
+                          fontWeight: 700,
+                          color: "#3d9c93",
+                          marginBottom: "0.6rem",
+                        }}
                       >
                         {p.title}
                       </h3>
                       <p
-                        className="text-xs leading-relaxed"
-                        style={{ color: "var(--nav-fg-muted)" }}
+                        style={{
+                          fontSize: "0.875rem",
+                          lineHeight: 1.75,
+                          color: "#7a7a6e",
+                        }}
                       >
                         {p.body}
                       </p>
@@ -447,53 +677,62 @@ export default function AboutUsPage() {
           </div>
         </section>
 
-        {/* ── CLOSING STATEMENT ── */}
+        {/* ══════════════ OUR PROMISE (closing) ══════════════ */}
         <section
           ref={closingRef}
-          className="fade-up max-w-4xl mx-auto px-6 py-24 md:py-32 text-center"
+          className="fade-up"
+          style={{
+            background: "var(--about-hero-bg)",
+            padding: "96px 24px",
+            textAlign: "center",
+          }}
         >
           <p
-            className="text-xs font-bold tracking-[0.18em] uppercase mb-8"
-            style={{ color: "var(--nav-accent)" }}
+            style={{
+              fontSize: "0.65rem",
+              fontWeight: 700,
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              color: "var(--about-teal)",
+              marginBottom: "2rem",
+            }}
           >
             Our Promise
           </p>
-          <blockquote
-            className="text-4xl md:text-6xl font-bold uppercase leading-[1.05] tracking-wide mb-10"
-            style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
+          <h2
+            className="var(--nav-fg)"
+            style={{
+              fontFamily: "var(--nav-font)",
+              fontSize: "64px",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              lineHeight: 1.05,
+              letterSpacing: "0.02em",
+              maxWidth: "900px",
+              margin: "0 auto 2.5rem",
+            }}
           >
             Wear the Comfort.
             <br />
-            <span style={{ color: "var(--nav-accent)" }}>Wear Bambumm.</span>
-          </blockquote>
+            <span className="var(--about-teal)">Wear Bambumm.</span>
+          </h2>
 
-          <div className="flex items-center justify-center gap-4 mb-10">
+          <div className="flex var(--nav-border) items-center justify-center gap-4 mb-10">
+            <div style={{ height: 1, width: 64 }} />
+            <Leaf size={16} className="var(--about-teal)" />
             <div
-              className="h-px w-12"
-              style={{ background: "var(--nav-border)" }}
-            />
-            <Leaf size={14} style={{ color: "var(--nav-accent)" }} />
-            <div
-              className="h-px w-12"
-              style={{ background: "var(--nav-border)" }}
+              className="var(--nav-border)"
+              style={{ height: 1, width: 64 }}
             />
           </div>
 
-          <a
-            href="/"
-            className="inline-flex items-center gap-2 px-8 py-4 text-xs font-bold tracking-[0.14em] uppercase transition-colors duration-200"
-            style={{ background: "var(--nav-accent)", color: "#fff" }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.background = "var(--nav-accent-hover)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.background = "var(--nav-accent)")
-            }
-          >
+          <a href="/products" className="about-cta-btn">
             Shop the Collection
+            <span style={{ fontSize: "1rem" }}>→</span>
           </a>
         </section>
-        <FAQ />
+
+        {/* <FAQ /> */}
       </main>
     </>
   );
