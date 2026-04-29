@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import ProductCard from "@/components/productCard";
+import Image from "next/image";
 
 interface ProductVariant {
   colorName: string;
@@ -20,61 +19,17 @@ interface Product {
   variants: ProductVariant[];
 }
 
-const CARDS_PER_VIEW = { mobile: 2, tablet: 3, desktop: 4 };
-const SS_PAGE = "ps_page";
 const SS_SCROLL = "ps_scroll";
 
 export default function ProductsSection() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [visibleCount, setVisibleCount] = useState(CARDS_PER_VIEW.desktop);
+  const [activeVariants, setActiveVariants] = useState<Record<string, number>>(
+    {},
+  );
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Track whether we are in a "restore" flow so we can scroll after render
-  const pendingScrollRef = useRef<number | null>(null);
-  // Tracks if the grid has been rendered with products so we know when to scroll
-  const gridRef = useRef<HTMLDivElement>(null);
-
-  // ── Responsive visible count ──────────────────────────────────────────────
-  useEffect(() => {
-    const update = () => {
-      const w = window.innerWidth;
-      setVisibleCount(
-        w < 640
-          ? CARDS_PER_VIEW.mobile
-          : w < 1024
-            ? CARDS_PER_VIEW.tablet
-            : CARDS_PER_VIEW.desktop,
-      );
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  // ── Read saved state immediately (before fetch) ───────────────────────────
-  // We read the page synchronously on first render so the correct page slice
-  // is requested from the very first render — no flicker.
-  const [initialised, setInitialised] = useState(false);
-  useEffect(() => {
-    if (initialised) return;
-    setInitialised(true);
-
-    const savedPage = sessionStorage.getItem(SS_PAGE);
-    const savedScroll = sessionStorage.getItem(SS_SCROLL);
-
-    if (savedPage !== null) {
-      setPage(Number(savedPage));
-      sessionStorage.removeItem(SS_PAGE);
-    }
-    if (savedScroll !== null) {
-      pendingScrollRef.current = Number(savedScroll);
-      sessionStorage.removeItem(SS_SCROLL);
-    }
-  }, [initialised]);
-
-  // ── Fetch products ────────────────────────────────────────────────────────
   useEffect(() => {
     fetch("/api/products")
       .then((r) => r.json())
@@ -83,262 +38,242 @@ export default function ProductsSection() {
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Scroll restoration — fires after products are rendered ────────────────
-  // We watch `loading` → when it becomes false and there is a pending scroll
-  // target, we wait for the grid to actually paint (3 rAF frames = safe) then
-  // smooth-scroll to the saved position.
-  useEffect(() => {
-    if (loading) return;
-    if (pendingScrollRef.current === null) return;
-
-    const target = pendingScrollRef.current;
-    pendingScrollRef.current = null;
-
-    // Use a small timeout as belt-and-suspenders after rAF to ensure images
-    // have started laying out (they are lazy-loaded so they take up space
-    // immediately via the fixed aspect ratio, so this is reliable).
-    let frame1: number, frame2: number, frame3: number;
-    frame1 = requestAnimationFrame(() => {
-      frame2 = requestAnimationFrame(() => {
-        frame3 = requestAnimationFrame(() => {
-          window.scrollTo({ top: target, behavior: "smooth" });
-        });
-      });
-    });
-
-    return () => {
-      cancelAnimationFrame(frame1);
-      cancelAnimationFrame(frame2);
-      cancelAnimationFrame(frame3);
-    };
-  }, [loading]);
-
-  // ── Navigate to product — save state first ────────────────────────────────
   const saveStateAndNavigate = useCallback(
     (slug: string) => {
-      sessionStorage.setItem(SS_PAGE, String(page));
       sessionStorage.setItem(SS_SCROLL, String(window.scrollY));
       router.push(`/products/${slug}`);
     },
-    [page, router],
+    [router],
   );
 
-  // ── Pagination ────────────────────────────────────────────────────────────
-  const totalPages = Math.ceil(products.length / visibleCount);
-  const canPrev = page > 0;
-  const canNext = page < totalPages - 1;
-  const prev = useCallback(() => setPage((p) => Math.max(0, p - 1)), []);
-  const next = useCallback(
-    () => setPage((p) => Math.min(totalPages - 1, p + 1)),
-    [totalPages],
-  );
-
-  // ── Touch swipe ───────────────────────────────────────────────────────────
-  const touchStartX = useRef<number | null>(null);
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
-    const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (diff > 50 && canNext) next();
-    if (diff < -50 && canPrev) prev();
-    touchStartX.current = null;
+  const setVariant = (productId: string, idx: number) => {
+    setActiveVariants((prev) => ({ ...prev, [productId]: idx }));
   };
 
-  const visibleProducts = products.slice(
-    page * visibleCount,
-    page * visibleCount + visibleCount,
-  );
+  const getActiveVariant = (product: Product) => {
+    const idx = activeVariants[product._id] ?? 0;
+    return product.variants[idx] ?? product.variants[0];
+  };
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <section
-      className="w-full"
-      style={{ background: "var(--nav-bg)", fontFamily: "var(--nav-font-ui)" }}
-    >
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-16 md:py-20">
-        {/* Header */}
-        <div className="flex flex-col items-center text-center mb-12">
-          <p
-            className="text-[0.65rem] font-bold tracking-[0.2em] uppercase mb-3"
-            style={{ color: "var(--nav-accent)" }}
+    <>
+      <style>{`
+        .bestsellers-scroll::-webkit-scrollbar {
+          display: none;
+        }
+        .bestsellers-scroll {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+
+        .product-card-bs {
+          transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+                      box-shadow 0.22s ease;
+        }
+        .product-card-bs:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 16px 48px rgba(200, 169, 126, 0.18);
+        }
+
+        .swatch-bs {
+          transition: outline 0.15s ease, transform 0.15s ease;
+        }
+        .swatch-bs:hover {
+          transform: scale(1.15);
+        }
+        .swatch-bs.active-swatch {
+          outline: 2px solid var(--nav-accent);
+          outline-offset: 2px;
+        }
+
+        .img-zoom-bs {
+          transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .product-card-bs:hover .img-zoom-bs {
+          transform: scale(1.05);
+        }
+
+        @keyframes bsSkeletonPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        .bs-skeleton {
+          animation: bsSkeletonPulse 1.4s ease-in-out infinite;
+        }
+      `}</style>
+
+      <section
+        className="w-full py-5 md:py-5"
+        style={{
+          background: "var(--nav-bg)",
+          fontFamily: "var(--nav-font-ui)",
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          {/* Header */}
+          <div className="flex items-end justify-between mb-6 md:mb-8">
+            <h2
+              className="text-3xl md:text-5xl font-bold uppercase tracking-tight"
+              style={{
+                fontFamily: "var(--nav-font)",
+                color: "black",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              Bestsellers
+            </h2>
+            <a
+              href="/products"
+              className="text-xs font-bold tracking-[0.14em] uppercase pb-0.5 transition-colors duration-200"
+              style={{
+                color: "var(--nav-fg-muted)",
+                borderBottom: "1px solid var(--nav-border)",
+                textDecoration: "none",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--nav-accent)";
+                e.currentTarget.style.borderBottomColor = "var(--nav-accent)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--nav-fg-muted)";
+                e.currentTarget.style.borderBottomColor = "var(--nav-border)";
+              }}
+            >
+              View All
+            </a>
+          </div>
+
+          {/* Scrollable Cards */}
+          <div
+            ref={scrollRef}
+            className="bestsellers-scroll flex gap-4 md:gap-5 overflow-x-auto pb-2"
           >
-            Our Collection
-          </p>
-          <h2
-            className="text-3xl md:text-4xl font-bold uppercase tracking-widest mb-4"
-            style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
-          >
-            Shop Now
-          </h2>
-          <div className="flex items-center gap-3">
-            <div
-              className="h-px w-10"
-              style={{ background: "var(--nav-border)" }}
-            />
-            <div
-              className="w-1 h-1 rounded-full"
-              style={{ background: "var(--nav-accent)" }}
-            />
-            <div
-              className="h-px w-10"
-              style={{ background: "var(--nav-border)" }}
-            />
+            {loading
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bs-skeleton shrink-0 rounded-none"
+                    style={{
+                      width: 220,
+                      minWidth: 220,
+                      background: "var(--nav-border)",
+                      height: 340,
+                    }}
+                  />
+                ))
+              : products.map((product) => {
+                  const variant = getActiveVariant(product);
+                  const firstImage = variant?.images?.[0];
+                  if (!variant || !firstImage) return null;
+
+                  return (
+                    <div
+                      key={product._id}
+                      className="product-card-bs shrink-0 cursor-pointer"
+                      style={{
+                        width: 220,
+                        minWidth: 220,
+                        background: "#fff",
+                        border: "1px solid var(--nav-border)",
+                      }}
+                      onClick={() => saveStateAndNavigate(product.slug)}
+                    >
+                      {/* Image */}
+                      <div
+                        className="relative overflow-hidden"
+                        style={{
+                          aspectRatio: "3/4",
+                          background: "var(--nav-bg)",
+                        }}
+                      >
+                        <Image
+                          src={firstImage}
+                          alt={`${product.name} – ${variant.colorName}`}
+                          fill
+                          sizes="220px"
+                          className="img-zoom-bs object-cover object-center"
+                        />
+                      </div>
+
+                      {/* Info */}
+                      <div className="p-3.5">
+                        <p
+                          className="text-sm font-bold uppercase leading-tight mb-1 truncate"
+                          style={{
+                            fontFamily: "var(--nav-font)",
+                            color: "black",
+                            letterSpacing: "0.02em",
+                          }}
+                        >
+                          {product.name}
+                        </p>
+                        <p
+                          className="text-sm font-bold mb-2.5"
+                          style={{ color: "black" }}
+                        >
+                          ₹{product.price.toLocaleString("en-IN")}
+                        </p>
+
+                        {/* Rating Row */}
+                        <div
+                          className="flex items-center justify-between mb-3"
+                          style={{
+                            borderTop: "1px solid var(--nav-border)",
+                            paddingTop: "10px",
+                          }}
+                        >
+                          <span
+                            className="text-[11px] tracking-wide"
+                            style={{ color: "var(--nav-fg-muted)" }}
+                          >
+                            Rating
+                          </span>
+                          <span
+                            className="text-[11px] font-bold"
+                            style={{ color: "var(--nav-fg)" }}
+                          >
+                            4.9
+                          </span>
+                        </div>
+
+                        {/* Color Swatches */}
+                        <div
+                          className="flex items-center gap-2 flex-wrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {product.variants.map((v, idx) => (
+                            <button
+                              key={`${v.colorName}-${idx}`}
+                              title={v.colorName}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setVariant(product._id, idx);
+                              }}
+                              aria-label={v.colorName}
+                              className={`swatch-bs shrink-0 ${
+                                (activeVariants[product._id] ?? 0) === idx
+                                  ? "active-swatch"
+                                  : ""
+                              }`}
+                              style={{
+                                width: 18,
+                                height: 18,
+                                borderRadius: "50%",
+                                background: v.colorHex,
+                                border: "2px solid var(--nav-border)",
+                                cursor: "pointer",
+                                padding: 0,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
           </div>
         </div>
-
-        {/* Loading skeleton */}
-        {loading && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {Array.from({ length: visibleCount }).map((_, i) => (
-              <div
-                key={i}
-                className="animate-pulse"
-                style={{
-                  border: "1px solid var(--nav-border)",
-                  background: "#fff",
-                }}
-              >
-                <div
-                  className="aspect-3/4"
-                  style={{ background: "var(--nav-border)" }}
-                />
-                <div className="p-4 flex flex-col gap-2">
-                  <div
-                    className="h-3 rounded w-3/4"
-                    style={{ background: "var(--nav-border)" }}
-                  />
-                  <div
-                    className="h-3 rounded w-1/2"
-                    style={{ background: "var(--nav-border)" }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!loading && products.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <p className="text-sm" style={{ color: "var(--nav-fg-muted)" }}>
-              No products available right now.
-            </p>
-          </div>
-        )}
-
-        {/* Product grid */}
-        {!loading && products.length > 0 && (
-          <div>
-            <div
-              ref={gridRef}
-              onTouchStart={onTouchStart}
-              onTouchEnd={onTouchEnd}
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
-            >
-              {visibleProducts.map((product) => (
-                <ProductCard
-                  key={product._id}
-                  product={product as any}
-                  onNavigate={saveStateAndNavigate}
-                />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-4 mt-10">
-                <button
-                  onClick={prev}
-                  disabled={!canPrev}
-                  aria-label="Previous products"
-                  className="flex items-center justify-center w-10 h-10 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
-                  style={{
-                    border: "1px solid var(--nav-border)",
-                    background: "#fff",
-                    color: "var(--nav-fg)",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (canPrev) {
-                      e.currentTarget.style.background = "var(--nav-accent)";
-                      e.currentTarget.style.borderColor = "var(--nav-accent)";
-                      e.currentTarget.style.color = "#fff";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#fff";
-                    e.currentTarget.style.borderColor = "var(--nav-border)";
-                    e.currentTarget.style.color = "var(--nav-fg)";
-                  }}
-                >
-                  <ChevronLeft size={18} />
-                </button>
-
-                <div className="flex items-center gap-2">
-                  {Array.from({ length: totalPages }).map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setPage(i)}
-                      aria-label={`Go to page ${i + 1}`}
-                      className="transition-all duration-200"
-                      style={{
-                        width: i === page ? 24 : 8,
-                        height: 8,
-                        borderRadius: 999,
-                        background:
-                          i === page
-                            ? "var(--nav-accent)"
-                            : "var(--nav-border)",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: 0,
-                      }}
-                    />
-                  ))}
-                </div>
-
-                <button
-                  onClick={next}
-                  disabled={!canNext}
-                  aria-label="Next products"
-                  className="flex items-center justify-center w-10 h-10 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
-                  style={{
-                    border: "1px solid var(--nav-border)",
-                    background: "#fff",
-                    color: "var(--nav-fg)",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (canNext) {
-                      e.currentTarget.style.background = "var(--nav-accent)";
-                      e.currentTarget.style.borderColor = "var(--nav-accent)";
-                      e.currentTarget.style.color = "#fff";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#fff";
-                    e.currentTarget.style.borderColor = "var(--nav-border)";
-                    e.currentTarget.style.color = "var(--nav-fg)";
-                  }}
-                >
-                  <ChevronRight size={18} />
-                </button>
-              </div>
-            )}
-
-            {totalPages > 1 && (
-              <p
-                className="text-center text-[0.65rem] tracking-widest uppercase mt-4"
-                style={{ color: "var(--nav-fg-muted)" }}
-              >
-                {page * visibleCount + 1}–
-                {Math.min((page + 1) * visibleCount, products.length)} of{" "}
-                {products.length}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

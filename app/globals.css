@@ -1,6 +1,7 @@
 @import "tailwindcss";
 .nav-root {
-  background: var(--nav-bg);
+  background-color: var(--nav-bg-color);
+  color: var(--adm-bg-white);
   border-bottom: 1px solid var(--nav-border);
   height: var(--nav-height);
   position: sticky;
@@ -10,13 +11,23 @@
 }
 
 :root {
-  /* ── Core palette ── */
-  --nav-bg: #f5f2ec;
-  --nav-fg: #1a1a18;
-  --nav-fg-muted: #6b6b60;
-  --nav-accent: #2a7a72;
-  --nav-accent-hover: #1d5e58;
-  --nav-accent-light: rgba(42, 122, 114, 0.12);
+  --mega-bg: #ffffff;
+  --mega-col-title-fg: #0a0a0a;
+  --mega-link-hover-fg: var(--nav-accent-hover);
+  --mega-divider: #e0e0e0;
+  --promo-dark-bg: #1c1a14;
+  --promo-dark-fg: #f0ebe0;
+  --promo-dark-muted: rgba(240, 235, 224, 0.6);
+  --promo-warm-bg: #3b2112;
+  --promo-warm-fg: #f0ebe0;
+  --promo-warm-muted: rgba(240, 235, 224, 0.6);
+  --bg-color: #19635e;
+  --nav-bg: #ffffff;
+  --nav-bg-color: #090909;
+  --nav-fg: #ffffff;
+  --nav-fg-muted: #19635e;
+  --nav-accent: #19635e;
+  --nav-accent-hover: #19635e;
   --nav-sale: #d94f3d;
   --nav-border: #dcd8ce;
   --nav-dropdown-bg: #faf8f4;
@@ -25,38 +36,34 @@
   --nav-font: "Georgia", serif;
   --nav-font-ui: system-ui, sans-serif;
   --nav-overlay: rgba(0, 0, 0, 0.35);
+  --ft-bg: #000000;
+  --ft-bg-band: #191510;
+  --ft-fg: #29b1a8;
+  --ft-fg-muted: #777777;
+  --ft-fg-link: #14b8a6;
+  --ft-fg-faint: #3a352c;
+  --ft-accent: #19635e;
+  --ft-accent-hover: #19635e;
+  --ft-border: rgba(200, 169, 126, 0.12);
+  --ft-border-strong: rgba(200, 169, 126, 0.25);
+  --adm-bg: #f7f3ee; /* page background            */
+  --adm-bg-white: #ffffff; /* card / sidebar background  */
+  --adm-bg-soft: #fdfaf7; /* section header tint        */
+  --adm-bg-input: #f7f3ee; /* input field background     */
+  --adm-bg-hover: rgba(184, 148, 94, 0.06); /* row hover          */
+  --adm-bg-active: rgba(184, 148, 94, 0.1); /* selected nav item  */
+  --adm-bg-accent-lt: rgba(184, 148, 94, 0.12); /* light accent fill  */
+  --adm-bg-accent-md: rgba(184, 148, 94, 0.15); /* badge background   */
+  --adm-bg-danger-lt: rgba(192, 57, 43, 0.08); /* danger hover fill  */
 
-  /* ── Footer ── */
-  --ft-bg: #111210;
-  --ft-bg-band: #191a18;
-  --ft-fg: #e8e4da;
-  --ft-fg-muted: #7a7a6e;
-  --ft-fg-faint: #3a3a30;
-  --ft-accent: var(--nav-accent);
-  --ft-accent-hover: var(--nav-accent-hover);
-  --ft-border: rgba(42, 122, 114, 0.14);
-  --ft-border-strong: rgba(42, 122, 114, 0.28);
+  --adm-accent: #19635e; /* primary gold accent        */
+  --adm-accent-hover: #19635e; /* gold darker on hover       */
+  --adm-accent-border: rgba(184, 148, 94, 0.25); /* accent border      */
+  --adm-accent-border-md: rgba(184, 148, 94, 0.35); /* medium accent border */
 
-  /* ── About page specific ── */
-  --about-hero-bg: #f5f2ec;
-  --about-dark-bg: #141614;
-  --about-dark-fg: #e8e4da;
-  --about-dark-muted: #7a7a6e;
-  --about-card-bg: #1d201d;
-  --about-card-border: rgba(42, 122, 114, 0.22);
-  --about-teal: #2a7a72;
-  --about-teal-light: #3d9c93;
-
-  /* ── Admin ── */
-  --adm-bg: #f7f4ee;
-  --adm-bg-white: #ffffff;
-  --adm-bg-soft: #fdfaf6;
-  --adm-bg-input: #f7f4ee;
-  --adm-bg-hover: rgba(42, 122, 114, 0.06);
-  --adm-bg-active: rgba(42, 122, 114, 0.1);
-  --adm-bg-accent-lt: rgba(42, 122, 114, 0.12);
-  --adm-bg-accent-md: rgba(42, 122, 114, 0.15);
-  --adm-bg-danger-lt: rgba(192, 57, 43, 0.08);
+  --adm-fg: #14b8a6; /* primary text               */
+  --adm-fg-muted: #19635e; /* secondary / label text     */
+  --adm-fg-faint: #19635e; /* placeholder / hint text    */
 
   --adm-accent: #2a7a72;
   --adm-accent-hover: #1d5e58;
@@ -96,7 +103,7 @@
   font-weight: 500;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--nav-fg);
+  color: var(--adm-bg-white);
   padding: 0 2px;
   transition: color 0.15s;
   white-space: nowrap;
@@ -112,7 +119,7 @@
   left: 0;
   right: 0;
   height: 1.5px;
-  background: var(--nav-accent);
+  background: var(--ft-fg);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.22s ease;
@@ -185,7 +192,7 @@
 .simple-dropdown-link {
   display: block;
   font-size: 0.875rem;
-  color: var(--nav-fg-muted);
+  color: var(--ft-fg);
   padding: 8px 20px;
   transition:
     background 0.12s,
@@ -193,8 +200,8 @@
   cursor: pointer;
 }
 .simple-dropdown-link:hover {
-  background: rgba(42, 122, 114, 0.08);
-  color: var(--nav-accent-hover);
+  background: rgba(200, 169, 126, 0.1);
+  color: var(--ft-fg);
 }
 
 /* ─ Featured cards ─ */

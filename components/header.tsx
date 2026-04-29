@@ -21,7 +21,6 @@ import { useCart } from "@/context/cartContext";
 import Image from "next/image";
 import UserMenu from "@/components/userMenu";
 
-// ── Types
 interface ProductVariant {
   colorName: string;
   colorHex: string;
@@ -36,51 +35,51 @@ interface SearchProduct {
   variants: ProductVariant[];
 }
 
-// ── Nav config
 const NAV_ITEMS = [
   {
     label: "Men",
     categories: [
-      { title: "Trunks", links: ["SAMPLE", "SAMPLE", "SAMPLE", "SAMPLE"] },
-      { title: "Briefs", links: ["SAMPLE", "SAMPLE", "SAMPLE", "SAMPLE"] },
+      { title: "Trunks", links: ["BAMBUMM CORE", "BAMBUMM VERT-S"] },
+      {
+        title: "Briefs",
+        links: ["BAMBUMM CORE", "BAMBUMM VERT-S"],
+      },
       {
         title: "Vest",
-        links: ["SAMPLE", "SAMPLE", "SAMPLE", "SAMPLE", "SAMPLE", "SAMPLE"],
+        links: ["BAMBUMM CORE", "BAMBUMM VERT-S"],
       },
-    ],
-    featured: [
-      { caption: "Explore the collection" },
-      { caption: "Discover new arrivals" },
+      { title: "Deals", links: [] },
     ],
   },
   {
     label: "Women",
     categories: [
-      { title: "Hipster", links: ["SAMPLE", "SAMPLE"] },
+      {
+        title: "Hipster",
+        links: ["BAMBUMM CORE", "BAMBUMM VERT-S", "SPORT DIVA"],
+      },
       {
         title: "Boy Short Panty",
-        links: ["SAMPLE", "SAMPLE", "SAMPLE", "SAMPLE", "SAMPLE", "SAMPLE"],
+        links: ["BAMBUMM CORE", "BAMBUMM VERT-S", "SPORT DIVA", "LUNARA"],
       },
-      { title: "Lounge Bra", links: ["SAMPLE"] },
+      { title: "Lounge Bra", links: ["SEOUL SWAY BRA"] },
+      { title: "Deals", links: [] },
     ],
-    featured: [],
   },
   {
     label: "Accessories",
     categories: [
-      { title: "Balaclava", links: ["SAMPLE", "SAMPLE", "SAMPLE"] },
-      { title: "Multi Purpose Band", links: ["SAMPLE", "SAMPLE", "SAMPLE"] },
-      { title: "Snood Cap", links: ["SAMPLE", "SAMPLE", "SAMPLE"] },
-      { title: "Utility Pouch", links: ["SAMPLE", "SAMPLE", "SAMPLE"] },
+      { title: "Balaclava", links: ["ZORO"] },
+      { title: "Multi Purpose Band", links: ["BANDX (suggestion)"] },
+      { title: "Snood Cap", links: ["BAMBUMM CozyWrap"] },
+      { title: "Deals", links: [] },
     ],
-    featured: [],
   },
 ];
 
 const DEBOUNCE_MS = 280;
 const MAX_RESULTS = 6;
 
-// ── Main component
 export default function Navbar() {
   const { totalItems, openCart } = useCart();
   const router = useRouter();
@@ -90,7 +89,6 @@ export default function Navbar() {
   const [activePanel, setActivePanel] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // search state
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [searchResults, setSearchResults] = useState<SearchProduct[]>([]);
@@ -98,13 +96,11 @@ export default function Navbar() {
   const [cursor, setCursor] = useState(-1);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
-  // refs
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchWrapRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── nav hover
   const enter = (label: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setActiveNav(label);
@@ -119,7 +115,6 @@ export default function Navbar() {
     [],
   );
 
-  // ── drawer body lock
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? "hidden" : "";
     return () => {
@@ -127,7 +122,6 @@ export default function Navbar() {
     };
   }, [drawerOpen]);
 
-  // ── fetch suggestions
   const fetchSuggestions = useCallback(async (q: string) => {
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
@@ -149,7 +143,6 @@ export default function Navbar() {
     }
   }, []);
 
-  // ── debounce search
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     const trimmed = searchValue.trim();
@@ -168,21 +161,18 @@ export default function Navbar() {
     };
   }, [searchValue, fetchSuggestions]);
 
-  // ── close suggestions on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (
         searchWrapRef.current &&
         !searchWrapRef.current.contains(e.target as Node)
-      ) {
+      )
         setSuggestionsOpen(false);
-      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // ── keyboard nav in suggestions
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
       setSuggestionsOpen(false);
@@ -237,27 +227,88 @@ export default function Navbar() {
     setDrawerOpen(false);
     setActivePanel(null);
   };
-
   const showSuggestions = suggestionsOpen && searchValue.trim().length > 0;
 
   return (
     <>
       <style>{`
-        /* Cart badge pop animation */
+        :root {
+          --mega-bg: #ffffff;
+          --mega-col-title-fg: #0a0a0a;
+          --mega-link-fg: var(--nav-accent);
+          --mega-link-hover-fg: var(--nav-accent-hover);
+          --mega-divider: #e0e0e0;
+        }
+
         @keyframes badgePop {
-          0%   { transform: translate(30%, -30%) scale(1); }
-          40%  { transform: translate(30%, -30%) scale(1.4); }
-          70%  { transform: translate(30%, -30%) scale(0.9); }
-          100% { transform: translate(30%, -30%) scale(1); }
+          0%   { transform: translate(30%,-30%) scale(1); }
+          40%  { transform: translate(30%,-30%) scale(1.4); }
+          70%  { transform: translate(30%,-30%) scale(0.9); }
+          100% { transform: translate(30%,-30%) scale(1); }
         }
         .cart-badge-pop { animation: badgePop 0.35s cubic-bezier(0.22,1,0.36,1); }
 
-        /* ── Header search suggestion panel ── */
+        /* ── Mega menu ── */
+        .mega-menu {
+          position: absolute;
+          top: calc(var(--nav-height) + 1px);
+          left: 0;
+          right: 0;
+          background: var(--mega-bg);
+          border-bottom: 1px solid var(--mega-divider);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+          animation: menuIn 0.18s ease;
+          z-index: 40;
+        }
+        @keyframes menuIn {
+          from { opacity: 0; transform: translateY(-4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Category title */
+        .mega-col-title {
+          font-size: 0.9rem;
+          font-weight: 700;
+          letter-spacing: 0.01em;
+          text-transform: capitalize;
+          color: var(--mega-col-title-fg);
+          margin: 0 0 14px;
+          font-family: var(--nav-font-ui);
+        }
+
+        /* Category links */
+        .mega-link {
+          display: block;
+          font-size: 0.72rem;
+          font-weight: 600;
+          letter-spacing: 0.09em;
+          text-transform: uppercase;
+          color: var(--mega-link-fg);
+          padding: 3px 0;
+          transition: color 0.15s;
+          cursor: pointer;
+          text-decoration: none;
+        }
+        .mega-link:hover {
+          color: var(--mega-link-hover-fg);
+          text-decoration: underline;
+          text-underline-offset: 3px;
+        }
+
+        /* Vertical divider */
+        .mega-col-divider {
+          width: 1px;
+          background: var(--mega-divider);
+          align-self: stretch;
+          flex-shrink: 0;
+          margin: 0 36px;
+        }
+
+        /* ── Search suggestion panel ── */
         .hdr-suggest-panel {
           position: absolute;
           top: calc(100% + 4px);
-          left: 0;
-          right: 0;
+          left: 0; right: 0;
           background: #fff;
           border: 1px solid var(--nav-border);
           box-shadow: 0 12px 40px rgba(0,0,0,0.12);
@@ -270,147 +321,93 @@ export default function Navbar() {
           from { opacity: 0; transform: translateY(-6px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-
         .hdr-suggest-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 9px 14px;
-          cursor: pointer;
-          text-decoration: none;
-          color: inherit;
+          display: flex; align-items: center; gap: 12px;
+          padding: 9px 14px; cursor: pointer;
           transition: background 0.12s ease;
           border-bottom: 1px solid var(--nav-border);
         }
         .hdr-suggest-item:last-child { border-bottom: none; }
-        .hdr-suggest-item:hover,
-        .hdr-suggest-item.active { background: rgba(200,169,126,0.08); }
-
+        .hdr-suggest-item:hover, .hdr-suggest-item.active { background: rgba(200,169,126,0.08); }
         .hdr-suggest-thumb {
-          width: 40px;
-          height: 52px;
-          flex-shrink: 0;
-          overflow: hidden;
-          border: 1px solid var(--nav-border);
-          position: relative;
-          background: var(--nav-bg);
+          width: 40px; height: 52px; flex-shrink: 0;
+          overflow: hidden; border: 1px solid var(--nav-border);
+          position: relative; background: var(--nav-bg);
         }
-
         .hdr-suggest-name {
-          font-family: var(--nav-font);
-          font-size: 0.8125rem;
-          font-weight: 700;
-          color: var(--nav-fg);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
+          font-family: var(--nav-font); font-size: 0.8125rem; font-weight: 700;
+          color: var(--nav-fg); white-space: nowrap; overflow: hidden;
+          text-overflow: ellipsis; text-transform: uppercase; letter-spacing: 0.04em;
         }
         .hdr-suggest-cat {
-          font-size: 0.68rem;
-          color: var(--nav-fg-muted);
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-          margin-top: 2px;
+          font-size: 0.68rem; color: var(--nav-fg-muted);
+          letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px;
         }
         .hdr-suggest-price {
-          font-family: var(--nav-font);
-          font-size: 0.8125rem;
-          font-weight: 700;
-          color: var(--nav-accent);
-          flex-shrink: 0;
-          margin-left: auto;
+          font-family: var(--nav-font); font-size: 0.8125rem; font-weight: 700;
+          color: var(--nav-accent); flex-shrink: 0; margin-left: auto;
         }
-
         .hdr-suggest-footer {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 8px 14px;
-          border-top: 1px solid var(--nav-border);
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 8px 14px; border-top: 1px solid var(--nav-border);
           background: rgba(200,169,126,0.04);
         }
-        .hdr-suggest-hint {
-          font-size: 0.62rem;
-          color: var(--nav-fg-muted);
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-        }
+        .hdr-suggest-hint { font-size: 0.62rem; color: var(--nav-fg-muted); letter-spacing: 0.1em; text-transform: uppercase; }
         .hdr-suggest-viewall {
-          font-size: 0.68rem;
-          font-weight: 700;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          color: var(--nav-accent);
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          background: none;
-          border: none;
-          cursor: pointer;
-          transition: color 0.15s;
-          padding: 0;
+          font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em;
+          text-transform: uppercase; color: var(--nav-accent);
+          display: flex; align-items: center; gap: 4px;
+          background: none; border: none; cursor: pointer;
+          transition: color 0.15s; padding: 0;
         }
         .hdr-suggest-viewall:hover { color: var(--nav-accent-hover); }
-
-        .hdr-suggest-empty {
-          padding: 22px 14px;
-          text-align: center;
-          font-size: 0.8rem;
-          color: var(--nav-fg-muted);
-          font-family: var(--nav-font-ui);
-        }
-
+        .hdr-suggest-empty { padding: 22px 14px; text-align: center; font-size: 0.8rem; color: var(--nav-fg-muted); }
         @keyframes hdrSpin { to { transform: rotate(360deg); } }
-        .hdr-suggest-spinner {
-          color: var(--nav-accent);
-          animation: hdrSpin 0.8s linear infinite;
-          flex-shrink: 0;
-        }
+        .hdr-suggest-spinner { color: var(--nav-accent); animation: hdrSpin 0.8s linear infinite; flex-shrink: 0; }
       `}</style>
 
       <header className="nav-root">
         <div
-          className="max-w-7xl mx-auto h-full flex items-center gap-8 px-6"
+          className="max-w-7xl mx-auto h-full flex items-center px-6"
           onMouseLeave={leave}
         >
-          <Link href="/">
-            <img className="w-20" src="/logo.png" alt="" />
+          {/* Logo — left */}
+          <Link
+            href="/"
+            className="bg-white rounded-2xl"
+            style={{ flexShrink: 0 }}
+          >
+            <img className="w-15" src="/logo.png" alt="" />
           </Link>
 
-          {/* ── Desktop nav ── */}
-          <nav className="desktop-only justify-center items-center gap-6 flex-1">
+          {/* ── Desktop nav — absolutely centred ── */}
+          <nav
+            className="desktop-only items-center gap-6"
+            style={{
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+            }}
+          >
             {NAV_ITEMS.map((item) => (
-              <div key={item.label} style={{ position: "relative" }}>
-                <button
-                  className={`nav-link${activeNav === item.label ? " active" : ""}`}
-                  onMouseEnter={() => enter(item.label)}
-                  aria-haspopup={item.categories.length > 0}
-                  aria-expanded={activeNav === item.label}
-                >
-                  {item.label}
-                </button>
-
-                {activeNav === item.label && (
-                  <div
-                    className="simple-dropdown"
-                    onMouseEnter={() => enter(item.label)}
-                  >
-                    {item.categories[0]?.links.map((link, i) => (
-                      <a key={i} className="simple-dropdown-link">
-                        {link}
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <button
+                key={item.label}
+                className={`nav-link${activeNav === item.label ? " active" : ""}`}
+                onMouseEnter={() => enter(item.label)}
+                aria-haspopup={item.categories.length > 0}
+                aria-expanded={activeNav === item.label}
+              >
+                {item.label}
+              </button>
             ))}
           </nav>
 
-          {/* ── Desktop right icons ── */}
-          <div className="desktop-only items-center gap-1 ml-auto">
-            {/* Search with suggestions */}
+          {/* ── Desktop right icons — pushed to right ── */}
+          <div
+            className="desktop-only items-center gap-1"
+            style={{ marginLeft: "auto" }}
+          >
+            {/* Search */}
             <div
               ref={searchWrapRef}
               style={{
@@ -419,7 +416,6 @@ export default function Navbar() {
                 position: "relative",
               }}
             >
-              {/* Animated expanding search bar */}
               <div
                 style={{
                   display: "flex",
@@ -435,7 +431,6 @@ export default function Navbar() {
               >
                 {searchOpen && (
                   <div style={{ width: 220, position: "relative" }}>
-                    {/* Input row — keeps existing .search-bar styling */}
                     <div className="search-bar" style={{ width: "100%" }}>
                       <input
                         ref={searchInputRef}
@@ -452,7 +447,7 @@ export default function Navbar() {
                         autoComplete="off"
                         spellCheck={false}
                       />
-                      {searchLoading ? (
+                      {searchLoading && (
                         <span
                           style={{
                             padding: "0 8px",
@@ -462,12 +457,9 @@ export default function Navbar() {
                         >
                           <Loader2 size={13} className="hdr-suggest-spinner" />
                         </span>
-                      ) : (
-                        searchValue && <> </>
                       )}
                     </div>
 
-                    {/* Suggestions dropdown */}
                     {showSuggestions && (
                       <div className="hdr-suggest-panel">
                         {searchResults.length === 0 && !searchLoading ? (
@@ -477,8 +469,7 @@ export default function Navbar() {
                         ) : (
                           <>
                             {searchResults.map((product, idx) => {
-                              const variant = product.variants[0];
-                              const img = variant?.images?.[0];
+                              const img = product.variants[0]?.images?.[0];
                               return (
                                 <div
                                   key={product._id}
@@ -488,7 +479,6 @@ export default function Navbar() {
                                   }
                                   onMouseEnter={() => setCursor(idx)}
                                 >
-                                  {/* Thumbnail */}
                                   <div className="hdr-suggest-thumb">
                                     {img ? (
                                       <Image
@@ -518,8 +508,6 @@ export default function Navbar() {
                                       </div>
                                     )}
                                   </div>
-
-                                  {/* Info */}
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <div className="hdr-suggest-name">
                                       {product.name}
@@ -528,13 +516,9 @@ export default function Navbar() {
                                       {product.category}
                                     </div>
                                   </div>
-
-                                  {/* Price */}
                                   <div className="hdr-suggest-price">
                                     ₹{product.price.toLocaleString("en-IN")}
                                   </div>
-
-                                  {/* Arrow */}
                                   <ArrowRight
                                     size={12}
                                     style={{
@@ -547,8 +531,6 @@ export default function Navbar() {
                                 </div>
                               );
                             })}
-
-                            {/* Footer */}
                             <div className="hdr-suggest-footer">
                               <span className="hdr-suggest-hint">
                                 {searchResults.length} result
@@ -576,7 +558,6 @@ export default function Navbar() {
                 )}
               </div>
 
-              {/* Search toggle icon — unchanged styling */}
               <button
                 className="icon-btn"
                 onClick={() => {
@@ -617,7 +598,10 @@ export default function Navbar() {
           </div>
 
           {/* ── Mobile right icons ── */}
-          <div className="mobile-only items-center gap-1 ml-auto">
+          <div
+            className="mobile-only items-center gap-1"
+            style={{ marginLeft: "auto" }}
+          >
             <div className="search-bar search-bar-mobile">
               <input
                 type="text"
@@ -644,7 +628,6 @@ export default function Navbar() {
                 </button>
               )}
             </div>
-
             <button
               className="icon-btn"
               onClick={openCart}
@@ -657,7 +640,6 @@ export default function Navbar() {
                 </span>
               )}
             </button>
-
             <button
               className="icon-btn"
               onClick={() => setDrawerOpen(true)}
@@ -668,37 +650,41 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* ── Mega/Simple dropdown ── */}
+        {/* ── Mega dropdown ── */}
         {activeNav && activeItem && activeItem.categories.length > 0 && (
           <div
             className="mega-menu"
             onMouseEnter={() => enter(activeNav)}
             onMouseLeave={leave}
           >
-            <div className="max-w-7xl mx-auto px-6 py-8 flex gap-12">
-              <div
-                style={{ display: "flex", gap: 48, flex: 1, flexWrap: "wrap" }}
-              >
-                {activeItem.categories.map((cat) => (
-                  <div key={cat.title} style={{ minWidth: 110 }}>
-                    <p className="mega-col-title">{cat.title}</p>
-                    {cat.links.map((link, i) => (
-                      <a key={i} className="mega-link">
-                        {link}
-                      </a>
-                    ))}
+            {/* Centred content — columns + dividers */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                padding: "28px 24px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "stretch" }}>
+                {activeItem.categories.map((cat, idx) => (
+                  <div
+                    key={cat.title}
+                    style={{ display: "flex", alignItems: "stretch" }}
+                  >
+                    {/* Vertical divider before every column except the first */}
+                    {idx > 0 && <div className="mega-col-divider" />}
+
+                    <div style={{ minWidth: 130 }}>
+                      <p className="mega-col-title">{cat.title}</p>
+                      {cat.links.map((link, i) => (
+                        <a key={i} className="mega-link">
+                          {link}
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
-              {activeItem.featured.length > 0 && (
-                <div style={{ display: "flex", gap: 16, flexShrink: 0 }}>
-                  {activeItem.featured.map((f, i) => (
-                    <div key={i} className="featured-card">
-                      <span className="featured-card-caption">{f.caption}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -712,7 +698,6 @@ export default function Navbar() {
             onClick={closeDrawer}
             aria-hidden="true"
           />
-
           <div className="drawer" role="dialog" aria-label="Navigation menu">
             <div className="drawer-header">
               <span className="nav-logo" style={{ fontSize: "1.2rem" }}>
@@ -780,14 +765,12 @@ export default function Navbar() {
               )}
             </nav>
 
-            {/* ── Mobile Drawer Footer ── */}
             <div
               className="drawer-footer"
               style={{ flexDirection: "column", gap: 0, padding: 0 }}
             >
               {user ? (
                 <>
-                  {/* User info row */}
                   <div
                     style={{
                       display: "flex",
@@ -798,7 +781,6 @@ export default function Navbar() {
                       background: "var(--nav-bg)",
                     }}
                   >
-                    {/* Avatar */}
                     <div
                       style={{
                         width: 36,
@@ -832,8 +814,6 @@ export default function Navbar() {
                         user.name.charAt(0).toUpperCase()
                       )}
                     </div>
-
-                    {/* Name + email */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
                         style={{
@@ -862,8 +842,6 @@ export default function Navbar() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Actions row */}
                   <div
                     style={{ display: "flex", gap: 0, padding: "10px 16px" }}
                   >
@@ -875,8 +853,7 @@ export default function Navbar() {
                       }}
                       style={{ flex: 1 }}
                     >
-                      <ShoppingBag size={16} />
-                      Cart
+                      <ShoppingBag size={16} /> Cart
                       {totalItems > 0 && (
                         <span
                           style={{
@@ -892,7 +869,6 @@ export default function Navbar() {
                         </span>
                       )}
                     </button>
-
                     <button
                       onClick={logout}
                       style={{
@@ -913,13 +889,11 @@ export default function Navbar() {
                         flexShrink: 0,
                       }}
                     >
-                      <LogOut size={15} />
-                      Sign Out
+                      <LogOut size={15} /> Sign Out
                     </button>
                   </div>
                 </>
               ) : (
-                /* Not logged in */
                 <div style={{ display: "flex", gap: 12, padding: "10px 16px" }}>
                   <button
                     className="drawer-footer-btn"
