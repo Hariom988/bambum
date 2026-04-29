@@ -1,55 +1,93 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef } from "react";
-
+import breathableFabric from "@/public/vectors/breathableFabric.svg";
+import ecoFriendly from "@/public/vectors/ecoFriendly.svg";
+import longLastingComfort from "@/public/vectors/longLastingComfort.svg";
+import thermoRegulating from "@/public/vectors/thermoRegulating.svg";
+import Image from "next/image";
 const CITIES = [
   {
     name: "TOKYO",
     subtitle: "VOLT",
-    tagline: "Built for the hustle.",
-    color: "#c8e600",
+    tagline: "BOLD.\nELECTRIC.",
+    nameColor: "#c8e600",
+    backgroundColorFrom: "#000000",
+    backgroundColorTo: "#000000",
+    image: "/shopByComponentImages/tokyo.png",
     href: "/products",
   },
   {
     name: "NEW YORK",
     subtitle: "PULSE",
-    tagline: "Power through the pavement.",
-    color: "#e8c4b8",
-    href: "/products",
-  },
-  {
-    name: "SYDNEY",
-    subtitle: "GLIDE",
-    tagline: "Smooth like the harbour.",
-    color: "#b8d4e8",
-    href: "/products",
-  },
-  {
-    name: "PARIS",
-    subtitle: "AURA",
-    tagline: "Effortless and refined.",
-    color: "#f0e8d8",
+    tagline: "BUILT\nFOR THE\nHUSTLE.",
+    nameColor: "#ffffff",
+    backgroundColorFrom: "#19635E",
+    backgroundColorTo: "#2DAFA7",
+    image: "/shopByComponentImages/newyork.png",
     href: "/products",
   },
   {
     name: "MIAMI",
     subtitle: "NOVA",
-    tagline: "Sun, skin, and freedom.",
-    color: "#e8b4b4",
+    tagline: "TURN THE\nVIBE ON.",
+    nameColor: "#ffffff",
+    backgroundColorFrom: "#AF886D",
+    backgroundColorTo: "#524033",
+    image: "/shopByComponentImages/miami.png",
     href: "/products",
+  },
+  {
+    name: "SYDNEY",
+    subtitle: "GLIDE",
+    tagline: "SMOOTH.\nLIGHT.\nEFFORTLESS.",
+    nameColor: "#ffffff",
+    backgroundColorFrom: "#000000",
+    backgroundColorTo: "#000000",
+    image: "/shopByComponentImages/sydney.png",
+    href: "/products",
+  },
+  {
+    name: "PARIS",
+    subtitle: "AURA",
+    tagline: "SOFTNESS\nYOU FEEL.",
+    nameColor: "#ffffff",
+    backgroundColorFrom: "#AF886D",
+    backgroundColorTo: "#524033",
+    image: "/shopByComponentImages/paris.png",
+    href: "/products",
+  },
+];
+const FEATURES = [
+  {
+    label: "Eco-Friendly",
+    icon: breathableFabric.src,
+  },
+  {
+    label: "Breathable Fabric",
+    icon: ecoFriendly.src,
+  },
+  {
+    label: "Thermo-Regulating",
+    icon: longLastingComfort.src,
+  },
+  {
+    label: "Long-lasting Comfort",
+    icon: thermoRegulating.src,
   },
 ];
 
 export default function ShopByCity() {
   const sectionRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          el.classList.add("sbc-visible");
+          el.classList.add("opacity-100", "translate-y-0");
+          el.classList.remove("opacity-0", "translate-y-6");
           obs.disconnect();
         }
       },
@@ -60,106 +98,112 @@ export default function ShopByCity() {
   }, []);
 
   return (
-    <>
-      <style>{`
-        .sbc-section { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
-        .sbc-section.sbc-visible { opacity: 1; transform: translateY(0); }
-        .sbc-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
-        .sbc-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.15); }
-        .sbc-card:hover .sbc-overlay { opacity: 0.6; }
-        .sbc-overlay { transition: opacity 0.25s ease; opacity: 0.5; }
-      `}</style>
-
-      <section
-        ref={sectionRef}
-        className="sbc-section w-full py-10 md:py-14"
-        style={{
-          background: "var(--nav-bg)",
-          fontFamily: "var(--nav-font-ui)",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          {/* Header */}
-          <div className="flex items-end justify-between mb-6">
-            <div>
-              <p
-                className="text-[0.65rem] font-bold tracking-[0.2em] uppercase mb-1"
-                style={{ color: "var(--nav-accent)" }}
-              >
-                Collections
-              </p>
-              <h2
-                className="text-2xl md:text-3xl font-bold uppercase tracking-widest"
-                style={{
-                  fontFamily: "var(--nav-font)",
-                  color: "var(--nav-fg)",
-                }}
-              >
-                Shop by City
-              </h2>
-            </div>
-            <a
-              href="/products"
-              className="text-xs font-bold tracking-[0.14em] uppercase transition-colors duration-150"
-              style={{ color: "var(--nav-accent)" }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.color = "var(--nav-accent-hover)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.color = "var(--nav-accent)")
-              }
-            >
-              View All
-            </a>
-          </div>
-
-          {/* City Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-            {CITIES.map((city) => (
-              <a
-                key={city.name}
-                href={city.href}
-                className="sbc-card relative overflow-hidden no-underline block"
-                style={{ aspectRatio: "3/4", borderRadius: 0 }}
-              >
-                {/* Color Background */}
-                <div
-                  className="absolute inset-0"
-                  style={{ background: city.color }}
-                />
-
-                {/* Overlay */}
-                <div
-                  className="sbc-overlay absolute inset-0"
-                  style={{ background: "rgba(0,0,0,0.3)" }}
-                />
-
-                {/* Content */}
-                <div className="absolute inset-0 flex flex-col justify-end p-3">
-                  <p
-                    className="text-[0.55rem] font-black tracking-[0.2em] uppercase"
-                    style={{ color: "rgba(255,255,255,0.7)" }}
-                  >
-                    {city.name}
-                  </p>
-                  <p
-                    className="text-lg md:text-xl font-black uppercase leading-tight"
-                    style={{ color: "#fff", fontFamily: "var(--nav-font)" }}
-                  >
-                    {city.subtitle}
-                  </p>
-                  <p
-                    className="text-[0.6rem] mt-1 leading-tight"
-                    style={{ color: "rgba(255,255,255,0.8)" }}
-                  >
-                    {city.tagline}
-                  </p>
-                </div>
-              </a>
-            ))}
-          </div>
+    <section
+      ref={sectionRef}
+      className="w-full py-10 md:py-14 opacity-0 translate-y-6 transition-all duration-700 ease-out"
+      style={{ background: "var(--nav-bg)" }}
+    >
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
+        {/* Header */}
+        <div className="flex items-end justify-between mb-5">
+          <h2
+            className="text-2xl md:text-3xl font-black uppercase tracking-widest"
+            style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
+          >
+            Shop by BAMBUMM
+          </h2>
+          <Link
+            href="/products"
+            className="text-xs font-bold tracking-[0.14em] uppercase transition-colors duration-150"
+            style={{ color: "var(--nav-accent)" }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.color = "var(--nav-accent-hover)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.color = "var(--nav-accent)")
+            }
+          >
+            View All
+          </Link>
         </div>
-      </section>
-    </>
+
+        {/* Cards */}
+        <div className="flex gap-3">
+          {CITIES.map((city) => (
+            <Link
+              key={city.name}
+              href={city.href}
+              className="relative flex-1 overflow-hidden rounded-xl cursor-pointer group no-underline"
+              style={{ aspectRatio: "3/5" }}
+            >
+              <img
+                src={city.image}
+                alt={`${city.name} - ${city.subtitle}`}
+                className="absolute right-0 z-2 inset-0 w-full h-full object-contain object-right transition-transform duration-500 ease-out group-hover:scale-105"
+              />
+
+              {/* Dark gradient overlay */}
+              <div
+                className={`absolute inset-0`}
+                style={{
+                  background: `linear-gradient(to bottom, ${city.backgroundColorFrom}, ${city.backgroundColorFrom}, ${city.backgroundColorTo})`,
+                }}
+              />
+
+              {/* Text content */}
+              <div className="absolute inset-0 flex flex-col justify-start p-4 md:p-5">
+                {/* City name */}
+                <span
+                  className="font-black uppercase tracking-wide leading-none text-sm md:text-base"
+                  style={{
+                    fontFamily: "var(--nav-font)",
+                    color: city.nameColor,
+                  }}
+                >
+                  {city.name}
+                </span>
+
+                {/* Product subtitle */}
+                <span
+                  className="font-black uppercase leading-none text-white mt-1 text-2xl md:text-3xl lg:text-3xl"
+                  style={{ fontFamily: "var(--nav-font)" }}
+                >
+                  {city.subtitle}
+                </span>
+
+                {/* Tagline */}
+                <span className="font-bold uppercase tracking-widest text-white/85 mt-2 text-[0.6rem] md:text-[0.65rem] leading-relaxed whitespace-pre-line">
+                  {city.tagline}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* New Features Section */}
+        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {FEATURES.map((feature, idx) => (
+            <div
+              key={idx}
+              className="flex items-center gap-4 bg-[#F8F9FA] rounded-xl p-4 md:p-5"
+            >
+              {/* Icon Container */}
+              <div className="bg-[#EEF2F1] text-[#134D41] p-3.5 rounded-2xl flex-shrink-0">
+                <Image
+                  src={feature.icon}
+                  alt={feature.label}
+                  width={24}
+                  height={24}
+                />
+              </div>
+              {/* Feature Text */}
+              <span className="text-[#111111] text-[0.95rem] font-serif tracking-wide leading-tight">
+                {feature.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

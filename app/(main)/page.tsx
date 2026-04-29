@@ -5,6 +5,7 @@ import FeatureBadges from "@/components/(homePage)/featurebadges";
 import HeroSection from "@/components/(homePage)/heroSection";
 import HeroSection2 from "@/components/(homePage)/heroSection2";
 import ProductsSection from "@/components/(homePage)/productsSection";
+import PromoBanner from "@/components/(homePage)/promoBanner";
 import ShopByCity from "@/components/(homePage)/shopByCity";
 import Testimonials from "@/components/(homePage)/testimonial";
 import WhyUs from "@/components/(homePage)/why";
@@ -15,15 +16,16 @@ export default function Home() {
     <>
       <HeroSection />
       {/* <HeroSection2 /> */}
-      {/* <ShopByCity /> */}
+      <ShopByCity />
       {/* <FeatureBadges /> */}
       {/* <BestsellersSection /> */}
       {/* <CollectionsSection /> */}
       <ProductsSection />
-      <BambooProcess />
-      <WhyUs />
-      <Testimonials />
-      <FAQ />
+      <PromoBanner />
+      {/* <BambooProcess /> */}
+      {/* <WhyUs /> */}
+      {/* <Testimonials /> */}
+      {/* <FAQ /> */}
     </>
   );
 }

@@ -10,6 +10,13 @@
 }
 
 :root {
+  --promo-dark-bg: #1c1a14;
+  --promo-dark-fg: #f0ebe0;
+  --promo-dark-muted: rgba(240, 235, 224, 0.6);
+  --promo-warm-bg: #3b2112;
+  --promo-warm-fg: #f0ebe0;
+  --promo-warm-muted: rgba(240, 235, 224, 0.6);
+  --bg-color: #19635e;
   --nav-bg: #f5f0e8;
   --nav-fg: #1a1a1a;
   --nav-fg-muted: #6b6b6b;
