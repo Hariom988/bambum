@@ -24,7 +24,7 @@ export default function Home() {
       <PromoBanner />
       {/* <BambooProcess /> */}
       {/* <WhyUs /> */}
-      {/* <Testimonials /> */}
+      <Testimonials />
       {/* <FAQ /> */}
     </>
   );

@@ -103,7 +103,7 @@ export default function ProductsSection() {
       `}</style>
 
       <section
-        className="w-full py-10 md:py-14"
+        className="w-full py-5 md:py-5"
         style={{
           background: "var(--nav-bg)",
           fontFamily: "var(--nav-font-ui)",
@@ -116,7 +116,7 @@ export default function ProductsSection() {
               className="text-3xl md:text-5xl font-bold uppercase tracking-tight"
               style={{
                 fontFamily: "var(--nav-font)",
-                color: "var(--nav-fg)",
+                color: "black",
                 letterSpacing: "-0.01em",
               }}
             >
@@ -201,7 +201,7 @@ export default function ProductsSection() {
                           className="text-sm font-bold uppercase leading-tight mb-1 truncate"
                           style={{
                             fontFamily: "var(--nav-font)",
-                            color: "var(--nav-fg)",
+                            color: "black",
                             letterSpacing: "0.02em",
                           }}
                         >
@@ -209,7 +209,7 @@ export default function ProductsSection() {
                         </p>
                         <p
                           className="text-sm font-bold mb-2.5"
-                          style={{ color: "var(--nav-fg)" }}
+                          style={{ color: "black" }}
                         >
                           ₹{product.price.toLocaleString("en-IN")}
                         </p>

@@ -100,7 +100,7 @@ export default function ShopByCity() {
   return (
     <section
       ref={sectionRef}
-      className="w-full py-10 md:py-14 opacity-0 translate-y-6 transition-all duration-700 ease-out"
+      className="w-full py-10 md:py-10 opacity-0 translate-y-6 transition-all duration-700 ease-out"
       style={{ background: "var(--nav-bg)" }}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-6">
@@ -108,7 +108,7 @@ export default function ShopByCity() {
         <div className="flex items-end justify-between mb-5">
           <h2
             className="text-2xl md:text-3xl font-black uppercase tracking-widest"
-            style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
+            style={{ fontFamily: "var(--nav-font)", color: "black" }}
           >
             Shop by BAMBUMM
           </h2>

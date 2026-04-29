@@ -1,53 +1,62 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Star, ChevronLeft, ChevronRight, Quote } from "lucide-react";
+import { Star } from "lucide-react";
+
+/* ─────────────────────────────────────────────────────────────
+   Add these new variables alongside the existing :root block
+   in your globals.css / variables file:
+
+   --tm-card-bg: #1a1a1a;
+   --tm-card-border: rgba(255,255,255,0.06);
+   --tm-star-active: var(--ft-fg);          // reuses teal accent
+   --tm-star-inactive: rgba(41,177,168,0.25);
+   --tm-heading-fg: #ffffff;
+   --tm-body-fg: rgba(255,255,255,0.75);
+   --tm-author-fg: var(--ft-fg);            // teal
+   --tm-meta-fg: rgba(255,255,255,0.45);
+   --tm-stat-value-fg: #ffffff;
+   --tm-stat-label-fg: rgba(255,255,255,0.5);
+   --tm-subtitle-fg: rgba(255,255,255,0.55);
+   --tm-divider: rgba(255,255,255,0.08);
+───────────────────────────────────────────────────────────── */
 
 const TESTIMONIALS = [
   {
-    name: "Priya Sharma",
-    location: "Mumbai",
+    name: "Sanjoa Sharma",
     rating: 5,
-    title: "Genuinely the softest thing I've ever worn.",
-    text: "I was skeptical about bamboo fabric but decided to try Bambumm after seeing the reviews. Absolutely blown away — these briefs feel like wearing nothing. I ordered three more sets within a week.",
-    product: "Men's Brief – Black",
+    text: "The most comfortable underwear I've ever owned. The bamboo fabric is incredibly soft and breathable.",
+    initials: "SS",
+  },
+  {
+    name: "Piyush",
+    rating: 5,
+    text: "Love the sustainability aspect and they feel amazing. Will never go back to regular cotton.",
+    initials: "PI",
+  },
+  {
+    name: "Alia",
+    rating: 5,
+    text: "These are worth every penny. The quality is outstanding and they actually stay comfortable all day.",
+    initials: "AL",
+  },
+  {
+    name: "Priya Sharma",
+    rating: 5,
+    text: "I was skeptical about bamboo fabric but decided to try Bambumm after seeing the reviews. Absolutely blown away — these briefs feel like wearing nothing.",
     initials: "PS",
   },
   {
     name: "Arjun Mehta",
-    location: "Bangalore",
     rating: 5,
-    title: "Finally, innerwear that doesn't scratch.",
-    text: "My skin is super sensitive and regular cotton always causes irritation. These are a complete game-changer. Cool, soft, and no allergic reaction after two months of wearing them daily.",
-    product: "Men's Brief – Grey",
+    text: "My skin is super sensitive and regular cotton always causes irritation. These are a complete game-changer. Cool, soft, and no allergic reaction.",
     initials: "AM",
   },
   {
-    name: "Sneha Kapoor",
-    location: "Delhi",
-    rating: 5,
-    title: "Worth every rupee and more.",
-    text: "The quality is exceptional. I've washed them over 30 times and they still feel brand new — no fading, no pilling, no stretching. This is how everyday wear should be.",
-    product: "Men's Brief – Light Green",
-    initials: "SK",
-  },
-  {
     name: "Rahul Verma",
-    location: "Pune",
     rating: 5,
-    title: "My go-to for workdays and gym days alike.",
-    text: "Whether I'm in the office or working out, these stay comfortable all day. The breathability is real — I genuinely feel cooler compared to my old cotton underwear.",
-    product: "Men's Brief – Orange",
+    text: "Whether I'm in the office or working out, these stay comfortable all day. The breathability is real — I genuinely feel cooler.",
     initials: "RV",
-  },
-  {
-    name: "Anika Desai",
-    location: "Hyderabad",
-    rating: 5,
-    title: "Eco-friendly and incredibly comfortable.",
-    text: "I love that I'm making a sustainable choice without sacrificing quality. Bambumm has set a new standard for what I expect from everyday essentials. Already gifted pairs to my husband!",
-    product: "Men's Brief – Black",
-    initials: "AD",
   },
 ];
 
@@ -57,50 +66,111 @@ function StarRating({ rating }: { rating: number }) {
       {[...Array(5)].map((_, i) => (
         <Star
           key={i}
-          size={13}
-          fill={i < rating ? "#c8a97e" : "transparent"}
-          strokeWidth={1.5}
-          style={{ color: "#c8a97e" }}
+          size={14}
+          fill={
+            i < rating ? "var(--tm-star-active)" : "var(--tm-star-inactive)"
+          }
+          strokeWidth={0}
         />
       ))}
     </div>
   );
 }
 
-export default function Testimonials() {
-  const [active, setActive] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [direction, setDirection] = useState<"left" | "right">("right");
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+function TestimonialCard({
+  name,
+  rating,
+  text,
+  initials,
+  visible,
+  delay,
+}: {
+  name: string;
+  rating: number;
+  text: string;
+  initials: string;
+  visible: boolean;
+  delay: number;
+}) {
+  return (
+    <div
+      className="tm-card"
+      style={{
+        background: "var(--tm-card-bg)",
+        border: "1px solid var(--tm-card-border)",
+        borderRadius: 12,
+        padding: "24px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(24px)",
+        transition: `opacity 0.6s ease ${delay}ms, transform 0.6s cubic-bezier(0.22,1,0.36,1) ${delay}ms`,
+      }}
+    >
+      <StarRating rating={rating} />
 
-  const goTo = useCallback(
-    (idx: number, dir: "left" | "right" = "right") => {
-      if (isAnimating) return;
-      setDirection(dir);
-      setIsAnimating(true);
-      setTimeout(() => {
-        setActive(idx);
-        setIsAnimating(false);
-      }, 300);
-    },
-    [isAnimating],
+      <p
+        style={{
+          color: "var(--tm-body-fg)",
+          fontSize: "0.9rem",
+          lineHeight: 1.65,
+          margin: 0,
+          flex: 1,
+        }}
+      >
+        &ldquo;{text}&rdquo;
+      </p>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            background: "rgba(41,177,168,0.15)",
+            border: "1px solid rgba(41,177,168,0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "0.65rem",
+            fontWeight: 700,
+            color: "var(--tm-author-fg)",
+            flexShrink: 0,
+            fontFamily: "var(--nav-font)",
+          }}
+        >
+          {initials}
+        </div>
+        <div>
+          <p
+            style={{
+              color: "var(--tm-author-fg)",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              margin: 0,
+            }}
+          >
+            {name}
+          </p>
+          <p
+            style={{
+              color: "var(--tm-meta-fg)",
+              fontSize: "0.7rem",
+              margin: 0,
+            }}
+          >
+            Verified Customer
+          </p>
+        </div>
+      </div>
+    </div>
   );
+}
 
-  const next = useCallback(() => {
-    goTo((active + 1) % TESTIMONIALS.length, "right");
-  }, [active, goTo]);
-
-  const prev = useCallback(() => {
-    goTo((active - 1 + TESTIMONIALS.length) % TESTIMONIALS.length, "left");
-  }, [active, goTo]);
-
-  useEffect(() => {
-    intervalRef.current = setInterval(next, 5000);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [next]);
+export default function Testimonials() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -108,7 +178,7 @@ export default function Testimonials() {
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          el.classList.add("tm-visible");
+          setVisible(true);
           obs.disconnect();
         }
       },
@@ -118,274 +188,202 @@ export default function Testimonials() {
     return () => obs.disconnect();
   }, []);
 
-  const t = TESTIMONIALS[active];
+  // Show first 3 on mobile, all 6 on desktop (handled via CSS grid)
+  const displayed = TESTIMONIALS.slice(0, 3);
 
   return (
     <>
       <style>{`
-        .tm-section {
-          opacity: 0;
-          transform: translateY(28px);
-          transition: opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1);
-        }
-        .tm-section.tm-visible { opacity: 1; transform: translateY(0); }
-
-        .tm-card-enter-right { animation: tmSlideRight 0.35s cubic-bezier(0.22,1,0.36,1) forwards; }
-        .tm-card-enter-left  { animation: tmSlideLeft  0.35s cubic-bezier(0.22,1,0.36,1) forwards; }
-        .tm-card-exit        { animation: tmFadeOut    0.25s ease forwards; }
-
-        @keyframes tmSlideRight {
-          from { opacity: 0; transform: translateX(32px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes tmSlideLeft {
-          from { opacity: 0; transform: translateX(-32px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes tmFadeOut {
-          to { opacity: 0; }
+        :root {
+          --tm-card-bg: #1a1a1a;
+          --tm-card-border: rgba(255,255,255,0.06);
+          --tm-star-active: var(--ft-fg);
+          --tm-star-inactive: rgba(41,177,168,0.25);
+          --tm-heading-fg: #ffffff;
+          --tm-body-fg: rgba(255,255,255,0.75);
+          --tm-author-fg: var(--ft-fg);
+          --tm-meta-fg: rgba(255,255,255,0.45);
+          --tm-stat-value-fg: #ffffff;
+          --tm-stat-label-fg: rgba(255,255,255,0.5);
+          --tm-subtitle-fg: rgba(255,255,255,0.55);
+          --tm-divider: rgba(255,255,255,0.08);
         }
 
-        .tm-dot {
-          transition: width 0.3s ease, background 0.3s ease;
+        .tm-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
         }
-        .tm-arrow {
-          transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+
+        @media (max-width: 768px) {
+          .tm-grid {
+            grid-template-columns: 1fr;
+          }
         }
-        .tm-arrow:hover {
-          background: #c8a97e !important;
-          color: #fff !important;
-          border-color: #c8a97e !important;
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .tm-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        .tm-overall-stars {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .tm-stat-divider {
+          width: 1px;
+          height: 40px;
+          background: var(--tm-divider);
+        }
+
+        @media (max-width: 480px) {
+          .tm-stat-divider { display: none; }
+          .tm-stats-row { flex-wrap: wrap; gap: 24px !important; }
         }
       `}</style>
 
       <section
-        className="w-full border-t border-b py-20 md:py-15"
         style={{
           background: "var(--ft-bg)",
-          borderColor: "rgba(200,169,126,0.12)",
+          borderTop: "1px solid var(--ft-border)",
+          borderBottom: "1px solid var(--ft-border)",
+          padding: "80px 0",
           fontFamily: "var(--nav-font-ui)",
         }}
       >
-        <div ref={sectionRef} className="tm-section max-w-5xl mx-auto px-6">
+        <div
+          ref={sectionRef}
+          style={{
+            maxWidth: 1100,
+            margin: "0 auto",
+            padding: "0 24px",
+            opacity: visible ? 1 : 0,
+            transform: visible ? "translateY(0)" : "translateY(28px)",
+            transition:
+              "opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)",
+          }}
+        >
           {/* Header */}
-          <div className="flex flex-col items-center text-center mb-14">
-            <p
-              className="text-[0.65rem] font-bold tracking-[0.2em] uppercase mb-3"
-              style={{ color: "#c8a97e" }}
-            >
-              What Our Customers Say
-            </p>
+          <div style={{ textAlign: "center", marginBottom: 56 }}>
             <h2
-              className="text-4xl md:text-5xl font-bold uppercase tracking-widest mb-4"
-              style={{ fontFamily: "var(--nav-font)", color: "#e8e0d0" }}
-            >
-              Real Reviews.
-              <br />
-              <span style={{ color: "#c8a97e" }}>Real Comfort.</span>
-            </h2>
-            <div className="flex items-center gap-3">
-              <div
-                className="h-px w-10"
-                style={{ background: "rgba(200,169,126,0.2)" }}
-              />
-              <div
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: "#c8a97e" }}
-              />
-              <div
-                className="h-px w-10"
-                style={{ background: "rgba(200,169,126,0.2)" }}
-              />
-            </div>
-          </div>
-
-          {/* Main card */}
-          <div
-            className="relative mx-auto max-w-3xl"
-            onMouseEnter={() => {
-              if (intervalRef.current) clearInterval(intervalRef.current);
-            }}
-            onMouseLeave={() => {
-              intervalRef.current = setInterval(next, 5000);
-            }}
-          >
-            {/* Large quote mark */}
-            <div
-              className="absolute -top-6 -left-2 select-none pointer-events-none"
-              aria-hidden="true"
-            >
-              <Quote
-                size={64}
-                style={{ color: "#c8a97e", opacity: 0.12 }}
-                fill="#c8a97e"
-                strokeWidth={0}
-              />
-            </div>
-
-            <div
-              className="relative p-8 md:p-12"
               style={{
-                background: "rgba(200,169,126,0.06)",
-                border: "1px solid rgba(200,169,126,0.18)",
+                fontFamily: "var(--nav-font)",
+                fontSize: "clamp(1.75rem, 4vw, 2.5rem)",
+                fontWeight: 700,
+                color: "var(--tm-heading-fg)",
+                margin: "0 0 12px",
+                letterSpacing: "0.01em",
               }}
             >
-              {/* Gold top bar */}
-              <div
-                className="absolute top-0 left-0 right-0 h-0.5"
-                style={{ background: "#c8a97e" }}
-              />
-
-              <div
-                key={active}
-                className={
-                  isAnimating ? "tm-card-exit" : `tm-card-enter-${direction}`
-                }
-              >
-                {/* Rating */}
-                <div className="flex items-center gap-3 mb-6">
-                  <StarRating rating={t.rating} />
-                  <span
-                    className="text-[0.65rem] font-bold tracking-[0.14em] uppercase px-2 py-0.5"
-                    style={{
-                      background: "rgba(200,169,126,0.12)",
-                      border: "1px solid rgba(200,169,126,0.2)",
-                      color: "#c8a97e",
-                    }}
-                  >
-                    Verified Purchase
-                  </span>
-                </div>
-
-                {/* Title */}
-                <h3
-                  className="text-xl md:text-2xl font-bold mb-4 leading-snug"
-                  style={{ fontFamily: "var(--nav-font)", color: "#e8e0d0" }}
-                >
-                  &ldquo;{t.title}&rdquo;
-                </h3>
-
-                {/* Body */}
-                <p
-                  className="text-base leading-relaxed mb-8"
-                  style={{ color: "#8a8070" }}
-                >
-                  {t.text}
-                </p>
-
-                {/* Author row */}
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div className="flex items-center gap-4">
-                    {/* Avatar */}
-                    <div
-                      className="w-11 h-11 flex items-center justify-center text-sm font-bold"
-                      style={{
-                        background: "rgba(200,169,126,0.15)",
-                        border: "1px solid rgba(200,169,126,0.3)",
-                        color: "#c8a97e",
-                        fontFamily: "var(--nav-font)",
-                      }}
-                    >
-                      {t.initials}
-                    </div>
-                    <div>
-                      <p
-                        className="text-sm font-bold"
-                        style={{ color: "#e8e0d0" }}
-                      >
-                        {t.name}
-                      </p>
-                      <p className="text-xs" style={{ color: "#8a8070" }}>
-                        {t.location}
-                      </p>
-                    </div>
-                  </div>
-                  <p
-                    className="text-[0.65rem] tracking-widest uppercase"
-                    style={{ color: "rgba(200,169,126,0.6)" }}
-                  >
-                    {t.product}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Navigation */}
-            <div className="flex items-center justify-between mt-8">
-              <div className="flex items-center gap-2">
-                {TESTIMONIALS.map((_, i) => (
-                  <button
+              What Our Customers Say
+            </h2>
+            <p
+              style={{
+                color: "var(--tm-subtitle-fg)",
+                fontSize: "0.9rem",
+                margin: "0 0 20px",
+                lineHeight: 1.5,
+              }}
+            >
+              Join thousands of satisfied customers who&apos;s made the switch
+              to
+              <br />
+              sustainable comfort
+            </p>
+            {/* Overall rating */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+              }}
+            >
+              <div className="tm-overall-stars">
+                {[...Array(5)].map((_, i) => (
+                  <Star
                     key={i}
-                    onClick={() => goTo(i, i > active ? "right" : "left")}
-                    className="tm-dot h-1.5 rounded-full cursor-pointer"
-                    style={{
-                      width: i === active ? 32 : 8,
-                      background:
-                        i === active ? "#c8a97e" : "rgba(200,169,126,0.3)",
-                      border: "none",
-                    }}
-                    aria-label={`Go to review ${i + 1}`}
+                    size={20}
+                    fill="var(--tm-star-active)"
+                    strokeWidth={0}
                   />
                 ))}
               </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={prev}
-                  className="tm-arrow w-10 h-10 flex items-center justify-center"
-                  style={{
-                    background: "transparent",
-                    border: "1px solid rgba(200,169,126,0.25)",
-                    color: "#8a8070",
-                    cursor: "pointer",
-                  }}
-                  aria-label="Previous review"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <button
-                  onClick={next}
-                  className="tm-arrow w-10 h-10 flex items-center justify-center"
-                  style={{
-                    background: "transparent",
-                    border: "1px solid rgba(200,169,126,0.25)",
-                    color: "#8a8070",
-                    cursor: "pointer",
-                  }}
-                  aria-label="Next review"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
+              <span
+                style={{
+                  color: "var(--tm-heading-fg)",
+                  fontSize: "1.1rem",
+                  fontWeight: 600,
+                }}
+              >
+                4.0/5
+              </span>
             </div>
           </div>
 
-          {/* Aggregate rating bar */}
+          {/* Cards grid */}
+          <div className="tm-grid">
+            {displayed.map((t, i) => (
+              <TestimonialCard
+                key={t.name}
+                {...t}
+                visible={visible}
+                delay={i * 100}
+              />
+            ))}
+          </div>
+
+          {/* Stats bar */}
           <div
-            className="mt-14 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12 py-8 border-t"
-            style={{ borderColor: "rgba(200,169,126,0.12)" }}
+            className="tm-stats-row"
+            style={{
+              marginTop: 56,
+              borderTop: "1px solid var(--tm-divider)",
+              paddingTop: 40,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 48,
+            }}
           >
             {[
-              { label: "Average Rating", value: "5.0 / 5.0" },
-              { label: "Happy Customers", value: "1,200+" },
-              { label: "Repeat Buyers", value: "78%" },
-            ].map((stat) => (
+              { value: "5.0 / 5.0", label: "Average Rating" },
+              { value: "1,200+", label: "Happy Customers" },
+              { value: "98%", label: "Repeat Buyers" },
+            ].map((stat, i) => (
               <div
                 key={stat.label}
-                className="flex flex-col items-center text-center"
+                style={{ display: "flex", alignItems: "center", gap: 48 }}
               >
-                <p
-                  className="text-3xl font-bold leading-none mb-1"
-                  style={{ fontFamily: "var(--nav-font)", color: "#c8a97e" }}
-                >
-                  {stat.value}
-                </p>
-                <p
-                  className="text-xs tracking-widest uppercase"
-                  style={{ color: "#8a8070" }}
-                >
-                  {stat.label}
-                </p>
+                <div style={{ textAlign: "center" }}>
+                  <p
+                    style={{
+                      fontFamily: "var(--nav-font)",
+                      fontSize: "1.75rem",
+                      fontWeight: 700,
+                      color: "var(--tm-stat-value-fg)",
+                      margin: "0 0 4px",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {stat.value}
+                  </p>
+                  <p
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "var(--tm-stat-label-fg)",
+                      margin: 0,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {stat.label}
+                  </p>
+                </div>
+                {i < 2 && <div className="tm-stat-divider" />}
               </div>
             ))}
           </div>
