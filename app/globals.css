@@ -11,6 +11,14 @@
 }
 
 :root {
+  --about-hero-bg: #f5f5f0;
+  --about-teal: #19635e;
+  --about-teal-light: #3d9c93;
+  --about-card-bg: #1c1f1c;
+  --about-card-border: rgba(42, 122, 114, 0.18);
+  --about-body-muted: #7a7a6e;
+  --about-dark-section: #111311;
+  --about-promise-bg: #f0eeea;
   --mega-bg: #ffffff;
   --mega-col-title-fg: #0a0a0a;
   --mega-link-hover-fg: var(--nav-accent-hover);
