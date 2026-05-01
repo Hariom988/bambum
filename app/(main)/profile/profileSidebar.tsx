@@ -1,173 +1,72 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { User, MapPin, ShoppingBag, LogOut } from "lucide-react";
-import { useAuth } from "@/context/authContext";
-
-const NAV_ITEMS = [
-  { label: "Profile", href: "/profile", icon: User },
-  { label: "Addresses", href: "/profile/addresses", icon: MapPin },
-  { label: "Orders", href: "/profile/orders", icon: ShoppingBag },
-];
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { User, Package, Heart, Settings, LogOut } from "lucide-react";
 
 export default function ProfileSidebar({
-  mobile = false,
+  userData,
 }: {
-  mobile?: boolean;
+  userData: { name: string; email: string };
 }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { logout } = useAuth();
 
-  const handleLogout = async () => {
-    await logout();
-    router.push("/");
-  };
-
-  if (mobile) {
-    return (
-      <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex"
-        style={{
-          height: 60,
-          background: "#fff",
-          borderTop: "1px solid var(--nav-border)",
-          boxShadow: "0 -4px 20px rgba(0,0,0,0.08)",
-        }}
-      >
-        {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
-          const isActive = pathname === href;
-          return (
-            <button
-              key={href}
-              onClick={() => router.push(href)}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 bg-transparent border-none cursor-pointer transition-all duration-150 border-t-2"
-              style={{
-                color: isActive ? "var(--nav-accent)" : "var(--nav-fg-muted)",
-                borderColor: isActive ? "var(--nav-accent)" : "transparent",
-                fontFamily: "var(--nav-font-ui)",
-                fontSize: "9px",
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
-              <Icon size={18} />
-              {label}
-            </button>
-          );
-        })}
-        <button
-          onClick={handleLogout}
-          className="flex-1 flex flex-col items-center justify-center gap-0.5 bg-transparent border-none cursor-pointer transition-all duration-150 border-t-2"
-          style={{
-            color: "var(--nav-fg-muted)",
-            borderColor: "transparent",
-            fontFamily: "var(--nav-font-ui)",
-            fontSize: "9px",
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-          }}
-        >
-          <LogOut size={18} />
-          Sign Out
-        </button>
-      </nav>
-    );
-  }
+  // Define actual Next.js routes here
+  const navItems = [
+    { name: "OVERVIEW", icon: User, href: "/profile" },
+    { name: "MY ORDERS", icon: Package, href: "/profile/orders" },
+    { name: "WISHLIST", icon: Heart, href: "/profile/wishlist" },
+    { name: "SETTINGS", icon: Settings, href: "/profile/settings" },
+  ];
 
   return (
-    <div
-      className="sticky top-20 flex flex-col overflow-hidden"
-      style={{
-        background: "#fff",
-        border: "1px solid var(--nav-border)",
-        boxShadow: "0 2px 16px rgba(200,169,126,0.06)",
-      }}
-    >
-      {/* Gold top bar */}
-      <div className="h-0.5" style={{ background: "var(--nav-accent)" }} />
+    <aside className="w-full md:w-[280px] flex-shrink-0 bg-white rounded-xl shadow-sm overflow-hidden h-fit">
+      {/* Green Header Block */}
+      <div className="bg-[#1A5E54] text-white p-6 flex flex-col items-center justify-center">
+        <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-3">
+          <User className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="font-medium text-lg text-center leading-tight">
+          {userData.name}
+        </h2>
+        <p className="text-xs text-white/80 mt-1">{userData.email}</p>
+      </div>
 
-      <nav className="flex flex-col py-2">
-        {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
-          const isActive = pathname === href;
+      {/* Navigation Links */}
+      <nav className="p-4 space-y-2">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          // Exact match for overview to prevent it staying active on sub-routes
+          const isActive =
+            item.href === "/profile"
+              ? pathname === "/profile"
+              : pathname.includes(item.href);
+
           return (
-            <button
-              key={href}
-              onClick={() => router.push(href)}
-              className="flex items-center gap-3 px-5 py-3 text-left w-full transition-all duration-150 border-r-2 border-transparent"
-              style={{
-                background: isActive ? "rgba(200,169,126,0.08)" : "transparent",
-                color: isActive ? "var(--nav-fg)" : "var(--nav-fg-muted)",
-                borderRightColor: isActive
-                  ? "var(--nav-accent)"
-                  : "transparent",
-                fontFamily: "var(--nav-font-ui)",
-                fontSize: "12px",
-                fontWeight: 600,
-                letterSpacing: "0.04em",
-                cursor: "pointer",
-                border: "none",
-                borderRight: `2px solid ${isActive ? "var(--nav-accent)" : "transparent"}`,
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = "rgba(200,169,126,0.05)";
-                  e.currentTarget.style.color = "var(--nav-fg)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "var(--nav-fg-muted)";
-                }
-              }}
-            >
-              <Icon
-                size={14}
-                style={{
-                  color: isActive ? "var(--nav-accent)" : "var(--nav-fg-muted)",
-                  flexShrink: 0,
-                }}
-              />
-              {label}
-            </button>
+            <Link href={item.href} key={item.name}>
+              <div
+                className={`flex items-center w-full gap-3 px-4 py-3 text-sm font-bold uppercase rounded-lg transition-colors ${
+                  isActive
+                    ? "bg-[#EBEFEF] text-[#1A5E54]"
+                    : "text-gray-500 hover:bg-gray-50 hover:text-[#1A5E54]"
+                }`}
+              >
+                <Icon size={18} />
+                {item.name}
+              </div>
+            </Link>
           );
         })}
 
-        {/* Divider */}
-        <div
-          className="h-px mx-4 my-2"
-          style={{ background: "var(--nav-border)" }}
-        />
-
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-5 py-3 text-left w-full transition-all duration-150"
-          style={{
-            background: "transparent",
-            color: "var(--nav-fg-muted)",
-            fontFamily: "var(--nav-font-ui)",
-            fontSize: "12px",
-            fontWeight: 600,
-            letterSpacing: "0.04em",
-            cursor: "pointer",
-            border: "none",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(217,79,61,0.05)";
-            e.currentTarget.style.color = "var(--nav-sale)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = "var(--nav-fg-muted)";
-          }}
-        >
-          <LogOut size={14} style={{ flexShrink: 0 }} />
-          Sign Out
-        </button>
+        {/* Logout Button */}
+        <div className="pt-4 mt-2 border-t border-gray-100">
+          <button className="flex items-center w-full gap-3 px-4 py-3 text-sm font-bold text-[#FF5A5F] hover:bg-red-50 rounded-lg transition-colors uppercase">
+            <LogOut size={18} />
+            Logout
+          </button>
+        </div>
       </nav>
-    </div>
+    </aside>
   );
 }
