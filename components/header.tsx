@@ -583,7 +583,7 @@ export default function Navbar() {
             <button
               className="icon-btn"
               style={{ marginLeft: 8 }}
-              onClick={openCart}
+              onClick={() => router.push("/cart")}
               aria-label={`Open cart, ${totalItems} items`}
             >
               <ShoppingBag size={20} />
@@ -630,7 +630,7 @@ export default function Navbar() {
             </div>
             <button
               className="icon-btn"
-              onClick={openCart}
+              onClick={() => router.push("/cart")}
               aria-label={`Open cart, ${totalItems} items`}
             >
               <ShoppingBag size={20} />

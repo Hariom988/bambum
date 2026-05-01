@@ -11,6 +11,18 @@
 }
 
 :root {
+  --pp-hero-bg: #f5f4f0;
+  --pp-dark-bg: #141414;
+  --pp-card-bg: #1e2020;
+  --pp-card-border: rgba(25, 99, 94, 0.25);
+  --pp-teal: var(--nav-accent);
+  --pp-card-title: var(--nav-accent);
+  --pp-card-body: rgba(255, 255, 255, 0.65);
+  --pp-section-heading: #ffffff;
+  --pp-section-sub: rgba(255, 255, 255, 0.55);
+  --pp-contact-bg: #ffffff;
+  --pp-contact-heading: #0a0a0a;
+  --pp-contact-sub: rgba(10, 10, 10, 0.5);
   --about-hero-bg: #f5f5f0;
   --about-teal: #19635e;
   --about-teal-light: #3d9c93;
@@ -32,7 +44,7 @@
   --bg-color: #19635e;
   --nav-bg: #ffffff;
   --nav-bg-color: #090909;
-  --nav-fg: #ffffff;
+  --nav-fg: #020101;
   --nav-fg-muted: #19635e;
   --nav-accent: #19635e;
   --nav-accent-hover: #19635e;
