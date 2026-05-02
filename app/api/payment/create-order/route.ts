@@ -21,20 +21,19 @@ const razorpay = new Razorpay({
 });
 
 export async function POST(req: NextRequest) {
-  const userId = await getUserId(req);
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  }
+  // Allow both logged-in users and guests
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const userId = await getUserId(req); // may be null for guests — that's fine
 
   try {
-    const { amount } = await req.json(); 
+    const { amount } = await req.json();
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: "Invalid amount." }, { status: 400 });
     }
 
     const order = await razorpay.orders.create({
-      amount: Math.round(amount * 100), 
+      amount: Math.round(amount * 100),
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     });

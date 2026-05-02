@@ -13,6 +13,9 @@ import {
   Leaf,
   X,
   Save,
+  User,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { useCart } from "@/context/cartContext";
 import { useAuth } from "@/context/authContext";
@@ -29,6 +32,12 @@ interface Address {
   state: string;
   pincode: string;
   isDefault: boolean;
+}
+
+interface GuestInfo {
+  name: string;
+  phone: string;
+  email: string;
 }
 
 declare global {
@@ -68,19 +77,45 @@ const EMPTY_FORM = {
   pincode: "",
 };
 
+const EMPTY_GUEST: GuestInfo = {
+  name: "",
+  phone: "",
+  email: "",
+};
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { items, totalPrice, clearCart } = useCart();
 
+  const isGuest = !authLoading && !user;
+
+  // Guest info state
+  const [guestInfo, setGuestInfo] = useState<GuestInfo>(EMPTY_GUEST);
+  const [guestErrors, setGuestErrors] = useState<Partial<GuestInfo>>({});
+
+  // Address states (for logged-in users)
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null,
   );
-  const [loadingAddresses, setLoadingAddresses] = useState(true);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [savingAddress, setSavingAddress] = useState(false);
+
+  // Guest address state
+  const [guestAddress, setGuestAddress] = useState({
+    label: "Home",
+    fullName: "",
+    phone: "",
+    line1: "",
+    line2: "",
+    city: "",
+    state: "",
+    pincode: "",
+  });
+
   const [paying, setPaying] = useState(false);
   const [toast, setToast] = useState<{
     type: "success" | "error";
@@ -88,19 +123,12 @@ export default function CheckoutPage() {
   } | null>(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
-  // Auth guard
+  // Redirect only if cart is empty (not for auth)
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace("/auth?returnUrl=/checkout");
-    }
-  }, [user, authLoading, router]);
-
-  // Empty cart guard
-  useEffect(() => {
-    if (!authLoading && user && items.length === 0) {
+    if (!authLoading && items.length === 0) {
       router.replace("/products");
     }
-  }, [items, user, authLoading, router]);
+  }, [items, authLoading, router]);
 
   // Load Razorpay script
   useEffect(() => {
@@ -126,6 +154,7 @@ export default function CheckoutPage() {
   }, [toast]);
 
   const fetchAddresses = useCallback(async () => {
+    if (!user) return;
     setLoadingAddresses(true);
     try {
       const res = await fetch("/api/user/addresses");
@@ -139,7 +168,7 @@ export default function CheckoutPage() {
       }
     } catch {}
     setLoadingAddresses(false);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (user) fetchAddresses();
@@ -179,11 +208,49 @@ export default function CheckoutPage() {
     setSavingAddress(false);
   };
 
+  const validateGuestInfo = (): boolean => {
+    const errors: Partial<GuestInfo> = {};
+    if (!guestInfo.name.trim()) errors.name = "Name is required";
+    if (!guestInfo.phone.trim()) errors.phone = "Phone is required";
+    else if (!/^\+?[\d\s-]{10,}$/.test(guestInfo.phone.trim()))
+      errors.phone = "Enter a valid phone number";
+    setGuestErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateGuestAddress = (): boolean => {
+    return !!(
+      guestAddress.line1 &&
+      guestAddress.city &&
+      guestAddress.state &&
+      guestAddress.pincode
+    );
+  };
+
   const handlePay = async () => {
-    if (!selectedAddressId) {
-      setToast({ type: "error", msg: "Please select a delivery address." });
-      return;
+    // Validate guest info if not logged in
+    if (isGuest) {
+      if (!validateGuestInfo()) {
+        setToast({
+          type: "error",
+          msg: "Please fill in your contact details.",
+        });
+        return;
+      }
+      if (!validateGuestAddress()) {
+        setToast({
+          type: "error",
+          msg: "Please fill in your delivery address.",
+        });
+        return;
+      }
+    } else {
+      if (!selectedAddressId) {
+        setToast({ type: "error", msg: "Please select a delivery address." });
+        return;
+      }
     }
+
     if (!scriptLoaded) {
       setToast({
         type: "error",
@@ -192,13 +259,15 @@ export default function CheckoutPage() {
       return;
     }
 
-    const selectedAddress = addresses.find((a) => a._id === selectedAddressId);
-    if (!selectedAddress) return;
+    const deliveryAddress = isGuest
+      ? guestAddress
+      : addresses.find((a) => a._id === selectedAddressId);
+
+    if (!deliveryAddress) return;
 
     setPaying(true);
 
     try {
-      // Create Razorpay order
       const orderRes = await fetch("/api/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -222,6 +291,12 @@ export default function CheckoutPage() {
         keyId,
       } = await orderRes.json();
 
+      const prefillName = isGuest ? guestInfo.name : user?.name;
+      const prefillEmail = isGuest ? guestInfo.email : user?.email;
+      const prefillPhone = isGuest
+        ? guestInfo.phone
+        : (deliveryAddress as Address).phone;
+
       const options: RazorpayOptions = {
         key: keyId,
         amount,
@@ -231,9 +306,9 @@ export default function CheckoutPage() {
         image: "/logo.png",
         order_id: rzpOrderId,
         prefill: {
-          name: user?.name,
-          email: user?.email,
-          contact: selectedAddress.phone,
+          name: prefillName,
+          email: prefillEmail,
+          contact: prefillPhone,
         },
         theme: { color: "#c8a97e" },
         modal: {
@@ -260,14 +335,19 @@ export default function CheckoutPage() {
                 })),
                 total: totalPrice,
                 address: {
-                  fullName: selectedAddress.fullName,
-                  phone: selectedAddress.phone,
-                  line1: selectedAddress.line1,
-                  line2: selectedAddress.line2,
-                  city: selectedAddress.city,
-                  state: selectedAddress.state,
-                  pincode: selectedAddress.pincode,
+                  fullName:
+                    deliveryAddress.fullName || (isGuest ? guestInfo.name : ""),
+                  phone:
+                    deliveryAddress.phone || (isGuest ? guestInfo.phone : ""),
+                  line1: deliveryAddress.line1,
+                  line2: deliveryAddress.line2,
+                  city: deliveryAddress.city,
+                  state: deliveryAddress.state,
+                  pincode: deliveryAddress.pincode,
                 },
+                // Guest-specific data
+                isGuest,
+                guestInfo: isGuest ? guestInfo : null,
               }),
             });
 
@@ -301,7 +381,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (authLoading || (!user && !authLoading)) {
+  if (authLoading) {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
@@ -316,7 +396,9 @@ export default function CheckoutPage() {
     );
   }
 
-  const selectedAddress = addresses.find((a) => a._id === selectedAddressId);
+  const selectedAddress = user
+    ? addresses.find((a) => a._id === selectedAddressId)
+    : null;
   const LABELS = ["Home", "Work", "Other"];
 
   return (
@@ -335,6 +417,7 @@ export default function CheckoutPage() {
         }
         .co-input:focus { border-color: var(--nav-accent); background: #fff; }
         .co-input::placeholder { color: var(--nav-fg-muted); opacity: 0.6; }
+        .co-input.error { border-color: var(--nav-sale); }
         .addr-card {
           border: 1px solid var(--nav-border);
           transition: border-color 0.2s, box-shadow 0.2s;
@@ -352,11 +435,16 @@ export default function CheckoutPage() {
         .co-section { animation: coFadeUp 0.4s cubic-bezier(0.22,1,0.36,1) both; }
         .co-section:nth-child(2) { animation-delay: 0.08s; }
         .co-section:nth-child(3) { animation-delay: 0.16s; }
+        .co-section:nth-child(4) { animation-delay: 0.24s; }
         @keyframes toastIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
         .co-toast { animation: toastIn 0.25s ease both; }
+        .guest-banner {
+          background: rgba(200,169,126,0.08);
+          border: 1px solid rgba(200,169,126,0.25);
+        }
       `}</style>
 
       <main
@@ -389,10 +477,190 @@ export default function CheckoutPage() {
             </h1>
           </div>
 
+          {/* Guest banner */}
+          {isGuest && (
+            <div className="guest-banner flex items-center justify-between gap-4 px-5 py-3 mb-6">
+              <p className="text-sm" style={{ color: "var(--nav-fg-muted)" }}>
+                <span style={{ color: "var(--nav-fg)", fontWeight: 600 }}>
+                  Checking out as guest.
+                </span>{" "}
+                <a
+                  href="/auth?returnUrl=/checkout"
+                  style={{
+                    color: "var(--nav-accent)",
+                    textDecoration: "underline",
+                  }}
+                >
+                  Sign in
+                </a>{" "}
+                to save your details for next time.
+              </p>
+            </div>
+          )}
+
           <div className="grid md:grid-cols-[1fr_360px] gap-8">
-            {/* LEFT: Address + items */}
+            {/* LEFT */}
             <div className="flex flex-col gap-6">
-              {/* Delivery Address */}
+              {/* ── STEP 1: Guest Contact Info (only for guests) ── */}
+              {isGuest && (
+                <div
+                  className="co-section overflow-hidden"
+                  style={{
+                    background: "#fff",
+                    border: "1px solid var(--nav-border)",
+                    boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+                  }}
+                >
+                  <div
+                    className="flex items-center gap-3 px-6 py-4 border-b"
+                    style={{
+                      borderColor: "var(--nav-border)",
+                      background: "rgba(200,169,126,0.04)",
+                    }}
+                  >
+                    <div
+                      className="w-8 h-8 flex items-center justify-center shrink-0"
+                      style={{
+                        background: "rgba(200,169,126,0.12)",
+                        border: "1px solid var(--nav-border)",
+                      }}
+                    >
+                      <User size={14} style={{ color: "var(--nav-accent)" }} />
+                    </div>
+                    <div>
+                      <p
+                        className="text-[10px] font-bold tracking-[0.16em] uppercase"
+                        style={{ color: "var(--nav-fg-muted)" }}
+                      >
+                        Step 1
+                      </p>
+                      <p
+                        className="text-sm font-bold"
+                        style={{ fontFamily: "var(--nav-font)" }}
+                      >
+                        Your Contact Details
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-6 flex flex-col gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Name */}
+                      <div>
+                        <label
+                          className="block text-[10px] font-bold tracking-widest uppercase mb-1.5"
+                          style={{ color: "var(--nav-fg-muted)" }}
+                        >
+                          Full Name *
+                        </label>
+                        <div className="relative">
+                          <User
+                            size={13}
+                            className="absolute left-3 top-1/2 -translate-y-1/2"
+                            style={{ color: "var(--nav-fg-muted)" }}
+                          />
+                          <input
+                            type="text"
+                            className={`co-input ${guestErrors.name ? "error" : ""}`}
+                            style={{ paddingLeft: 32 }}
+                            placeholder="Your full name"
+                            value={guestInfo.name}
+                            onChange={(e) => {
+                              setGuestInfo((g) => ({
+                                ...g,
+                                name: e.target.value,
+                              }));
+                              setGuestErrors((err) => ({ ...err, name: "" }));
+                            }}
+                          />
+                        </div>
+                        {guestErrors.name && (
+                          <p
+                            className="text-[10px] mt-1"
+                            style={{ color: "var(--nav-sale)" }}
+                          >
+                            {guestErrors.name}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Phone */}
+                      <div>
+                        <label
+                          className="block text-[10px] font-bold tracking-widest uppercase mb-1.5"
+                          style={{ color: "var(--nav-fg-muted)" }}
+                        >
+                          Phone Number *
+                        </label>
+                        <div className="relative">
+                          <Phone
+                            size={13}
+                            className="absolute left-3 top-1/2 -translate-y-1/2"
+                            style={{ color: "var(--nav-fg-muted)" }}
+                          />
+                          <input
+                            type="tel"
+                            className={`co-input ${guestErrors.phone ? "error" : ""}`}
+                            style={{ paddingLeft: 32 }}
+                            placeholder="+91 9999999999"
+                            value={guestInfo.phone}
+                            onChange={(e) => {
+                              setGuestInfo((g) => ({
+                                ...g,
+                                phone: e.target.value,
+                              }));
+                              setGuestErrors((err) => ({ ...err, phone: "" }));
+                            }}
+                          />
+                        </div>
+                        {guestErrors.phone && (
+                          <p
+                            className="text-[10px] mt-1"
+                            style={{ color: "var(--nav-sale)" }}
+                          >
+                            {guestErrors.phone}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Email (optional) */}
+                    <div>
+                      <label
+                        className="block text-[10px] font-bold tracking-widest uppercase mb-1.5"
+                        style={{ color: "var(--nav-fg-muted)" }}
+                      >
+                        Email Address{" "}
+                        <span style={{ opacity: 0.6 }}>
+                          (optional — for order confirmation)
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <Mail
+                          size={13}
+                          className="absolute left-3 top-1/2 -translate-y-1/2"
+                          style={{ color: "var(--nav-fg-muted)" }}
+                        />
+                        <input
+                          type="email"
+                          className="co-input"
+                          style={{ paddingLeft: 32 }}
+                          placeholder="you@example.com"
+                          value={guestInfo.email}
+                          onChange={(e) =>
+                            setGuestInfo((g) => ({
+                              ...g,
+                              email: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── STEP 2: Delivery Address ── */}
               <div
                 className="co-section overflow-hidden"
                 style={{
@@ -417,12 +685,12 @@ export default function CheckoutPage() {
                   >
                     <MapPin size={14} style={{ color: "var(--nav-accent)" }} />
                   </div>
-                  <div className="flex-1">
+                  <div>
                     <p
                       className="text-[10px] font-bold tracking-[0.16em] uppercase"
                       style={{ color: "var(--nav-fg-muted)" }}
                     >
-                      Step 1
+                      Step {isGuest ? "2" : "1"}
                     </p>
                     <p
                       className="text-sm font-bold"
@@ -434,7 +702,116 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="p-6">
-                  {loadingAddresses ? (
+                  {/* Guest: inline address form */}
+                  {isGuest ? (
+                    <div className="flex flex-col gap-4">
+                      <div>
+                        <label
+                          className="block text-[10px] font-bold tracking-widest uppercase mb-1.5"
+                          style={{ color: "var(--nav-fg-muted)" }}
+                        >
+                          Address Line 1 *
+                        </label>
+                        <input
+                          type="text"
+                          className="co-input"
+                          value={guestAddress.line1}
+                          onChange={(e) =>
+                            setGuestAddress((a) => ({
+                              ...a,
+                              line1: e.target.value,
+                            }))
+                          }
+                          placeholder="Flat / House No., Building, Street"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          className="block text-[10px] font-bold tracking-widests uppercase mb-1.5"
+                          style={{ color: "var(--nav-fg-muted)" }}
+                        >
+                          Address Line 2{" "}
+                          <span style={{ opacity: 0.6 }}>(optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          className="co-input"
+                          value={guestAddress.line2}
+                          onChange={(e) =>
+                            setGuestAddress((a) => ({
+                              ...a,
+                              line2: e.target.value,
+                            }))
+                          }
+                          placeholder="Area, Colony, Landmark"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <label
+                            className="block text-[10px] font-bold tracking-widest uppercase mb-1.5"
+                            style={{ color: "var(--nav-fg-muted)" }}
+                          >
+                            City *
+                          </label>
+                          <input
+                            type="text"
+                            className="co-input"
+                            value={guestAddress.city}
+                            onChange={(e) =>
+                              setGuestAddress((a) => ({
+                                ...a,
+                                city: e.target.value,
+                              }))
+                            }
+                            placeholder="Delhi"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            className="block text-[10px] font-bold tracking-widest uppercase mb-1.5"
+                            style={{ color: "var(--nav-fg-muted)" }}
+                          >
+                            State *
+                          </label>
+                          <input
+                            type="text"
+                            className="co-input"
+                            value={guestAddress.state}
+                            onChange={(e) =>
+                              setGuestAddress((a) => ({
+                                ...a,
+                                state: e.target.value,
+                              }))
+                            }
+                            placeholder="Delhi"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            className="block text-[10px] font-bold tracking-widest uppercase mb-1.5"
+                            style={{ color: "var(--nav-fg-muted)" }}
+                          >
+                            Pincode *
+                          </label>
+                          <input
+                            type="text"
+                            className="co-input"
+                            value={guestAddress.pincode}
+                            onChange={(e) =>
+                              setGuestAddress((a) => ({
+                                ...a,
+                                pincode: e.target.value,
+                              }))
+                            }
+                            placeholder="110001"
+                            maxLength={6}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : /* Logged-in: saved addresses */
+                  loadingAddresses ? (
                     <div className="flex justify-center py-8">
                       <Loader2
                         size={20}
@@ -457,7 +834,6 @@ export default function CheckoutPage() {
                           onClick={() => setSelectedAddressId(addr._id)}
                         >
                           <div className="flex items-start gap-3">
-                            {/* Radio */}
                             <div
                               className="mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all"
                               style={{
@@ -521,7 +897,6 @@ export default function CheckoutPage() {
                         </div>
                       ))}
 
-                      {/* Add new address button */}
                       {!showAddForm && (
                         <button
                           onClick={() => setShowAddForm(true)}
@@ -545,7 +920,6 @@ export default function CheckoutPage() {
                         </button>
                       )}
 
-                      {/* Add address form */}
                       {showAddForm && (
                         <div
                           className="p-5 flex flex-col gap-4"
@@ -576,8 +950,6 @@ export default function CheckoutPage() {
                               <X size={16} />
                             </button>
                           </div>
-
-                          {/* Label */}
                           <div className="flex gap-2">
                             {LABELS.map((l) => (
                               <button
@@ -603,7 +975,6 @@ export default function CheckoutPage() {
                               </button>
                             ))}
                           </div>
-
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label
@@ -646,7 +1017,6 @@ export default function CheckoutPage() {
                               />
                             </div>
                           </div>
-
                           <div>
                             <label
                               className="block text-[10px] font-bold tracking-widest uppercase mb-1.5"
@@ -667,7 +1037,6 @@ export default function CheckoutPage() {
                               placeholder="Flat / House No., Building, Street"
                             />
                           </div>
-
                           <div>
                             <label
                               className="block text-[10px] font-bold tracking-widest uppercase mb-1.5"
@@ -689,7 +1058,6 @@ export default function CheckoutPage() {
                               placeholder="Area, Colony, Landmark"
                             />
                           </div>
-
                           <div className="grid grid-cols-3 gap-3">
                             <div>
                               <label
@@ -753,7 +1121,6 @@ export default function CheckoutPage() {
                               />
                             </div>
                           </div>
-
                           <div className="flex gap-3 pt-1">
                             <button
                               onClick={() => {
@@ -796,7 +1163,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Order Items */}
+              {/* ── Order Items ── */}
               <div
                 className="co-section overflow-hidden"
                 style={{
@@ -829,7 +1196,7 @@ export default function CheckoutPage() {
                       className="text-[10px] font-bold tracking-[0.16em] uppercase"
                       style={{ color: "var(--nav-fg-muted)" }}
                     >
-                      Step 2
+                      Step {isGuest ? "3" : "2"}
                     </p>
                     <p
                       className="text-sm font-bold"
@@ -839,7 +1206,6 @@ export default function CheckoutPage() {
                     </p>
                   </div>
                 </div>
-
                 <div
                   className="divide-y"
                   style={{ borderColor: "var(--nav-border)" }}
@@ -942,7 +1308,6 @@ export default function CheckoutPage() {
                   className="h-0.5"
                   style={{ background: "var(--nav-accent)" }}
                 />
-
                 <div className="px-6 py-5">
                   <p
                     className="text-xs font-bold uppercase tracking-widest mb-5"
@@ -951,7 +1316,6 @@ export default function CheckoutPage() {
                     Order Summary
                   </p>
 
-                  {/* Price breakdown */}
                   <div className="flex flex-col gap-3 mb-4">
                     {items.map((item) => (
                       <div
@@ -979,7 +1343,6 @@ export default function CheckoutPage() {
                     className="h-px mb-4"
                     style={{ background: "var(--nav-border)" }}
                   />
-
                   <div className="flex items-center justify-between mb-2">
                     <span
                       className="text-xs"
@@ -1008,12 +1371,10 @@ export default function CheckoutPage() {
                       Free
                     </span>
                   </div>
-
                   <div
                     className="h-px mb-4"
                     style={{ background: "var(--nav-border)" }}
                   />
-
                   <div className="flex items-center justify-between mb-6">
                     <span
                       className="text-sm font-bold uppercase tracking-wide"
@@ -1032,8 +1393,8 @@ export default function CheckoutPage() {
                     </span>
                   </div>
 
-                  {/* Selected address preview */}
-                  {selectedAddress && (
+                  {/* Delivery preview */}
+                  {!isGuest && selectedAddress && (
                     <div
                       className="p-3 mb-5 text-xs leading-relaxed"
                       style={{
@@ -1048,7 +1409,7 @@ export default function CheckoutPage() {
                         <MapPin
                           size={10}
                           style={{ color: "var(--nav-accent)" }}
-                        />
+                        />{" "}
                         Delivering to
                       </p>
                       <p style={{ color: "var(--nav-fg-muted)" }}>
@@ -1061,32 +1422,28 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
-                  {!selectedAddress &&
-                    addresses.length === 0 &&
-                    !loadingAddresses && (
-                      <div
-                        className="flex items-center gap-2 p-3 mb-5 text-xs"
-                        style={{
-                          background: "rgba(217,79,61,0.05)",
-                          border: "1px solid rgba(217,79,61,0.15)",
-                        }}
-                      >
-                        <AlertCircle
-                          size={13}
-                          style={{ color: "var(--nav-sale)", flexShrink: 0 }}
-                        />
-                        <span style={{ color: "var(--nav-sale)" }}>
-                          Please add a delivery address first.
-                        </span>
-                      </div>
-                    )}
+                  {!isGuest && addresses.length === 0 && !loadingAddresses && (
+                    <div
+                      className="flex items-center gap-2 p-3 mb-5 text-xs"
+                      style={{
+                        background: "rgba(217,79,61,0.05)",
+                        border: "1px solid rgba(217,79,61,0.15)",
+                      }}
+                    >
+                      <AlertCircle
+                        size={13}
+                        style={{ color: "var(--nav-sale)", flexShrink: 0 }}
+                      />
+                      <span style={{ color: "var(--nav-sale)" }}>
+                        Please add a delivery address first.
+                      </span>
+                    </div>
+                  )}
 
                   {/* Pay button */}
                   <button
                     onClick={handlePay}
-                    disabled={
-                      paying || !selectedAddressId || items.length === 0
-                    }
+                    disabled={paying || items.length === 0}
                     className="w-full flex items-center justify-center gap-2 py-4 text-xs font-bold tracking-[0.16em] uppercase transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
                       background: "var(--nav-accent)",
@@ -1124,7 +1481,6 @@ export default function CheckoutPage() {
                   </p>
                 </div>
 
-                {/* Trust badges */}
                 <div className="px-6 pb-5 flex items-center justify-center gap-4">
                   <div className="flex items-center gap-1.5">
                     <Leaf size={11} style={{ color: "var(--nav-accent)" }} />

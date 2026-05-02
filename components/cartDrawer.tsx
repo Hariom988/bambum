@@ -49,12 +49,7 @@ export default function CartDrawer() {
 
   const handleCheckout = () => {
     closeCart();
-    if (!user) {
-      // Save returnUrl so we come back after login
-      router.push("/auth?returnUrl=/checkout");
-    } else {
-      router.push("/checkout");
-    }
+    router.push("/checkout"); // Everyone goes straight to checkout now!
   };
 
   return (
@@ -508,17 +503,6 @@ export default function CartDrawer() {
                 </span>
               </div>
             </div>
-
-            {/* Login hint if not authenticated */}
-            {!user && (
-              <div className="cart-login-note">
-                <LogIn
-                  size={11}
-                  style={{ color: "var(--nav-accent)", flexShrink: 0 }}
-                />
-                <span>You&apos;ll be asked to sign in before checkout</span>
-              </div>
-            )}
 
             {/* Tax note */}
             <p

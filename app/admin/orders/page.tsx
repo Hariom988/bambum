@@ -50,6 +50,12 @@ interface Order {
     state: string;
     pincode: string;
   };
+  isGuest?: boolean;
+  guestInfo?: {
+    name: string;
+    phone: string;
+    email?: string;
+  };
   payment?: {
     razorpay_order_id: string;
     razorpay_payment_id: string;
@@ -219,6 +225,50 @@ function OrderCard({
             </div>
           </div>
         </div>
+        {order.isGuest && (
+          <div
+            className="flex items-center justify-between p-2.5"
+            style={{
+              background: "rgba(200,169,126,0.05)",
+              border: "1px solid var(--nav-border)",
+            }}
+          >
+            <span
+              className="text-[10px] font-bold tracking-widest uppercase"
+              style={{ color: "var(--nav-fg-muted)" }}
+            >
+              Order Type
+            </span>
+            <span
+              className="text-[10px] font-bold"
+              style={{ color: "var(--nav-accent)" }}
+            >
+              Guest
+            </span>
+          </div>
+        )}
+        {order.isGuest && order.guestInfo?.email && (
+          <div
+            className="flex items-center justify-between p-2.5"
+            style={{
+              background: "rgba(200,169,126,0.05)",
+              border: "1px solid var(--nav-border)",
+            }}
+          >
+            <span
+              className="text-[10px] font-bold tracking-widest uppercase"
+              style={{ color: "var(--nav-fg-muted)" }}
+            >
+              Guest Email
+            </span>
+            <span
+              className="text-[10px] font-mono"
+              style={{ color: "var(--nav-fg)" }}
+            >
+              {order.guestInfo.email}
+            </span>
+          </div>
+        )}
 
         {/* Right side */}
         <div className="flex items-center gap-3 shrink-0">
