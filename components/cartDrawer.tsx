@@ -334,7 +334,7 @@ export default function CartDrawer() {
                       <button
                         className="cart-remove-btn flex-shrink-0"
                         onClick={() =>
-                          removeItem(item.productId, item.colorName)
+                          removeItem(item.productId, item.colorName, item.size)
                         }
                         aria-label={`Remove ${item.name}`}
                       >
@@ -352,10 +352,11 @@ export default function CartDrawer() {
                         }}
                       />
                       <span
-                        className="text-[10px] tracking-wide"
+                        className="text-[10px] "
                         style={{ color: "var(--nav-fg-muted)" }}
                       >
-                        {item.colorName}
+                        {item.colorName}· Size: {item.size} · Qty:{" "}
+                        {item.quantity}
                       </span>
                     </div>
 
@@ -372,6 +373,7 @@ export default function CartDrawer() {
                             updateQty(
                               item.productId,
                               item.colorName,
+                              item.size,
                               item.quantity - 1,
                             )
                           }
@@ -395,6 +397,7 @@ export default function CartDrawer() {
                             updateQty(
                               item.productId,
                               item.colorName,
+                              item.size,
                               item.quantity + 1,
                             )
                           }

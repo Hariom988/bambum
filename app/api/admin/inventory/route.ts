@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { MongoClient, ObjectId } from "mongodb";
 
 const MONGODB_URI = process.env.MONGODB_URI!;
-
+const calculateTotalStock = (variants: any[]) => {
+  if (!variants || !Array.isArray(variants)) return 0;
+  return variants.reduce((total, variant) => {
+    const variantStock = variant.sizes?.reduce((sum: number, s: any) => sum + (Number(s.stock) || 0), 0) || 0;
+    return total + variantStock;
+  }, 0);
+};
 async function getDb() {
   const client = await MongoClient.connect(MONGODB_URI);
   const db = client.db("inventory");
@@ -45,7 +51,7 @@ export async function POST(req: NextRequest) {
       category,
       variants: variants || [],
       isActive: isActive !== false,
-      stock: typeof stock === "number" && stock >= 0 ? Math.floor(stock) : 0, // ← stock stored here
+      stock: calculateTotalStock(variants),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -83,7 +89,7 @@ export async function PUT(req: NextRequest) {
           category,
           variants,
           isActive: isActive !== false,
-          stock: typeof stock === "number" && stock >= 0 ? Math.floor(stock) : 0, // ← stock updated
+          stock: calculateTotalStock(variants),
           updatedAt: new Date(),
         },
       }

@@ -19,6 +19,7 @@ export interface CartItem {
   category: string;
   colorName: string;
   colorHex: string;
+  size: string;
   image: string;
   quantity: number;
   stock: number;
@@ -32,13 +33,17 @@ interface CartContextValue {
   openCart: () => void;
   closeCart: () => void;
   addItem: (item: Omit<CartItem, "quantity">) => void;
-  removeItem: (productId: string, colorName: string) => void;
-  updateQty: (productId: string, colorName: string, qty: number) => void;
+  removeItem: (productId: string, colorName: string, size: string) => void;
+  updateQty: (
+    productId: string,
+    colorName: string,
+    size: string,
+    qty: number,
+  ) => void;
   clearCart: () => void;
-  isInCart: (productId: string, colorName: string) => boolean;
-  getItemQty: (productId: string, colorName: string) => number;
+  isInCart: (productId: string, colorName: string, size: string) => boolean;
+  getItemQty: (productId: string, colorName: string, size: string) => number;
 }
-
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -68,9 +73,8 @@ const ssClear = (): void => {
     window.sessionStorage.removeItem(CART_KEY);
   } catch {}
 };
-
-function itemKey(productId: string, colorName: string) {
-  return `${productId}__${colorName}`;
+function itemKey(productId: string, colorName: string, size: string) {
+  return `${productId}__${colorName}__${size}`;
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -97,13 +101,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback((incoming: Omit<CartItem, "quantity">) => {
     setItems((prev) => {
-      const key = itemKey(incoming.productId, incoming.colorName);
+      const key = itemKey(
+        incoming.productId,
+        incoming.colorName,
+        incoming.size,
+      );
       const existing = prev.find(
-        (i) => itemKey(i.productId, i.colorName) === key,
+        (i) => itemKey(i.productId, i.colorName, i.size) === key,
       );
       if (existing) {
         return prev.map((i) =>
-          itemKey(i.productId, i.colorName) === key
+          itemKey(i.productId, i.colorName, i.size) === key
             ? { ...i, quantity: Math.min(i.quantity + 1, i.stock) }
             : i,
         );
@@ -113,24 +121,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsOpen(true);
   }, []);
 
-  const removeItem = useCallback((productId: string, colorName: string) => {
-    setItems((prev) =>
-      prev.filter(
-        (i) =>
-          itemKey(i.productId, i.colorName) !== itemKey(productId, colorName),
-      ),
-    );
-  }, []);
+  const removeItem = useCallback(
+    (productId: string, colorName: string, size: string) => {
+      setItems((prev) =>
+        prev.filter(
+          (i) =>
+            itemKey(i.productId, i.colorName, i.size) !==
+            itemKey(productId, colorName, size),
+        ),
+      );
+    },
+    [],
+  );
 
   const updateQty = useCallback(
-    (productId: string, colorName: string, qty: number) => {
+    (productId: string, colorName: string, size: string, qty: number) => {
       if (qty <= 0) {
-        removeItem(productId, colorName);
+        removeItem(productId, colorName, size);
         return;
       }
       setItems((prev) =>
         prev.map((i) =>
-          itemKey(i.productId, i.colorName) === itemKey(productId, colorName)
+          itemKey(i.productId, i.colorName, i.size) ===
+          itemKey(productId, colorName, size)
             ? { ...i, quantity: Math.min(qty, i.stock) }
             : i,
         ),
@@ -145,19 +158,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isInCart = useCallback(
-    (productId: string, colorName: string) =>
+    (productId: string, colorName: string, size: string) =>
       items.some(
         (i) =>
-          itemKey(i.productId, i.colorName) === itemKey(productId, colorName),
+          itemKey(i.productId, i.colorName, i.size) ===
+          itemKey(productId, colorName, size),
       ),
     [items],
   );
 
   const getItemQty = useCallback(
-    (productId: string, colorName: string) =>
+    (productId: string, colorName: string, size: string) =>
       items.find(
         (i) =>
-          itemKey(i.productId, i.colorName) === itemKey(productId, colorName),
+          itemKey(i.productId, i.colorName, i.size) ===
+          itemKey(productId, colorName, size),
       )?.quantity ?? 0,
     [items],
   );
@@ -186,8 +201,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     </CartContext.Provider>
   );
 }
-
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useCart() {
   const ctx = useContext(CartContext);

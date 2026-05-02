@@ -26,11 +26,16 @@ import CategoryManager from "./categoryManager";
 
 // ─── Types
 
+interface ProductSize {
+  size: string;
+  stock: number;
+}
 interface ProductVariant {
   colorName: string;
   colorHex: string;
   images: string[];
   imageFiles?: File[];
+  sizes: ProductSize[]; // <-- New sizes array
 }
 
 interface Product {
@@ -58,7 +63,13 @@ type ConfirmDialog = {
 type View = "products" | "add" | "categories";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-
+const DEFAULT_SIZES = [
+  { size: "Small", stock: 0 },
+  { size: "Medium", stock: 0 },
+  { size: "Large", stock: 0 },
+  { size: "Extra Large", stock: 0 },
+  { size: "XXL", stock: 0 },
+];
 const EMPTY_PRODUCT: FormProduct = {
   name: "",
   slug: "",
@@ -67,7 +78,13 @@ const EMPTY_PRODUCT: FormProduct = {
   category: "",
   stock: 0, // ← default
   variants: [
-    { colorName: "", colorHex: "#c8a97e", images: [], imageFiles: [] },
+    {
+      colorName: "",
+      colorHex: "#c8a97e",
+      images: [],
+      imageFiles: [],
+      sizes: [],
+    },
   ],
   isActive: true,
 };
@@ -548,11 +565,33 @@ export default function InventoryPage() {
         ...v,
         images: v.images.filter(Boolean),
         imageFiles: [],
+        sizes: v.sizes?.length ? v.sizes : [...DEFAULT_SIZES], // Load existing sizes or defaults
       })),
       isActive: p.isActive,
     });
     setView("add");
   }, []);
+
+  const updateVariantSizeStock = useCallback(
+    (vi: number, sizeIndex: number, stock: number) => {
+      setForm((f) => {
+        const v = [...f.variants];
+        const newSizes = [...(v[vi].sizes || DEFAULT_SIZES)];
+        newSizes[sizeIndex] = { ...newSizes[sizeIndex], stock };
+        v[vi] = { ...v[vi], sizes: newSizes };
+
+        // Auto-calculate total stock across all variants/sizes
+        const totalStock = v.reduce(
+          (acc, curr) =>
+            acc + (curr.sizes?.reduce((sAcc, s) => sAcc + s.stock, 0) || 0),
+          0,
+        );
+
+        return { ...f, variants: v, stock: totalStock };
+      });
+    },
+    [],
+  );
 
   const cancel = useCallback(() => {
     setEditingProduct(null);
@@ -566,7 +605,13 @@ export default function InventoryPage() {
         ...f,
         variants: [
           ...f.variants,
-          { colorName: "", colorHex: "#c8a97e", images: [], imageFiles: [] },
+          {
+            colorName: "",
+            colorHex: "#c8a97e",
+            images: [],
+            imageFiles: [],
+            sizes: [...DEFAULT_SIZES],
+          },
         ],
       })),
     [],
@@ -1513,95 +1558,6 @@ export default function InventoryPage() {
                       </select>
                     </div>
                   </div>
-
-                  {/* ── Stock field ── */}
-                  <div>
-                    <FieldLabel>Stock Quantity</FieldLabel>
-                    <div
-                      className="flex items-stretch gap-0"
-                      style={{
-                        border: "1px solid var(--adm-border)",
-                        background: "var(--adm-bg-input)",
-                      }}
-                    >
-                      {/* Decrement */}
-                      <button
-                        type="button"
-                        className="stock-stepper-btn"
-                        style={{
-                          borderRight: "1px solid var(--adm-border)",
-                          borderLeft: "none",
-                          borderTop: "none",
-                          borderBottom: "none",
-                        }}
-                        onClick={() =>
-                          setForm((f) => ({
-                            ...f,
-                            stock: Math.max(0, f.stock - 1),
-                          }))
-                        }
-                        tabIndex={-1}
-                      >
-                        −
-                      </button>
-                      {/* Input */}
-                      <input
-                        type="number"
-                        min={0}
-                        className="adm-stock-input flex-1 bg-transparent outline-none font-sans text-[14px] font-bold text-center"
-                        style={{
-                          color: "var(--adm-fg)",
-                          padding: "10px 8px",
-                          border: "none",
-                        }}
-                        value={form.stock}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value, 10);
-                          setForm((f) => ({
-                            ...f,
-                            stock: isNaN(val) || val < 0 ? 0 : val,
-                          }));
-                        }}
-                      />
-                      {/* Increment */}
-                      <button
-                        type="button"
-                        className="stock-stepper-btn"
-                        style={{
-                          borderLeft: "1px solid var(--adm-border)",
-                          borderRight: "none",
-                          borderTop: "none",
-                          borderBottom: "none",
-                        }}
-                        onClick={() =>
-                          setForm((f) => ({ ...f, stock: f.stock + 1 }))
-                        }
-                        tabIndex={-1}
-                      >
-                        +
-                      </button>
-                    </div>
-                    {/* Stock status hint */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <StockBadge stock={form.stock} />
-                      {form.stock > 0 && form.stock <= 10 && (
-                        <span
-                          className="font-sans text-[10px]"
-                          style={{ color: "var(--adm-fg-muted)" }}
-                        >
-                          Consider restocking soon
-                        </span>
-                      )}
-                      {form.stock === 0 && (
-                        <span
-                          className="font-sans text-[10px]"
-                          style={{ color: "#c0392b" }}
-                        >
-                          Product will appear as out of stock on the storefront
-                        </span>
-                      )}
-                    </div>
-                  </div>
                 </FormSection>
 
                 {/* Description */}
@@ -1762,6 +1718,60 @@ export default function InventoryPage() {
                             handleImageUpload(vi, e.target.files)
                           }
                         />
+                      </div>
+                      <div
+                        className="p-3.5 border-t bg-[#fdfaf7]"
+                        style={{ borderColor: "var(--adm-border-soft)" }}
+                      >
+                        <div
+                          className="font-sans text-[9px] font-bold tracking-[0.16em] uppercase mb-2.5"
+                          style={{ color: "var(--adm-fg-muted)" }}
+                        >
+                          Sizes & Stock for {variant.colorName || "this colour"}
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                          {(variant.sizes || DEFAULT_SIZES).map((sz, si) => (
+                            <div
+                              key={sz.size}
+                              className="flex flex-col gap-1.5"
+                            >
+                              <label
+                                className="font-sans text-[10px] font-bold text-center uppercase tracking-widest"
+                                style={{ color: "var(--adm-fg)" }}
+                              >
+                                {sz.size}
+                              </label>
+                              <input
+                                type="number"
+                                min={0}
+                                className="w-full border px-2 py-1.5 text-center font-sans text-[13px] font-semibold outline-none transition-colors"
+                                style={{
+                                  borderColor: "var(--adm-border)",
+                                  background: "var(--adm-bg-white)",
+                                  color: "var(--adm-fg)",
+                                }}
+                                onFocus={(e) =>
+                                  (e.currentTarget.style.borderColor =
+                                    "var(--adm-accent)")
+                                }
+                                onBlur={(e) =>
+                                  (e.currentTarget.style.borderColor =
+                                    "var(--adm-border)")
+                                }
+                                value={sz.stock === 0 ? "" : sz.stock} // Blank if 0 for cleaner UI
+                                placeholder="0"
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value, 10);
+                                  updateVariantSizeStock(
+                                    vi,
+                                    si,
+                                    isNaN(val) || val < 0 ? 0 : val,
+                                  );
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ))}

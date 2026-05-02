@@ -31,6 +31,7 @@ interface OrderItem {
   colorName: string;
   colorHex: string;
   price: number;
+  size: string;
   quantity: number;
 }
 
@@ -391,7 +392,8 @@ function OrderCard({
                           className="text-[10px]"
                           style={{ color: "var(--nav-fg-muted)" }}
                         >
-                          {item.colorName} · Qty: {item.quantity}
+                          {item.colorName} · Size: {item.size} · Qty:{" "}
+                          {item.quantity}
                         </span>
                       </div>
                     </div>

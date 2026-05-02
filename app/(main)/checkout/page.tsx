@@ -106,9 +106,6 @@ export default function CheckoutPage() {
 
   // Guest address state
   const [guestAddress, setGuestAddress] = useState({
-    label: "Home",
-    fullName: "",
-    phone: "",
     line1: "",
     line2: "",
     city: "",
@@ -335,10 +332,6 @@ export default function CheckoutPage() {
                 })),
                 total: totalPrice,
                 address: {
-                  fullName:
-                    deliveryAddress.fullName || (isGuest ? guestInfo.name : ""),
-                  phone:
-                    deliveryAddress.phone || (isGuest ? guestInfo.phone : ""),
                   line1: deliveryAddress.line1,
                   line2: deliveryAddress.line2,
                   city: deliveryAddress.city,
@@ -493,7 +486,7 @@ export default function CheckoutPage() {
                 >
                   Sign in
                 </a>{" "}
-                to save your details for next time.
+                to save your details for next time and view your order history.
               </p>
             </div>
           )}
@@ -631,9 +624,7 @@ export default function CheckoutPage() {
                         style={{ color: "var(--nav-fg-muted)" }}
                       >
                         Email Address{" "}
-                        <span style={{ opacity: 0.6 }}>
-                          (optional — for order confirmation)
-                        </span>
+                        <span style={{ opacity: 0.6 }}>(optional)</span>
                       </label>
                       <div className="relative">
                         <Mail
@@ -642,6 +633,7 @@ export default function CheckoutPage() {
                           style={{ color: "var(--nav-fg-muted)" }}
                         />
                         <input
+                          required
                           type="email"
                           className="co-input"
                           style={{ paddingLeft: 32 }}
@@ -795,7 +787,7 @@ export default function CheckoutPage() {
                             Pincode *
                           </label>
                           <input
-                            type="text"
+                            type="tel"
                             className="co-input"
                             value={guestAddress.pincode}
                             onChange={(e) =>
@@ -1260,13 +1252,8 @@ export default function CheckoutPage() {
                             className="text-[10px]"
                             style={{ color: "var(--nav-fg-muted)" }}
                           >
-                            {item.colorName}
-                          </span>
-                          <span
-                            className="text-[10px]"
-                            style={{ color: "var(--nav-fg-muted)" }}
-                          >
-                            · Qty: {item.quantity}
+                            {item.colorName} · Size: {item.size} · Qty:{" "}
+                            {item.quantity}
                           </span>
                         </div>
                       </div>
@@ -1326,7 +1313,7 @@ export default function CheckoutPage() {
                           className="text-xs truncate flex-1"
                           style={{ color: "var(--nav-fg-muted)" }}
                         >
-                          {item.name} × {item.quantity}
+                          {item.name} ({item.size}) x {item.quantity}
                         </span>
                         <span
                           className="text-xs font-semibold shrink-0"

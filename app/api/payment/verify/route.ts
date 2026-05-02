@@ -77,12 +77,18 @@ export async function POST(req: NextRequest) {
 
     const orderId = `ORD${Date.now().toString().slice(-8)}`;
 
-    // 2. Decrement stock
+ // 2. Decrement stock
     const productsCol = client.db("inventory").collection("products");
     for (const item of items) {
       await productsCol.updateOne(
         { _id: new ObjectId(item.productId) },
-        { $inc: { stock: -item.quantity } }
+        { $inc: { "variants.$[v].sizes.$[s].stock": -item.quantity } },
+        {
+          arrayFilters: [
+            { "v.colorName": item.colorName },
+            { "s.size": item.size }
+          ]
+        }
       );
     }
 
