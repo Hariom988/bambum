@@ -2,17 +2,15 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { User, Package, Heart, Settings, LogOut } from "lucide-react";
+import { useAuth, AuthUser } from "@/context/authContext";
 
-export default function ProfileSidebar({
-  userData,
-}: {
-  userData: { name: string; email: string };
-}) {
+export default function ProfileSidebar({ user }: { user: AuthUser }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useAuth();
 
-  // Define actual Next.js routes here
   const navItems = [
     { name: "OVERVIEW", icon: User, href: "/profile" },
     { name: "MY ORDERS", icon: Package, href: "/profile/orders" },
@@ -20,37 +18,63 @@ export default function ProfileSidebar({
     { name: "SETTINGS", icon: Settings, href: "/profile/settings" },
   ];
 
+  const handleLogout = async () => {
+    await logout();
+    router.push("/");
+  };
+
+  // Split name for display
+  const nameParts = user.name?.trim().split(" ") ?? [];
+  const initials =
+    nameParts.length >= 2
+      ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
+      : (user.name?.[0] ?? "U").toUpperCase();
+
   return (
-    <aside className="w-full md:w-[280px] flex-shrink-0 bg-white rounded-xl shadow-sm overflow-hidden h-fit">
+    <aside
+      className="w-full md:w-[280px] flex-shrink-0 overflow-hidden h-fit rounded-xl"
+      style={{ background: "#fff", border: "1px solid var(--nav-border)" }}
+    >
       {/* Green Header Block */}
-      <div className="bg-[#1A5E54] text-white p-6 flex flex-col items-center justify-center">
-        <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-3">
-          <User className="w-8 h-8 text-white" />
+      <div
+        className="p-6 flex flex-col items-center justify-center"
+        style={{ background: "var(--brand-teal)" }}
+      >
+        <div
+          className="w-16 h-16 rounded-full flex items-center justify-center mb-3 text-xl font-bold"
+          style={{
+            background: "rgba(255,255,255,0.2)",
+            color: "#fff",
+            fontFamily: "var(--nav-font)",
+          }}
+        >
+          {initials}
         </div>
-        <h2 className="font-medium text-lg text-center leading-tight">
-          {userData.name}
+        <h2 className="font-medium text-lg text-center leading-tight text-white">
+          {user.name}
         </h2>
-        <p className="text-xs text-white/80 mt-1">{userData.email}</p>
+        <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.75)" }}>
+          {user.email}
+        </p>
       </div>
 
       {/* Navigation Links */}
-      <nav className="p-4 space-y-2">
+      <nav className="p-4 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
-          // Exact match for overview to prevent it staying active on sub-routes
           const isActive =
             item.href === "/profile"
               ? pathname === "/profile"
-              : pathname.includes(item.href);
+              : pathname.startsWith(item.href);
 
           return (
             <Link href={item.href} key={item.name}>
               <div
-                className={`flex items-center w-full gap-3 px-4 py-3 text-sm font-bold uppercase rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-[#EBEFEF] text-[#1A5E54]"
-                    : "text-gray-500 hover:bg-gray-50 hover:text-[#1A5E54]"
-                }`}
+                className="flex items-center w-full gap-3 px-4 py-3 text-sm font-bold uppercase rounded-lg transition-colors"
+                style={{
+                  background: isActive ? "rgba(25,99,94,0.08)" : "transparent",
+                  color: isActive ? "var(--brand-teal)" : "#6b7280",
+                }}
               >
                 <Icon size={18} />
                 {item.name}
@@ -59,9 +83,22 @@ export default function ProfileSidebar({
           );
         })}
 
-        {/* Logout Button */}
-        <div className="pt-4 mt-2 border-t border-gray-100">
-          <button className="flex items-center w-full gap-3 px-4 py-3 text-sm font-bold text-[#FF5A5F] hover:bg-red-50 rounded-lg transition-colors uppercase">
+        {/* Logout */}
+        <div
+          className="pt-3 mt-2"
+          style={{ borderTop: "1px solid var(--nav-border)" }}
+        >
+          <button
+            onClick={handleLogout}
+            className="flex items-center w-full gap-3 px-4 py-3 text-sm font-bold rounded-lg uppercase transition-colors"
+            style={{ color: "var(--nav-sale)" }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "rgba(217,79,61,0.06)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "transparent")
+            }
+          >
             <LogOut size={18} />
             Logout
           </button>

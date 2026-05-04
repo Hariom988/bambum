@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
-import { usePathname } from "next/navigation";
+import React, { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import ProfileSidebar from "./profileSidebar";
+import { useAuth } from "@/context/authContext";
 
 export default function ProfileLayout({
   children,
@@ -10,8 +11,42 @@ export default function ProfileLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useAuth();
 
-  // Dynamically change headers based on the current Next.js route
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/auth");
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "var(--nav-dropdown-bg)" }}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
+            style={{
+              borderColor: "var(--brand-teal)",
+              borderTopColor: "transparent",
+            }}
+          />
+          <p
+            className="text-xs font-bold tracking-widest uppercase"
+            style={{ color: "var(--nav-fg-muted)" }}
+          >
+            Loading...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
   let title = "My Account";
   let subtitle = "Manage your profile and orders";
 
@@ -29,26 +64,26 @@ export default function ProfileLayout({
     subtitle = "Manage your shipping locations";
   }
 
-  // Passing top-level profile data down
-  const userData = {
-    name: "Hariom Sahu",
-    email: "hariomsahuu2005@gmail.com",
-  };
-
   return (
-    <div className="min-h-screen bg-[#F8F6F0] p-4 md:p-10 font-sans text-[#333]">
+    <div
+      className="min-h-screen p-4 md:p-10 font-sans"
+      style={{ background: "var(--nav-dropdown-bg)", color: "var(--nav-fg)" }}
+    >
       <div className="max-w-6xl mx-auto">
-        {/* Dynamic Page Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-serif text-[#111827] mb-1">{title}</h1>
-          <p className="text-gray-500 text-sm">{subtitle}</p>
+          <h1
+            className="text-4xl mb-1"
+            style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
+          >
+            {title}
+          </h1>
+          <p className="text-sm" style={{ color: "var(--nav-fg-muted)" }}>
+            {subtitle}
+          </p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-8">
-          {/* The Exact Design Sidebar */}
-          <ProfileSidebar userData={userData} />
-
-          {/* Child Pages (Overview, Orders, etc.) render here */}
+          <ProfileSidebar user={user} />
           <main className="flex-1 min-w-0">{children}</main>
         </div>
       </div>
