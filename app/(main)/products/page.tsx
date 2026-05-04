@@ -538,7 +538,7 @@ export function ProductsPageContent() {
                 </button>
                 {sortDropOpen && (
                   <div
-                    className="absolute right-0 top-full mt-1 z-30 min-w-45 py-1 shadow-lg"
+                    className="absolute right-0 top-full mt-1 z-999 min-w-45 py-1 shadow-lg"
                     style={{
                       background: "white",
                       border: "1px solid var(--nav-border)",
@@ -721,7 +721,7 @@ export function ProductsPageContent() {
             className={`pl-grid flex-1 min-w-0 ${mounted ? "" : "opacity-0"}`}
           >
             {loading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 md:gap-3">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <SkeletonCard key={i} />
                 ))}
