@@ -21,9 +21,7 @@ const razorpay = new Razorpay({
 });
 
 export async function POST(req: NextRequest) {
-  // Allow both logged-in users and guests
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const userId = await getUserId(req); // may be null for guests — that's fine
+  const userId = await getUserId(req);
 
   try {
     const { amount } = await req.json();
