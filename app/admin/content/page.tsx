@@ -20,8 +20,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import ReviewsManager from "./reviewsManager";
 
 interface FAQItem {
   _id: string;
@@ -45,11 +44,11 @@ interface Testimonial {
 }
 
 type Toast = { type: "success" | "error"; msg: string } | null;
-type ActiveTab = "faq" | "testimonials";
+type ActiveTab = "faq" | "testimonials" | "reviews";
 
 // ─── Star Rating Component ────────────────────────────────────────────────────
 
-function StarRating({
+export function StarRating({
   rating,
   onChange,
 }: {
@@ -1523,14 +1522,17 @@ export default function AdminContentPage() {
         >
           {(
             [
-              { key: "faq" as ActiveTab, label: "FAQs", icon: MessageSquare },
+              { key: "faq" as ActiveTab, label: "FAQs" },
               {
                 key: "testimonials" as ActiveTab,
                 label: "Testimonials",
-                icon: Star,
+              },
+              {
+                key: "reviews" as ActiveTab,
+                label: "Reviews",
               },
             ] as const
-          ).map(({ key, label, icon: Icon }) => (
+          ).map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
@@ -1550,14 +1552,13 @@ export default function AdminContentPage() {
                 cursor: "pointer",
               }}
             >
-              <Icon size={13} />
               {label}
             </button>
           ))}
         </div>
-
-        {/* Tab content */}
-        {activeTab === "faq" ? <FAQManager /> : <TestimonialsManager />}
+        {activeTab === "faq" && <FAQManager />}
+        {activeTab === "testimonials" && <TestimonialsManager />}
+        {activeTab === "reviews" && <ReviewsManager />}
       </main>
     </div>
   );

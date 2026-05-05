@@ -15,6 +15,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useCart } from "@/context/cartContext";
+import ProductReviews from "@/components/(productPage)/productReviews";
 
 interface ProductSize {
   size: string;
@@ -319,7 +320,7 @@ export default function ProductPage({ params }: Props) {
 
     for (let i = 0; i < qty; i++) {
       addItem({
-        productId,
+        productId: productId,
         slug: product.slug,
         name: product.name,
         price: product.price,
@@ -1121,6 +1122,11 @@ export default function ProductPage({ params }: Props) {
               </div>
             </div>
           </div>
+          <ProductReviews
+            productId={productId}
+            productSlug={product.slug}
+            productName={product.name}
+          />
         </div>
       </main>
     </>
