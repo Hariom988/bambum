@@ -50,7 +50,10 @@ function Skeleton() {
   return (
     <main
       className="min-h-screen"
-      style={{ background: "var(--nav-bg)", fontFamily: "var(--nav-font-ui)" }}
+      style={{
+        background: "var(--nav-bg)",
+        fontFamily: "var(--nav-font-ui)",
+      }}
     >
       <div className="max-w-6xl mx-auto px-4 py-10 md:py-14 animate-pulse">
         <div
@@ -352,8 +355,8 @@ export default function ProductPage({ params }: Props) {
           border: 1px solid var(--nav-border); background: #fff; color: var(--nav-fg);
           cursor: pointer; transition: all 0.15s ease; border-radius: 8px;
         }
-        .pdp-size-btn:hover:not(:disabled) { border-color: var(--brand-teal); color: var(--brand-teal); }
-        .pdp-size-btn.active { background: var(--brand-teal); border-color: var(--brand-teal); color: #fff; }
+        .pdp-size-btn:hover:not(:disabled) { border-color: var(--brand-teal);  }
+        .pdp-size-btn.active { background: var(--brand-teal); border-color: var(--brand-teal); color: #ffffff; }
         .pdp-size-btn:disabled { opacity: 0.35; cursor: not-allowed; text-decoration: line-through; }
 
         .pdp-thumb { transition: all 0.15s ease; border-radius: 12px; overflow: hidden; }
@@ -380,7 +383,7 @@ export default function ProductPage({ params }: Props) {
       <main
         className="min-h-screen"
         style={{
-          background: "var(--nav-bg)",
+          background: "var(--brand-background-page)",
           color: "var(--nav-fg)",
           fontFamily: "var(--nav-font-ui)",
         }}
@@ -445,7 +448,7 @@ export default function ProductPage({ params }: Props) {
             <div className="fade-up">
               {/* Main image */}
               <div
-                className="relative w-full overflow-hidden rounded-2xl"
+                className="relative w-full  overflow-hidden rounded-2xl"
                 style={{ aspectRatio: "1/1", background: "#f0eeea" }}
               >
                 <Image
