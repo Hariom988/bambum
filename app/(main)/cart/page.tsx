@@ -153,7 +153,7 @@ export default function CartPage() {
                         </p>
                         <button
                           onClick={() =>
-                            removeItem(item.productId, item.colorName)
+                            removeItem(item.productId, item.colorName, item.size)
                           }
                           aria-label="Remove item"
                           className="shrink-0 w-8 h-8 flex items-center justify-center bg-transparent border-0 cursor-pointer transition-colors duration-150 rounded"
@@ -196,6 +196,7 @@ export default function CartPage() {
                               updateQty(
                                 item.productId,
                                 item.colorName,
+                                item.size,
                                 item.quantity - 1,
                               )
                             }
@@ -227,6 +228,7 @@ export default function CartPage() {
                               updateQty(
                                 item.productId,
                                 item.colorName,
+                                item.size,
                                 item.quantity + 1,
                               )
                             }
