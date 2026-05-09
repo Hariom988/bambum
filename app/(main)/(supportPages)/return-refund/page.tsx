@@ -8,6 +8,7 @@ import {
   Ban,
   CheckCircle2,
 } from "lucide-react";
+import Link from "next/link";
 
 const ELIGIBLE = [
   "Product received is damaged",
@@ -48,7 +49,7 @@ export default function RefundPolicyPage() {
     <main
       className="min-h-screen"
       style={{
-        background: "var(--nav-bg)",
+        background: "var(--brand-background-page)",
         color: "var(--nav-fg)",
         fontFamily: "var(--nav-font-ui)",
       }}
@@ -373,7 +374,7 @@ export default function RefundPolicyPage() {
               hours.
             </p>
           </div>
-          <a
+          <Link
             href="mailto:hello@bambum.in"
             className="inline-flex items-center gap-2 px-6 py-3 text-xs font-bold tracking-widest uppercase transition-colors duration-200 shrink-0"
             style={{ background: "var(--nav-accent)", color: "#fff" }}
@@ -385,7 +386,7 @@ export default function RefundPolicyPage() {
             }
           >
             Contact Us
-          </a>
+          </Link>
         </div>
       </section>
     </main>

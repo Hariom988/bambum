@@ -36,7 +36,7 @@ export default function TermsConditionsPage() {
     <main
       className="min-h-screen"
       style={{
-        background: "var(--nav-bg)",
+        background: "var(--brand-background-page)",
         color: "var(--nav-fg)",
         fontFamily: "var(--nav-font-ui)",
       }}
@@ -117,7 +117,7 @@ export default function TermsConditionsPage() {
             return (
               <article
                 key={sec.title}
-                className="group relative flex gap-6 p-6 md:p-8 rounded-sm transition-all duration-200"
+                className="group rounded-2xl relative flex gap-6 p-6 md:p-8  transition-all duration-200"
                 style={{
                   background: "rgba(255,255,255,0.55)",
                   border: "1px solid var(--nav-border)",

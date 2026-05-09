@@ -1,6 +1,7 @@
 "use client";
 
 import { Shield, Eye, Share2, Lock, CheckCircle } from "lucide-react";
+import Link from "next/link";
 
 /*
   New CSS variables to add to :root in globals.css:
@@ -87,7 +88,7 @@ export default function PrivacyPolicyPage() {
 
       <main
         style={{
-          background: "var(--pp-hero-bg)",
+          background: "var(--brand-background-page)",
           color: "var(--nav-fg)",
           fontFamily: "var(--nav-font-ui)",
         }}
@@ -328,7 +329,7 @@ export default function PrivacyPolicyPage() {
         {/* ══════════════ CONTACT STRIP ══════════════ */}
         <section
           style={{
-            background: "var(--pp-contact-bg)",
+            background: "var(--brand-background-page)",
             padding: "48px 24px",
           }}
         >
@@ -366,9 +367,9 @@ export default function PrivacyPolicyPage() {
               </p>
             </div>
 
-            <a href="mailto:support@bambumm.com" className="pp-contact-btn">
+            <Link href="mailto:support@bambumm.com" className="pp-contact-btn">
               Contact Us
-            </a>
+            </Link>
           </div>
         </section>
       </main>

@@ -1,6 +1,7 @@
 "use client";
 
 import { XCircle, Headphones, CreditCard, ShieldAlert } from "lucide-react";
+import Link from "next/link";
 
 const STEPS = [
   {
@@ -34,7 +35,7 @@ export default function CancellationPolicyPage() {
     <main
       className="min-h-screen"
       style={{
-        background: "var(--nav-bg)",
+        background: "var(--brand-background-page)",
         color: "var(--nav-fg)",
         fontFamily: "var(--nav-font-ui)",
       }}
@@ -112,7 +113,7 @@ export default function CancellationPolicyPage() {
 
           {/* Key rule callout */}
           <div
-            className="inline-block px-6 py-4 text-sm md:text-base font-medium leading-relaxed"
+            className="inline-block rounded-2xl px-6 py-4 text-sm md:text-base font-medium leading-relaxed"
             style={{
               background: "#fff",
               border: "1px solid var(--nav-border)",
@@ -153,11 +154,11 @@ export default function CancellationPolicyPage() {
             return (
               <div
                 key={step.number}
-                className={`relative flex gap-6 ${isLast ? "" : "pb-10"}`}
+                className={`relative rounded-2xl flex gap-6 ${isLast ? "" : "pb-10"}`}
               >
                 {/* Node */}
                 <div
-                  className="relative z-10 shrink-0 w-11 h-11 flex items-center justify-center"
+                  className="relative rounded-2xl z-10 shrink-0 w-11 h-11 flex items-center justify-center"
                   style={{
                     background: "var(--nav-bg)",
                     border: "1px solid var(--nav-border)",
@@ -172,7 +173,7 @@ export default function CancellationPolicyPage() {
 
                 {/* Content */}
                 <div
-                  className="flex-1 p-6 mb-1"
+                  className="flex-1 p-6 mb-1 rounded-2xl"
                   style={{
                     background: "#fff",
                     border: "1px solid var(--nav-border)",
@@ -227,13 +228,12 @@ export default function CancellationPolicyPage() {
               Want to cancel an order?
             </h3>
             <p className="text-sm" style={{ color: "var(--nav-fg-muted)" }}>
-              Act quickly — reach out to our support team before your order
-              ships.
+              Act quickly reach out to our support team before your order ships.
             </p>
           </div>
-          <a
+          <Link
             href="mailto:support@bambum.in"
-            className="inline-flex items-center gap-2 px-6 py-3 text-xs font-bold tracking-widest uppercase transition-colors duration-200 shrink-0"
+            className="inline-flex rounded-2xl items-center gap-2 px-6 py-3 text-xs font-bold tracking-widest uppercase transition-colors duration-200 shrink-0"
             style={{ background: "var(--nav-accent)", color: "#fff" }}
             onMouseEnter={(e) =>
               (e.currentTarget.style.background = "var(--nav-accent-hover)")
@@ -243,7 +243,7 @@ export default function CancellationPolicyPage() {
             }
           >
             Contact Support
-          </a>
+          </Link>
         </div>
       </section>
     </main>

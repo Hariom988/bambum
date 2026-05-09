@@ -24,7 +24,7 @@ export default function ProfileLayout({
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: "var(--nav-dropdown-bg)" }}
+        style={{ background: "var(--brand-background-page)" }}
       >
         <div className="flex flex-col items-center gap-3">
           <div
@@ -67,7 +67,10 @@ export default function ProfileLayout({
   return (
     <div
       className="min-h-screen p-4 md:p-10 font-sans"
-      style={{ background: "var(--nav-dropdown-bg)", color: "var(--nav-fg)" }}
+      style={{
+        background: "var(--brand-background-page)",
+        color: "var(--nav-fg)",
+      }}
     >
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">

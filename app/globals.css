@@ -5,7 +5,7 @@
   --brand-teal: #19635e;
   --brand-teal-light: #3d9c93;
   --brand-teal-dark: #1d5e58;
-  --brand-background-page: #ebf3f3;
+  --brand-background-page: #e8f4f3;
   --nav-height: 64px;
   --nav-font: "Georgia", serif;
   --nav-font-ui: system-ui, sans-serif;
@@ -16,42 +16,42 @@
   --nav-accent: var(--brand-teal);
   --nav-accent-hover: var(--brand-teal-dark);
   --nav-sale: #d94f3d;
-  --nav-border: #dcd8ce;
-  --nav-dropdown-bg: #faf8f4;
+  --nav-border: #c8dedd;
+  --nav-dropdown-bg: #f0f7f7;
   --nav-shadow: 0 8px 40px rgba(0, 0, 0, 0.1);
   --nav-overlay: rgba(0, 0, 0, 0.35);
 
   /* ─── FOOTER ─── */
   --ft-bg: #000000;
-  --ft-bg-band: #191510;
+  --ft-bg-band: #0d1a19;
   --ft-fg: #29b1a8;
   --ft-fg-muted: #777777;
   --ft-fg-link: #14b8a6;
-  --ft-fg-faint: #3a352c;
+  --ft-fg-faint: #1a3533;
   --ft-accent: var(--brand-teal);
   --ft-accent-hover: var(--brand-teal-dark);
-  --ft-border: rgba(200, 169, 126, 0.12);
-  --ft-border-strong: rgba(200, 169, 126, 0.25);
+  --ft-border: rgba(41, 177, 168, 0.12);
+  --ft-border-strong: rgba(41, 177, 168, 0.25);
 
   /* Product Page */
   --product-card-bg: #dde8e7;
 
   /* ─── ABOUT PAGE ─── */
-  --about-hero-bg: #f5f5f0;
+  --about-hero-bg: #f0f7f7;
   --about-teal: var(--brand-teal);
   --about-teal-light: var(--brand-teal-light);
   --about-card-bg: #1c1f1c;
   --about-card-border: rgba(42, 122, 114, 0.18);
-  --about-body-muted: #7a7a6e;
-  --about-dark-section: #111311;
-  --about-promise-bg: #f0eeea;
+  --about-body-muted: #5a7a78;
+  --about-dark-section: #0d1a19;
+  --about-promise-bg: #e8f4f3;
 
   /* ─── PRIVACY POLICY PAGE ─── */
-  --pp-hero-bg: #f5f4f0;
-  --pp-dark-bg: #141414;
-  --pp-card-bg: #1e2020;
+  --pp-hero-bg: #f0f7f7;
+  --pp-dark-bg: #0d1a19;
+  --pp-card-bg: #132220;
   --pp-card-border: rgba(25, 99, 94, 0.25);
-  --pp-teal: #29b1a8; /* intentionally different - matches ft-fg */
+  --pp-teal: #29b1a8;
   --pp-card-title: #29b1a8;
   --pp-card-body: rgba(255, 255, 255, 0.65);
   --pp-section-heading: #ffffff;
@@ -64,21 +64,21 @@
   --mega-bg: #ffffff;
   --mega-col-title-fg: #0a0a0a;
   --mega-link-hover-fg: var(--brand-teal-dark);
-  --mega-divider: #e0e0e0;
+  --mega-divider: #c8dedd;
 
   /* ─── PROMO BANNERS ─── */
-  --promo-dark-bg: #1c1a14;
-  --promo-dark-fg: #f0ebe0;
-  --promo-dark-muted: rgba(240, 235, 224, 0.6);
-  --promo-warm-bg: #3b2112;
-  --promo-warm-fg: #f0ebe0;
-  --promo-warm-muted: rgba(240, 235, 224, 0.6);
+  --promo-dark-bg: #0d1a19;
+  --promo-dark-fg: #e8f4f3;
+  --promo-dark-muted: rgba(232, 244, 243, 0.6);
+  --promo-warm-bg: #132220;
+  --promo-warm-fg: #e8f4f3;
+  --promo-warm-muted: rgba(232, 244, 243, 0.6);
 
   /* ─── ADMIN PANEL ─── */
-  --adm-bg: #f7f3ee;
+  --adm-bg: #eef6f6;
   --adm-bg-white: #ffffff;
-  --adm-bg-soft: #fdfaf7;
-  --adm-bg-input: #f7f3ee;
+  --adm-bg-soft: #f5fafa;
+  --adm-bg-input: #eef6f6;
   --adm-bg-hover: rgba(42, 122, 114, 0.06);
   --adm-bg-active: rgba(42, 122, 114, 0.1);
   --adm-bg-accent-lt: rgba(42, 122, 114, 0.12);
@@ -88,18 +88,19 @@
   --adm-accent-hover: #1d5e58;
   --adm-accent-border: rgba(42, 122, 114, 0.25);
   --adm-accent-border-md: rgba(42, 122, 114, 0.35);
-  --adm-fg: #1c1c18;
-  --adm-fg-muted: #7a7a68;
-  --adm-fg-faint: #bdbdaa;
-  --adm-border: #e8e4d5;
-  --adm-border-soft: #f0ebe0;
+  --adm-fg: #0d1a19;
+  --adm-fg-muted: #4a7a76;
+  --adm-fg-faint: #9abebb;
+  --adm-border: #c8dedd;
+  --adm-border-soft: #daeeed;
   --adm-danger: #c0392b;
   --adm-danger-border: rgba(192, 57, 43, 0.4);
-  --adm-shadow-card: 0 1px 8px rgba(0, 0, 0, 0.04);
-  --adm-shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.15);
-  --adm-shadow-toast: 0 4px 24px rgba(0, 0, 0, 0.1);
-  --adm-shadow-nav: 0 1px 0 #e8e4d5;
+  --adm-shadow-card: 0 1px 8px rgba(25, 99, 94, 0.06);
+  --adm-shadow-modal: 0 8px 40px rgba(25, 99, 94, 0.12);
+  --adm-shadow-toast: 0 4px 24px rgba(25, 99, 94, 0.1);
+  --adm-shadow-nav: 0 1px 0 #c8dedd;
 }
+
 .nav-root {
   background-color: var(--nav-bg-color);
   color: var(--adm-bg-white);
@@ -225,7 +226,7 @@
   cursor: pointer;
 }
 .simple-dropdown-link:hover {
-  background: rgba(200, 169, 126, 0.1);
+  background: rgba(41, 177, 168, 0.08);
   color: var(--ft-fg);
 }
 

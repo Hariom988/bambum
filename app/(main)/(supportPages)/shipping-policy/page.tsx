@@ -8,6 +8,7 @@ import {
   AlertCircle,
   Home,
   Clock,
+  Link,
 } from "lucide-react";
 
 const SHIPPING_TIMES = [
@@ -47,12 +48,11 @@ export default function ShippingPolicyPage() {
     <main
       className="min-h-screen"
       style={{
-        background: "var(--nav-bg)",
+        background: "var(--brand-background-page)",
         color: "var(--nav-fg)",
         fontFamily: "var(--nav-font-ui)",
       }}
     >
-      {/* ── HERO ── */}
       <section
         className="relative overflow-hidden border-b"
         style={{ borderColor: "var(--nav-border)" }}
@@ -82,7 +82,7 @@ export default function ShippingPolicyPage() {
             {/* Left: title block */}
             <div>
               <div
-                className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 text-xs font-semibold tracking-[0.14em] uppercase"
+                className="inline-flex items-center rounded-2xl gap-2 px-4 py-1.5 mb-6 text-xs font-semibold tracking-[0.14em] uppercase"
                 style={{
                   background: "rgba(200,169,126,0.12)",
                   border: "1px solid var(--nav-border)",
@@ -123,7 +123,7 @@ export default function ShippingPolicyPage() {
               {SHIPPING_TIMES.map((z) => (
                 <div
                   key={z.zone}
-                  className="flex flex-col items-center justify-center text-center p-6 min-w-30"
+                  className="flex flex-col items-center rounded-2xl justify-center text-center p-6 min-w-30"
                   style={{
                     background: "#fff",
                     border: "1px solid var(--nav-border)",
@@ -182,7 +182,7 @@ export default function ShippingPolicyPage() {
             </p>
           </div>
           <span
-            className="text-[0.7rem] font-bold tracking-[0.12em] uppercase px-3 py-1"
+            className="text-[0.7rem] rounded-2xl font-bold tracking-[0.12em] uppercase px-3 py-1"
             style={{
               background: "rgba(200,169,126,0.15)",
               border: "1px solid var(--nav-border)",
@@ -209,7 +209,7 @@ export default function ShippingPolicyPage() {
             return (
               <div
                 key={card.title}
-                className="relative flex flex-col gap-4 p-7"
+                className="relative rounded-2xl flex flex-col gap-4 p-7"
                 style={{
                   background: "#fff",
                   border: "1px solid var(--nav-border)",
@@ -218,7 +218,7 @@ export default function ShippingPolicyPage() {
               >
                 {/* Tag */}
                 <span
-                  className="absolute top-5 right-5 text-[0.6rem] font-bold tracking-widest uppercase px-2 py-1"
+                  className="absolute top-5 rounded-lg right-5 text-[0.6rem] font-bold tracking-widest uppercase px-2 py-1"
                   style={{
                     background: "rgba(200,169,126,0.1)",
                     color: "var(--nav-accent)",
@@ -230,7 +230,7 @@ export default function ShippingPolicyPage() {
 
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-10 h-10 flex items-center justify-center shrink-0"
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
                     style={{
                       background: "rgba(200,169,126,0.1)",
                       border: "1px solid var(--nav-border)",
@@ -284,7 +284,7 @@ export default function ShippingPolicyPage() {
           </div>
           <a
             href="mailto:support@bambum.in"
-            className="inline-flex items-center gap-2 px-6 py-3 text-xs font-bold tracking-widest uppercase transition-colors duration-200 shrink-0"
+            className="inline-flex rounded-2xl items-center gap-2 px-6 py-3 text-xs font-bold tracking-widest uppercase transition-colors duration-200 shrink-0"
             style={{ background: "var(--nav-accent)", color: "#fff" }}
             onMouseEnter={(e) =>
               (e.currentTarget.style.background = "var(--nav-accent-hover)")

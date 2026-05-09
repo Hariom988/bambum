@@ -28,7 +28,7 @@ const CONTACTS = [
   {
     icon: Clock,
     label: "Response Time",
-    value: "24 – 48 hrs",
+    value: "24 - 48 hrs",
     sub: "Typical support reply window",
     href: null,
   },
@@ -105,7 +105,7 @@ export default function ContactPage() {
       <main
         className="min-h-screen"
         style={{
-          background: "var(--nav-bg)",
+          background: "var(--brand-background-page)",
           color: "var(--nav-fg)",
           fontFamily: "var(--nav-font-ui)",
         }}
@@ -127,7 +127,7 @@ export default function ContactPage() {
             {/* ── LEFT: title block ── */}
             <div>
               <div
-                className="inline-flex items-center gap-2 px-4 py-1.5 mb-7 text-xs font-semibold tracking-[0.14em] uppercase"
+                className="inline-flex rounded-lg items-center gap-2 px-4 py-1.5 mb-7 text-xs font-semibold tracking-[0.14em] uppercase"
                 style={{
                   background: "rgba(200,169,126,0.12)",
                   border: "1px solid var(--nav-border)",
@@ -176,26 +176,20 @@ export default function ContactPage() {
             {/* ── RIGHT: hours panel ── */}
             <div className="flex justify-center md:justify-end">
               <div
-                className="relative w-full max-w-sm overflow-hidden"
+                className="relative w-full rounded-lg max-w-sm overflow-hidden"
                 style={{
                   background: "#fff",
                   border: "1px solid var(--nav-border)",
                   boxShadow: "0 8px 40px rgba(200,169,126,0.12)",
                 }}
               >
-                {/* Gold top bar */}
-                <div
-                  className="h-1 w-full"
-                  style={{ background: "var(--nav-accent)" }}
-                />
-
                 {/* Header row */}
                 <div
                   className="px-7 pt-6 pb-5 border-b flex items-center gap-3"
                   style={{ borderColor: "var(--nav-border)" }}
                 >
                   <div
-                    className="w-9 h-9 flex items-center justify-center shrink-0"
+                    className="w-9 h-9 rounded-sm flex items-center justify-center shrink-0"
                     style={{
                       background: "rgba(200,169,126,0.1)",
                       border: "1px solid var(--nav-border)",
@@ -230,8 +224,8 @@ export default function ContactPage() {
                 <div className="px-7 py-5 flex flex-col gap-3">
                   {[
                     {
-                      day: "Monday – Saturday",
-                      hours: "10:00 AM – 6:00 PM",
+                      day: "Monday - Saturday",
+                      hours: "10:00 AM - 6:00 PM",
                       active: true,
                     },
                     { day: "Sunday", hours: "Closed", active: false },
@@ -329,7 +323,7 @@ export default function ContactPage() {
                 <Tag
                   key={c.label}
                   {...(c.href ? { href: c.href } : {})}
-                  className={`ct-card ${c.href ? "ct-link" : ""} flex flex-col gap-5 p-7 no-underline`}
+                  className={`ct-card rounded-2xl ${c.href ? "ct-link" : ""} flex flex-col gap-5 p-7 no-underline`}
                   style={{
                     background: "#fff",
                     border: "1px solid var(--nav-border)",
@@ -339,7 +333,7 @@ export default function ContactPage() {
                   }}
                 >
                   <div
-                    className="ct-icon-wrap w-11 h-11 flex items-center justify-center"
+                    className="ct-icon-wrap rounded-sm w-11 h-11 flex items-center justify-center"
                     style={{
                       background: "rgba(200,169,126,0.1)",
                       border: "1px solid var(--nav-border)",

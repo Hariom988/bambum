@@ -1,12 +1,4 @@
 "use client";
-/**
- * components/navInteractive.tsx
- *
- * Client-side interactive wrapper for the header.
- * Receives pre-fetched navItems from the server (via layout.tsx / header.tsx)
- * so zero client fetch is needed for nav links.
- */
-
 import { useAuth } from "@/context/authContext";
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
@@ -814,7 +806,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                     </div>
                   </div>
                   <div
-                    style={{ display: "flex", gap: 0, padding: "10px 16px" }}
+                    style={{ display: "flex", gap: 8, padding: "10px 16px" }}
                   >
                     <button
                       className="drawer-footer-btn"
@@ -841,6 +833,16 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                       )}
                     </button>
                     <button
+                      className="drawer-footer-btn"
+                      onClick={() => {
+                        closeDrawer();
+                        router.push("/profile");
+                      }}
+                      style={{ flex: 1 }}
+                    >
+                      <User size={16} /> Profile
+                    </button>
+                    <button
                       onClick={logout}
                       style={{
                         display: "flex",
@@ -856,7 +858,6 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                         fontWeight: 600,
                         cursor: "pointer",
                         fontFamily: "var(--nav-font-ui)",
-                        marginLeft: 8,
                         flexShrink: 0,
                       }}
                     >

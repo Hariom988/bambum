@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/authContext";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Review {
   _id: string;
@@ -31,9 +29,12 @@ interface Props {
   productName: string;
 }
 
+const INITIAL_SHOW = 4;
+const SHOW_MORE_STEP = 2;
+
 // ─── Stars ────────────────────────────────────────────────────────────────────
 
-function StarIcon({ filled, size = 18 }: { filled: boolean; size?: number }) {
+function StarIcon({ filled, size = 16 }: { filled: boolean; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <path
@@ -47,7 +48,7 @@ function StarIcon({ filled, size = 18 }: { filled: boolean; size?: number }) {
   );
 }
 
-function RatingStars({ rating, size = 18 }: { rating: number; size?: number }) {
+function RatingStars({ rating, size = 16 }: { rating: number; size?: number }) {
   return (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((i) => (
@@ -84,13 +85,70 @@ function InteractiveStars({
         ))}
       </div>
       {(hover || value) > 0 && (
-        <span
-          className="text-sm font-semibold"
-          style={{ color: "var(--brand-teal)" }}
-        >
+        <span className="text-sm font-semibold" style={{ color: "#19635e" }}>
           {labels[hover || value]}
         </span>
       )}
+    </div>
+  );
+}
+
+// ─── Stats Bar ────────────────────────────────────────────────────────────────
+
+function StatsBar({ stats }: { stats: ReviewStats }) {
+  return (
+    <div
+      className="flex flex-col sm:flex-row items-start gap-8 w-full mb-8 md:mb-10 p-6 md:p-8 rounded-2xl"
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.07)",
+      }}
+    >
+      {/* Score */}
+      <div className="flex flex-col items-start shrink-0 min-w-[120px]">
+        <span
+          className="text-6xl md:text-7xl font-bold text-white leading-none"
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          {stats.average.toFixed(1)}
+        </span>
+        <div className="mt-2">
+          <RatingStars rating={stats.average} size={22} />
+        </div>
+        <span className="text-white/40 text-sm mt-2">
+          {stats.total} {stats.total === 1 ? "Review" : "Reviews"}
+        </span>
+      </div>
+
+      {/* Bars */}
+      <div className="flex flex-col gap-2.5 w-full">
+        {[5, 4, 3, 2, 1].map((star) => {
+          const count =
+            stats.distribution[star as keyof typeof stats.distribution];
+          const pct =
+            stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
+          return (
+            <div key={star} className="flex items-center gap-3">
+              <span className="text-white/50 text-xs w-3 shrink-0 text-right">
+                {star}
+              </span>
+              <StarIcon filled size={13} />
+              <div
+                className="flex-1 h-2 rounded-full overflow-hidden"
+                style={{ background: "rgba(255,255,255,0.08)" }}
+              >
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${pct}%`, background: "#19635e" }}
+                />
+              </div>
+              <span className="text-white/35 text-xs w-8 text-right shrink-0">
+                {pct}%
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -114,68 +172,68 @@ function ReviewCard({
     .join("")
     .toUpperCase()
     .slice(0, 2);
-
   const isOwner = !!(currentUserId && currentUserId === review.userId);
-
-  // images: filter out empty strings just in case
   const images = Array.isArray(review.images)
     ? review.images.filter(Boolean)
     : [];
 
   return (
-    <div className="relative flex flex-col gap-3 p-5 rounded-2xl h-full bg-white/[0.07]">
-      {/* Delete button — owner only */}
-      {isOwner && (
-        <button
-          onClick={() => onDelete(review._id)}
-          className="absolute top-3 right-3 text-[11px] font-bold tracking-wider px-2 py-1 rounded-md transition-colors hover:bg-red-500/20"
-          style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,100,100,0.3)",
-            color: "rgba(255,100,100,0.85)",
-            cursor: "pointer",
-          }}
-        >
-          DELETE
-        </button>
-      )}
-
-      {/* Avatar + name + badge */}
-      <div
-        className="flex items-center gap-2.5 flex-wrap"
-        style={{ paddingRight: isOwner ? "64px" : "0" }}
-      >
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-          style={{ background: "var(--brand-teal)" }}
-        >
-          {initials}
+    <div
+      className="w-full flex flex-col gap-4 p-5 md:p-6 rounded-2xl"
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.07)",
+      }}
+    >
+      {/* Top row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+            style={{ background: "#19635e" }}
+          >
+            {initials}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-white font-semibold text-sm leading-tight">
+              {review.userName}
+            </span>
+            <span className="text-white/35 text-xs mt-0.5">
+              {new Date(review.createdAt).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </span>
+          </div>
         </div>
-        <span className="text-white font-semibold text-sm">
-          {review.userName}
-        </span>
-        <span
-          className="ml-auto text-[11px] font-medium px-2.5 py-0.5 rounded-full shrink-0 whitespace-nowrap"
-          style={{
-            border: "1px solid var(--brand-teal)",
-            color: "var(--brand-teal-light)",
-          }}
-        >
-          Verified Purchase
-        </span>
+
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+          <span
+            className="text-[10px] font-medium px-2.5 py-1 rounded-full"
+            style={{ border: "1px solid #19635e", color: "#4db6ac" }}
+          >
+            Verified Purchase
+          </span>
+          {isOwner && (
+            <button
+              onClick={() => onDelete(review._id)}
+              className="text-[11px] font-bold tracking-wider px-2.5 py-1 rounded-md transition-colors hover:bg-red-500/20"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,100,100,0.35)",
+                color: "rgba(255,100,100,0.85)",
+                cursor: "pointer",
+              }}
+            >
+              DELETE
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Stars + date */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <RatingStars rating={review.rating} size={16} />
-        <span className="text-xs text-white/45">
-          {new Date(review.createdAt).toLocaleDateString("en-IN", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
-        </span>
-      </div>
+      {/* Stars */}
+      <RatingStars rating={review.rating} size={16} />
 
       {/* Title */}
       {review.title && (
@@ -185,28 +243,25 @@ function ReviewCard({
       )}
 
       {/* Body */}
-      <p className="text-white/70 text-sm leading-relaxed flex-1 m-0">
-        {review.body}
-      </p>
+      <p className="text-white/60 text-sm leading-relaxed m-0">{review.body}</p>
 
-      {/* ── Review images ── */}
+      {/* Images — only shown if present (new reviews with fixed API) */}
       {images.length > 0 && (
-        <div className="flex gap-2 flex-wrap mt-1">
+        <div className="flex gap-2 flex-wrap">
           {images.map((url, idx) => (
             <button
               key={idx}
               onClick={() => onImageClick(url)}
-              className="shrink-0 overflow-hidden rounded-lg transition-opacity hover:opacity-75"
+              className="shrink-0 overflow-hidden rounded-xl transition-opacity hover:opacity-75"
               style={{
-                width: 64,
-                height: 64,
+                width: 80,
+                height: 80,
                 padding: 0,
-                border: "1px solid rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.1)",
                 background: "rgba(255,255,255,0.05)",
                 cursor: "pointer",
               }}
             >
-              {/* Using plain <img> — make sure res.cloudinary.com is in next.config images.domains */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={url}
@@ -220,6 +275,11 @@ function ReviewCard({
             </button>
           ))}
         </div>
+      )}
+
+      {/* Helpful */}
+      {review.helpful > 0 && (
+        <p className="text-white/25 text-xs m-0">Helpful ({review.helpful})</p>
       )}
     </div>
   );
@@ -259,13 +319,22 @@ function WriteReviewPanel({
   onCancel: () => void;
 }) {
   const inputCls =
-    "w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 outline-none bg-white/[0.07] border border-white/[0.12] font-sans";
-
+    "w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 outline-none font-sans";
+  const inputStyle = {
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.12)",
+  };
   const labelCls =
-    "block text-[11px] font-bold tracking-widest uppercase mb-2 text-white/45";
+    "block text-[11px] font-bold tracking-widest uppercase mb-2 text-white/40";
 
   return (
-    <div className="rounded-2xl p-6 md:p-8 mt-6 bg-white/[0.05] border border-white/[0.1]">
+    <div
+      className="rounded-2xl p-5 md:p-8 mb-8"
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.09)",
+      }}
+    >
       <h3
         className="text-white text-xl font-bold mt-0 mb-6"
         style={{ fontFamily: "Georgia, serif" }}
@@ -277,7 +346,7 @@ function WriteReviewPanel({
         <div className="text-center py-8">
           <div
             className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
-            style={{ background: "var(--brand-teal)" }}
+            style={{ background: "#19635e" }}
           >
             <svg
               viewBox="0 0 24 24"
@@ -300,13 +369,10 @@ function WriteReviewPanel({
         </div>
       ) : (
         <div className="flex flex-col gap-5">
-          {/* Rating */}
           <div>
             <label className={labelCls}>Your Rating *</label>
             <InteractiveStars value={rating} onChange={setRating} />
           </div>
-
-          {/* Title */}
           <div>
             <label className={labelCls}>Review Title (optional)</label>
             <input
@@ -315,13 +381,12 @@ function WriteReviewPanel({
               onChange={(e) => setTitle(e.target.value.slice(0, 80))}
               placeholder="Summarise your experience..."
               className={inputCls}
+              style={inputStyle}
             />
             <p className="text-right text-xs mt-1 text-white/20">
               {title.length}/80
             </p>
           </div>
-
-          {/* Body */}
           <div>
             <label className={labelCls}>Your Review *</label>
             <textarea
@@ -330,13 +395,12 @@ function WriteReviewPanel({
               placeholder="Share your experience with this product..."
               rows={4}
               className={`${inputCls} resize-none`}
+              style={inputStyle}
             />
             <p className="text-right text-xs mt-1 text-white/20">
               {body.length}/1000
             </p>
           </div>
-
-          {/* Images */}
           <div>
             <label className={labelCls}>Add Photos (up to 4)</label>
             <div className="flex flex-wrap gap-3">
@@ -363,8 +427,12 @@ function WriteReviewPanel({
               ))}
               {imagePreviews.length < 4 && (
                 <label
-                  className="flex flex-col items-center justify-center shrink-0 rounded-xl cursor-pointer border-2 border-dashed border-white/20"
-                  style={{ width: 80, height: 80 }}
+                  className="flex flex-col items-center justify-center shrink-0 rounded-xl cursor-pointer"
+                  style={{
+                    width: 80,
+                    height: 80,
+                    border: "2px dashed rgba(255,255,255,0.15)",
+                  }}
                 >
                   <span className="text-white/30 text-2xl leading-none">+</span>
                   <span className="text-white/25 text-[11px] mt-0.5">
@@ -382,18 +450,16 @@ function WriteReviewPanel({
             </div>
             <p className="text-xs mt-2 text-white/25">Max 5MB per image</p>
           </div>
-
           {submitError && (
             <p className="text-red-400 text-sm m-0">{submitError}</p>
           )}
-
-          <div className="flex gap-3 pt-1">
+          <div className="flex gap-3 pt-1 flex-wrap">
             <button
               onClick={onSubmit}
               disabled={submitting}
               className="px-8 py-3 text-white text-sm font-bold tracking-wider uppercase rounded-xl disabled:opacity-50 transition-opacity"
               style={{
-                background: "var(--brand-teal)",
+                background: "#19635e",
                 border: "none",
                 cursor: "pointer",
               }}
@@ -402,8 +468,11 @@ function WriteReviewPanel({
             </button>
             <button
               onClick={onCancel}
-              className="px-6 py-3 text-sm text-white/50 rounded-xl border border-white/10 bg-transparent"
-              style={{ cursor: "pointer" }}
+              className="px-6 py-3 text-sm text-white/50 rounded-xl bg-transparent transition-colors hover:text-white/80"
+              style={{
+                border: "1px solid rgba(255,255,255,0.12)",
+                cursor: "pointer",
+              }}
             >
               Cancel
             </button>
@@ -424,8 +493,14 @@ function ConfirmModal({
   onCancel: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70">
-      <div className="w-full max-w-sm rounded-2xl p-7 bg-[#1a1a1a] border border-white/10">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/75">
+      <div
+        className="w-full max-w-sm rounded-2xl p-7"
+        style={{
+          background: "#111",
+          border: "1px solid rgba(255,255,255,0.1)",
+        }}
+      >
         <p className="text-white font-bold text-base m-0 mb-2">
           Delete your review?
         </p>
@@ -435,8 +510,11 @@ function ConfirmModal({
         <div className="flex gap-2.5">
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 rounded-xl text-sm text-white/60 bg-transparent border border-white/15"
-            style={{ cursor: "pointer" }}
+            className="flex-1 py-2.5 rounded-xl text-sm text-white/60 bg-transparent"
+            style={{
+              border: "1px solid rgba(255,255,255,0.15)",
+              cursor: "pointer",
+            }}
           >
             Cancel
           </button>
@@ -453,12 +531,12 @@ function ConfirmModal({
   );
 }
 
-// ─── Lightbox ────────────────────────────────────────────────────────────────
+// ─── Lightbox ─────────────────────────────────────────────────────────────────
 
 function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/92"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/95"
       onClick={onClose}
     >
       <button
@@ -492,15 +570,7 @@ export default function ProductReviews({
   const [reviews, setReviews] = useState<Review[]>([]);
   const [stats, setStats] = useState<ReviewStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-
-  // Carousel
-  const [slideIdx, setSlideIdx] = useState(0);
-  const [cardsPerView, setCardsPerView] = useState(3);
-  const autoRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Write review
+  const [visibleCount, setVisibleCount] = useState(INITIAL_SHOW);
   const [writeOpen, setWriteOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState("");
@@ -510,85 +580,29 @@ export default function ProductReviews({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
-
-  // Delete + lightbox
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
-
-  // ── Fetch ──────────────────────────────────────────────────────────────────
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/reviews?productId=${productId}&page=${page}&limit=9`,
+        `/api/reviews?productId=${productId}&page=1&limit=50`,
       );
       if (!res.ok) throw new Error();
       const data = await res.json();
       setReviews(data.reviews || []);
       setStats(data.stats || null);
-      setTotalPages(data.totalPages || 1);
-      setSlideIdx(0);
     } catch {
       /* silent */
     } finally {
       setLoading(false);
     }
-  }, [productId, page]);
+  }, [productId]);
 
   useEffect(() => {
     fetchReviews();
   }, [fetchReviews]);
-
-  // ── Responsive cardsPerView ────────────────────────────────────────────────
-
-  useEffect(() => {
-    const update = () => setCardsPerView(window.innerWidth < 768 ? 1 : 3);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  // ── Carousel ───────────────────────────────────────────────────────────────
-
-  const totalSlides =
-    reviews.length === 0 ? 0 : Math.ceil(reviews.length / cardsPerView);
-
-  const stopAuto = useCallback(() => {
-    if (autoRef.current) {
-      clearInterval(autoRef.current);
-      autoRef.current = null;
-    }
-  }, []);
-
-  const startAuto = useCallback(() => {
-    stopAuto();
-    if (reviews.length <= cardsPerView) return;
-    autoRef.current = setInterval(() => {
-      setSlideIdx((prev) => (prev + 1 >= totalSlides ? 0 : prev + 1));
-    }, 3000);
-  }, [reviews.length, cardsPerView, totalSlides, stopAuto]);
-
-  useEffect(() => {
-    startAuto();
-    return stopAuto;
-  }, [startAuto, stopAuto]);
-
-  const goTo = (idx: number) => {
-    stopAuto();
-    setSlideIdx(idx);
-    startAuto();
-  };
-  const goPrev = () =>
-    goTo(slideIdx <= 0 ? Math.max(0, totalSlides - 1) : slideIdx - 1);
-  const goNext = () => goTo(slideIdx >= totalSlides - 1 ? 0 : slideIdx + 1);
-
-  const visibleReviews = reviews.slice(
-    slideIdx * cardsPerView,
-    slideIdx * cardsPerView + cardsPerView,
-  );
-
-  // ── Image handlers ─────────────────────────────────────────────────────────
 
   const handleImageAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).filter(
@@ -606,8 +620,6 @@ export default function ProductReviews({
     setImagePreviews(updated.map((f) => URL.createObjectURL(f)));
   };
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
-
   const handleSubmit = async () => {
     if (!user) {
       router.push(`/auth?redirectTo=/products/${productSlug}`);
@@ -616,7 +628,6 @@ export default function ProductReviews({
     if (rating === 0) return setSubmitError("Please select a rating.");
     if (body.trim().length < 10)
       return setSubmitError("Review must be at least 10 characters.");
-
     setSubmitting(true);
     setSubmitError("");
     try {
@@ -628,7 +639,6 @@ export default function ProductReviews({
       formData.append("title", title);
       formData.append("body", body);
       imageFiles.forEach((img) => formData.append("images", img));
-
       const res = await fetch("/api/reviews", {
         method: "POST",
         body: formData,
@@ -641,7 +651,6 @@ export default function ProductReviews({
         const d = await res.json();
         throw new Error(d.error || "Failed to submit.");
       }
-
       setSubmitSuccess(true);
       setRating(0);
       setTitle("");
@@ -649,6 +658,7 @@ export default function ProductReviews({
       setImageFiles([]);
       setImagePreviews([]);
       fetchReviews();
+      setVisibleCount(INITIAL_SHOW);
       setTimeout(() => {
         setSubmitSuccess(false);
         setWriteOpen(false);
@@ -661,8 +671,6 @@ export default function ProductReviews({
       setSubmitting(false);
     }
   };
-
-  // ── Delete ─────────────────────────────────────────────────────────────────
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -688,12 +696,13 @@ export default function ProductReviews({
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const visibleReviews = reviews.slice(0, visibleCount);
+  const hasMore = visibleCount < reviews.length;
 
   return (
     <section
-      className="w-full py-16 px-4 md:px-8"
-      style={{ background: "var(--nav-bg-color)" }}
+      className="w-full py-12 md:py-16"
+      style={{ background: "#0a0a0a" }}
     >
       {lightbox && (
         <Lightbox src={lightbox} onClose={() => setLightbox(null)} />
@@ -705,151 +714,36 @@ export default function ProductReviews({
         />
       )}
 
-      <div className="w-full mx-auto">
+      {/* Full width container with comfortable padding */}
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20">
         {/* Header */}
-        <div className="mb-8">
+        <div className="flex items-start justify-between gap-4 mb-8 md:mb-10 flex-wrap">
           <h2
-            className="text-4xl md:text-5xl font-bold text-white mb-3"
+            className="text-3xl md:text-4xl lg:text-5xl font-bold text-white m-0"
             style={{ fontFamily: "Georgia, serif" }}
           >
             Customer Reviews
           </h2>
-          {!loading && stats && stats.total > 0 && (
-            <div className="flex items-center gap-3 flex-wrap">
-              <RatingStars rating={stats.average} size={22} />
-              <span className="text-2xl font-semibold text-white">
-                {stats.average.toFixed(1)}
-              </span>
-              <span className="text-white/35">|</span>
-              <span className="text-white/50">
-                {stats.total} {stats.total === 1 ? "Review" : "Reviews"}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Loading */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-52 rounded-2xl animate-pulse bg-white/[0.06]"
-              />
-            ))}
-          </div>
-        ) : reviews.length === 0 ? (
-          <div className="rounded-2xl p-12 text-center mb-8 bg-white/[0.04]">
-            <p className="text-white/40 m-0">
-              No reviews yet. Be the first to review this product!
-            </p>
-          </div>
-        ) : (
-          /* ── Carousel ── */
-          <div className="relative mb-8">
-            {/* Prev */}
-            <button
-              onClick={goPrev}
-              className="absolute -left-5 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center text-white text-2xl border border-white/25 bg-black/60 hover:bg-black/80 transition-colors"
-              style={{ cursor: "pointer" }}
-            >
-              ‹
-            </button>
-
-            {/* Cards */}
-            <div
-              className="grid gap-4"
-              style={{
-                gridTemplateColumns:
-                  visibleReviews.length >= cardsPerView
-                    ? `repeat(${cardsPerView}, 1fr)`
-                    : `repeat(${visibleReviews.length}, minmax(0, 380px))`,
-                justifyContent:
-                  visibleReviews.length < cardsPerView ? "center" : "stretch",
-              }}
-            >
-              {visibleReviews.map((review) => (
-                <ReviewCard
-                  key={review._id}
-                  review={review}
-                  currentUserId={user?.id}
-                  onImageClick={setLightbox}
-                  onDelete={setDeleteId}
-                />
-              ))}
-            </div>
-
-            {/* Next */}
-            <button
-              onClick={goNext}
-              className="absolute -right-5 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center text-white text-2xl border border-white/25 bg-black/60 hover:bg-black/80 transition-colors"
-              style={{ cursor: "pointer" }}
-            >
-              ›
-            </button>
-
-            {/* Dots */}
-            {totalSlides > 1 && (
-              <div className="flex justify-center gap-2 mt-5">
-                {Array.from({ length: totalSlides }).map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => goTo(i)}
-                    className="h-2 rounded-full border-none p-0 transition-all duration-300"
-                    style={{
-                      width: i === slideIdx ? 24 : 8,
-                      background:
-                        i === slideIdx
-                          ? "var(--brand-teal)"
-                          : "rgba(255,255,255,0.25)",
-                      cursor: "pointer",
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* DB pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center gap-2 mb-8">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setPage(i + 1)}
-                className="w-9 h-9 rounded-full text-sm font-medium border-none transition-colors"
-                style={{
-                  background:
-                    page === i + 1
-                      ? "var(--brand-teal)"
-                      : "rgba(255,255,255,0.08)",
-                  color: page === i + 1 ? "white" : "rgba(255,255,255,0.5)",
-                  cursor: "pointer",
-                }}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Write a Review */}
-        {!writeOpen ? (
           <button
             onClick={() => {
               if (!user) {
                 router.push(`/auth?redirectTo=/products/${productSlug}`);
                 return;
               }
-              setWriteOpen(true);
+              setWriteOpen((o) => !o);
             }}
-            className="px-10 py-4 text-white font-bold text-sm tracking-widest uppercase rounded-xl border-2 border-white bg-transparent transition-all hover:bg-white hover:text-black"
+            className="shrink-0 px-5 py-2.5 md:px-7 md:py-3 text-white font-bold text-xs md:text-sm tracking-widest uppercase rounded-xl border-2 border-white bg-transparent transition-all hover:bg-white hover:text-black"
             style={{ cursor: "pointer" }}
           >
             Write a Review
           </button>
-        ) : (
+        </div>
+
+        {/* Stats */}
+        {!loading && stats && stats.total > 0 && <StatsBar stats={stats} />}
+
+        {/* Write Review Panel */}
+        {writeOpen && (
           <WriteReviewPanel
             rating={rating}
             setRating={setRating}
@@ -866,6 +760,75 @@ export default function ProductReviews({
             onSubmit={handleSubmit}
             onCancel={() => setWriteOpen(false)}
           />
+        )}
+
+        {/* Reviews */}
+        {loading ? (
+          <div className="flex flex-col gap-4">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="p-5 md:p-6 rounded-2xl animate-pulse"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  height: 160,
+                }}
+              />
+            ))}
+          </div>
+        ) : reviews.length === 0 ? (
+          <div
+            className="rounded-2xl p-12 text-center"
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            <p className="text-white/40 m-0">
+              No reviews yet. Be the first to review this product!
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col gap-4">
+              {visibleReviews.map((review) => (
+                <ReviewCard
+                  key={review._id}
+                  review={review}
+                  currentUserId={user?.id}
+                  onImageClick={setLightbox}
+                  onDelete={setDeleteId}
+                />
+              ))}
+            </div>
+
+            {/* Show More */}
+            {hasMore && (
+              <div className="flex justify-center mt-8">
+                <button
+                  onClick={() => setVisibleCount((c) => c + SHOW_MORE_STEP)}
+                  className="px-10 py-3.5 text-sm font-bold tracking-widest uppercase rounded-xl transition-colors"
+                  style={{
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    color: "rgba(255,255,255,0.6)",
+                    background: "rgba(255,255,255,0.04)",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.09)";
+                    e.currentTarget.style.color = "rgba(255,255,255,0.9)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                    e.currentTarget.style.color = "rgba(255,255,255,0.6)";
+                  }}
+                >
+                  Show More ({reviews.length - visibleCount} remaining)
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>

@@ -45,7 +45,7 @@ const MARQUEE_ITEMS = [
   "·",
   "Bamboo Fabric",
   "·",
-  "Eco – Friendly",
+  "Eco - Friendly",
   "·",
   "Premium Quality",
   "·",
@@ -235,15 +235,14 @@ export default function AboutUsPage() {
 
       <main
         style={{
-          background: "var(--about-hero-bg)",
+          background: "var(--brand-background-page)",
           color: "var(--nav-fg)",
           fontFamily: "var(--nav-font-ui)",
         }}
       >
-        {/* ══════════════ HERO ══════════════ */}
         <section
           style={{
-            background: "var(--about-hero-bg)",
+            background: "var(--brand-background-page)",
           }}
         >
           <div
@@ -405,7 +404,6 @@ export default function AboutUsPage() {
           </div>
         </section>
 
-        {/* ══════════════ MARQUEE BAND (LTR) — dark bar ══════════════ */}
         <div
           style={{
             background: "#0d0f0d",
@@ -440,10 +438,9 @@ export default function AboutUsPage() {
           </div>
         </div>
 
-        {/* ══════════════ OUR VISION ══════════════ */}
         <section
           style={{
-            background: "var(--about-hero-bg)",
+            background: "var(--brand-background-page)",
             padding: "80px 0 96px",
           }}
         >
@@ -495,10 +492,10 @@ export default function AboutUsPage() {
                   color: "var(--nav-fg-muted)",
                 }}
               >
-                We specialize in premium products made from bamboo fabric —
-                known for its softness, breathability, and eco-friendly
-                properties. Our goal is to deliver comfort that feels good on
-                your skin and is better for the planet.
+                We specialize in premium products made from bamboo fabric known
+                for its softness, breathability, and eco-friendly properties.
+                Our goal is to deliver comfort that feels good on your skin and
+                is better for the planet.
               </p>
             </div>
           </div>
@@ -599,7 +596,7 @@ export default function AboutUsPage() {
           ref={closingRef}
           className="fade-up"
           style={{
-            background: "var(--about-promise-bg, #f0eeea)",
+            background: "var(--brand-background-page)",
             padding: "80px 24px",
             textAlign: "center",
           }}
