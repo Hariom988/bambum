@@ -3,8 +3,17 @@ import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { cookies } from "next/headers";
 import * as jose from "jose";
+import { v2 as cloudinary } from "cloudinary";
 
-  //  Auth helper
+// Configure Cloudinary SDK once
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
+
+// Auth helper
 async function getUserFromCookie(): Promise<{ id: string; name: string } | null> {
   try {
     const cookieStore = await cookies();
@@ -13,8 +22,8 @@ async function getUserFromCookie(): Promise<{ id: string; name: string } | null>
     const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
     const { payload } = await jose.jwtVerify(token, secret);
     return {
-      id: ((payload.userId ?? payload.id ?? payload.sub) as string),
-      name: ((payload.name ?? payload.userName ?? "Anonymous") as string),
+      id: (payload.userId ?? payload.id ?? payload.sub) as string,
+      name: (payload.name ?? payload.userName ?? "Anonymous") as string,
     };
   } catch (err) {
     console.error("[reviews] auth error:", err);
@@ -22,8 +31,36 @@ async function getUserFromCookie(): Promise<{ id: string; name: string } | null>
   }
 }
 
-  //  GET
+// Helper: upload a File to Cloudinary via SDK
+async function uploadToCloudinary(file: File): Promise<string | null> {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
+    return await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: "bambum/reviews",
+          resource_type: "image",
+        },
+        (error, result) => {
+          if (error) {
+            console.error("[reviews] Cloudinary SDK error:", error);
+            reject(error);
+          } else {
+            resolve(result?.secure_url ?? null);
+          }
+        }
+      );
+      uploadStream.end(buffer);
+    });
+  } catch (err) {
+    console.error("[reviews] uploadToCloudinary threw:", err);
+    return null;
+  }
+}
+
+// GET
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const productId = searchParams.get("productId") || "";
@@ -31,9 +68,8 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(50, Number(searchParams.get("limit") || "9"));
   const skip = (page - 1) * limit;
 
-  if (!productId) {
+  if (!productId)
     return NextResponse.json({ error: "productId required" }, { status: 400 });
-  }
 
   try {
     const client = await clientPromise;
@@ -61,7 +97,6 @@ export async function GET(req: NextRequest) {
     ]);
 
     const agg = aggregation[0] ?? null;
-
     return NextResponse.json({
       reviews,
       total,
@@ -70,7 +105,13 @@ export async function GET(req: NextRequest) {
         ? {
             average: Math.round((agg.average || 0) * 10) / 10,
             total: agg.total || 0,
-            distribution: { 1: agg.r1||0, 2: agg.r2||0, 3: agg.r3||0, 4: agg.r4||0, 5: agg.r5||0 },
+            distribution: {
+              1: agg.r1 || 0,
+              2: agg.r2 || 0,
+              3: agg.r3 || 0,
+              4: agg.r4 || 0,
+              5: agg.r5 || 0,
+            },
           }
         : null,
     });
@@ -80,12 +121,11 @@ export async function GET(req: NextRequest) {
   }
 }
 
-  //  POST 
+// POST
 export async function POST(req: NextRequest) {
   const user = await getUserFromCookie();
-  if (!user) {
+  if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
   try {
     const formData = await req.formData();
@@ -97,47 +137,39 @@ export async function POST(req: NextRequest) {
     const body = ((formData.get("body") as string) ?? "").slice(0, 1000);
     const imageFiles = formData.getAll("images") as File[];
 
-    if (!productId || !rating || !body || body.trim().length < 10) {
+    if (!productId || !rating || !body || body.trim().length < 10)
       return NextResponse.json({ error: "Invalid input." }, { status: 400 });
+
+    console.log("[reviews] image files received:", imageFiles.length);
+    imageFiles.forEach((f, i) =>
+      console.log(`[reviews] file[${i}]:`, f instanceof File, f.name, f.size, f.type)
+    );
+
+    // Upload all valid images in parallel via Cloudinary SDK
+    const imageUrls: string[] = [];
+    const validFiles = imageFiles.slice(0, 4).filter(
+      (f) => f instanceof File && f.size > 0
+    );
+
+    if (validFiles.length > 0) {
+      const results = await Promise.all(validFiles.map(uploadToCloudinary));
+      results.forEach((url) => { if (url) imageUrls.push(url); });
     }
+
+    console.log("[reviews] uploaded image URLs:", imageUrls);
 
     const client = await clientPromise;
     const col = client.db("users").collection("reviews");
-    const imageUrls: string[] = [];
-    for (const file of imageFiles.slice(0, 4)) {
-      if (!(file instanceof File) || file.size === 0) continue;
-      try {
-        const buf = Buffer.from(await file.arrayBuffer());
-        const base64 = buf.toString("base64");
-        const mime = file.type || "image/jpeg";
-        const cloudRes = await fetch(
-          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              file: `data:${mime};base64,${base64}`,
-              upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
-              folder: "bambum/reviews",
-            }),
-          }
-        );
-        if (cloudRes.ok) {
-          const d = await cloudRes.json();
-          if (d.secure_url) imageUrls.push(d.secure_url);
-          else console.error("[reviews] Cloudinary no secure_url:", d);
-        } else {
-          console.error("[reviews] Cloudinary error:", await cloudRes.text());
-        }
-      } catch (uploadErr) {
-        console.error("[reviews] Cloudinary upload threw:", uploadErr);
-      }
-    }
 
     await col.insertOne({
-      productId, productSlug, productName,
-      userId: user.id, userName: user.name,
-      rating, title, body,
+      productId,
+      productSlug,
+      productName,
+      userId: user.id,
+      userName: user.name,
+      rating,
+      title,
+      body,
       images: imageUrls,
       status: "visible",
       helpful: 0,
@@ -151,30 +183,27 @@ export async function POST(req: NextRequest) {
   }
 }
 
-  //  DELETE 
-
+// DELETE
 export async function DELETE(req: NextRequest) {
   const user = await getUserFromCookie();
-  if (!user) {
+  if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
   try {
     const { id } = await req.json();
-    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    if (!id)
+      return NextResponse.json({ error: "id required" }, { status: 400 });
 
     const client = await clientPromise;
     const col = client.db("users").collection("reviews");
 
-    // userId guard: users can only delete their own reviews
     const result = await col.deleteOne({
       _id: new ObjectId(id),
       userId: user.id,
     });
 
-    if (result.deletedCount === 0) {
+    if (result.deletedCount === 0)
       return NextResponse.json({ error: "Not found or not yours." }, { status: 404 });
-    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

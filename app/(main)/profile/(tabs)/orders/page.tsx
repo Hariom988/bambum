@@ -101,11 +101,9 @@ function OrderCard({ order }: { order: Order }) {
 
   return (
     <div
-      className="overflow-hidden"
+      className="overflow-hidden rounded-lg"
       style={{
         background: "#fff",
-        border: "1px solid var(--nav-border)",
-        borderTop: `2px solid ${status.color}`,
       }}
     >
       {/* Main row — matches screenshot layout: image | orderId+status+name+date | price+details */}
@@ -341,7 +339,7 @@ export default function OrdersPage() {
     <div className="flex flex-col gap-4">
       {/* Header card — matches screenshot "PURCHASE HISTORY / My Orders / N Total" */}
       <div
-        className="flex items-center gap-4 px-6 py-4"
+        className="flex rounded-lg items-center gap-4 px-6 py-4"
         style={{
           background: "#fff",
           border: "1px solid var(--nav-border)",
@@ -349,7 +347,7 @@ export default function OrdersPage() {
         }}
       >
         <div
-          className="w-9 h-9 flex items-center justify-center shrink-0"
+          className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
           style={{
             background: "rgba(25,99,94,0.08)",
             border: "1px solid var(--nav-border)",
@@ -397,7 +395,7 @@ export default function OrdersPage() {
               <button
                 key={key}
                 onClick={() => setFilter(key)}
-                className="px-4 py-1.5 text-[11px] font-bold tracking-widest uppercase transition-all"
+                className="px-4 py-1.5 rounded-lg text-[11px] font-bold tracking-widest uppercase transition-all"
                 style={{
                   background: isActive ? "var(--brand-teal)" : "#fff",
                   color: isActive ? "#fff" : "var(--nav-fg-muted)",
@@ -423,7 +421,7 @@ export default function OrdersPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div
-          className="flex flex-col items-center justify-center py-20 text-center"
+          className="flex  flex-col items-center justify-center py-20 text-center"
           style={{ background: "#fff", border: "1px solid var(--nav-border)" }}
         >
           <div

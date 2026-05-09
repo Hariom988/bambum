@@ -186,6 +186,16 @@ export default function UserMenu() {
 
             {/* Menu items */}
             <div className="py-1">
+              <button
+                className="user-menu-item"
+                onClick={() => {
+                  setOpen(false);
+                  router.push("/profile");
+                }}
+              >
+                <User size={14} />
+                My Profile
+              </button>
               <button className="user-menu-item danger" onClick={handleLogout}>
                 <LogOut size={14} />
                 Sign Out

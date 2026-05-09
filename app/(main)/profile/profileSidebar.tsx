@@ -12,7 +12,6 @@ export default function ProfileSidebar({ user }: { user: AuthUser }) {
   const navItems = [
     { name: "OVERVIEW", icon: User, href: "/profile" },
     { name: "MY ORDERS", icon: Package, href: "/profile/orders" },
-    { name: "WISHLIST", icon: Heart, href: "/profile/" },
     { name: "SETTINGS", icon: Settings, href: "/profile/settings" },
   ];
 

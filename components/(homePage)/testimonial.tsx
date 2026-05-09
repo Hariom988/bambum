@@ -1,64 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Star } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 
-/* ─────────────────────────────────────────────────────────────
-   Add these new variables alongside the existing :root block
-   in your globals.css / variables file:
-
-   --tm-card-bg: #1a1a1a;
-   --tm-card-border: rgba(255,255,255,0.06);
-   --tm-star-active: var(--ft-fg);          // reuses teal accent
-   --tm-star-inactive: rgba(41,177,168,0.25);
-   --tm-heading-fg: #ffffff;
-   --tm-body-fg: rgba(255,255,255,0.75);
-   --tm-author-fg: var(--ft-fg);            // teal
-   --tm-meta-fg: rgba(255,255,255,0.45);
-   --tm-stat-value-fg: #ffffff;
-   --tm-stat-label-fg: rgba(255,255,255,0.5);
-   --tm-subtitle-fg: rgba(255,255,255,0.55);
-   --tm-divider: rgba(255,255,255,0.08);
-───────────────────────────────────────────────────────────── */
-
-const TESTIMONIALS = [
-  {
-    name: "Sanjoa Sharma",
-    rating: 5,
-    text: "The most comfortable underwear I've ever owned. The bamboo fabric is incredibly soft and breathable.",
-    initials: "SS",
-  },
-  {
-    name: "Piyush",
-    rating: 5,
-    text: "Love the sustainability aspect and they feel amazing. Will never go back to regular cotton.",
-    initials: "PI",
-  },
-  {
-    name: "Alia",
-    rating: 5,
-    text: "These are worth every penny. The quality is outstanding and they actually stay comfortable all day.",
-    initials: "AL",
-  },
-  {
-    name: "Priya Sharma",
-    rating: 5,
-    text: "I was skeptical about bamboo fabric but decided to try Bambumm after seeing the reviews. Absolutely blown away — these briefs feel like wearing nothing.",
-    initials: "PS",
-  },
-  {
-    name: "Arjun Mehta",
-    rating: 5,
-    text: "My skin is super sensitive and regular cotton always causes irritation. These are a complete game-changer. Cool, soft, and no allergic reaction.",
-    initials: "AM",
-  },
-  {
-    name: "Rahul Verma",
-    rating: 5,
-    text: "Whether I'm in the office or working out, these stay comfortable all day. The breathability is real — I genuinely feel cooler.",
-    initials: "RV",
-  },
-];
+interface Testimonial {
+  _id: string;
+  name: string;
+  rating: number;
+  text: string;
+  title: string;
+  initials: string;
+  location?: string;
+}
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -67,9 +20,7 @@ function StarRating({ rating }: { rating: number }) {
         <Star
           key={i}
           size={14}
-          fill={
-            i < rating ? "var(--tm-star-active)" : "var(--tm-star-inactive)"
-          }
+          fill={i < rating ? "var(--ft-fg)" : "rgba(41,177,168,0.25)"}
           strokeWidth={0}
         />
       ))}
@@ -77,66 +28,40 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-function TestimonialCard({
-  name,
-  rating,
-  text,
-  initials,
-  visible,
-  delay,
-}: {
-  name: string;
-  rating: number;
-  text: string;
-  initials: string;
-  visible: boolean;
-  delay: number;
-}) {
+function TestimonialCard({ name, rating, text, title, initials }: Testimonial) {
   return (
     <div
-      className="tm-card"
+      className="flex flex-col gap-3.5 rounded-xl p-6 h-full"
       style={{
         background: "var(--tm-card-bg)",
         border: "1px solid var(--tm-card-border)",
-        borderRadius: 12,
-        padding: "24px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 14,
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(24px)",
-        transition: `opacity 0.6s ease ${delay}ms, transform 0.6s cubic-bezier(0.22,1,0.36,1) ${delay}ms`,
       }}
     >
       <StarRating rating={rating} />
 
+      {title && (
+        <p
+          className="text-[11px] font-bold tracking-widest uppercase m-0"
+          style={{ color: "var(--ft-fg)", fontFamily: "var(--nav-font-ui)" }}
+        >
+          {title}
+        </p>
+      )}
+
       <p
-        style={{
-          color: "var(--tm-body-fg)",
-          fontSize: "0.9rem",
-          lineHeight: 1.65,
-          margin: 0,
-          flex: 1,
-        }}
+        className="flex-1 text-[0.9rem] leading-relaxed m-0"
+        style={{ color: "var(--tm-body-fg)", fontFamily: "var(--nav-font-ui)" }}
       >
         &ldquo;{text}&rdquo;
       </p>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div className="flex items-center gap-2.5">
         <div
+          className="w-8 h-8 rounded-full flex items-center justify-center text-[0.65rem] font-bold shrink-0"
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
             background: "rgba(41,177,168,0.15)",
             border: "1px solid rgba(41,177,168,0.3)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "0.65rem",
-            fontWeight: 700,
-            color: "var(--tm-author-fg)",
-            flexShrink: 0,
+            color: "var(--ft-fg)",
             fontFamily: "var(--nav-font)",
           }}
         >
@@ -144,20 +69,16 @@ function TestimonialCard({
         </div>
         <div>
           <p
-            style={{
-              color: "var(--tm-author-fg)",
-              fontSize: "0.8rem",
-              fontWeight: 600,
-              margin: 0,
-            }}
+            className="text-[0.8rem] font-semibold m-0"
+            style={{ color: "var(--ft-fg)", fontFamily: "var(--nav-font-ui)" }}
           >
             {name}
           </p>
           <p
+            className="text-[0.7rem] m-0"
             style={{
               color: "var(--tm-meta-fg)",
-              fontSize: "0.7rem",
-              margin: 0,
+              fontFamily: "var(--nav-font-ui)",
             }}
           >
             Verified Customer
@@ -168,9 +89,31 @@ function TestimonialCard({
   );
 }
 
+const CARDS_DESKTOP = 3;
+const CARDS_MOBILE = 1;
+
 export default function Testimonials() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [index, setIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/content/testimonials")
+      .then((r) => r.json())
+      .then((d) => setTestimonials(d.items || []))
+      .catch(() => setTestimonials([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -188,8 +131,31 @@ export default function Testimonials() {
     return () => obs.disconnect();
   }, []);
 
-  // Show first 3 on mobile, all 6 on desktop (handled via CSS grid)
-  const displayed = TESTIMONIALS.slice(0, 3);
+  const perPage = isMobile ? CARDS_MOBILE : CARDS_DESKTOP;
+  const maxIndex = Math.max(0, testimonials.length - perPage);
+
+  const prev = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
+  const next = useCallback(
+    () => setIndex((i) => Math.min(maxIndex, i + 1)),
+    [maxIndex],
+  );
+
+  // Reset index if resizing causes it to go out of bounds
+  useEffect(() => {
+    setIndex((i) => Math.min(i, maxIndex));
+  }, [maxIndex]);
+
+  const avgRating =
+    testimonials.length > 0
+      ? (
+          testimonials.reduce((sum, t) => sum + t.rating, 0) /
+          testimonials.length
+        ).toFixed(1)
+      : "—";
+
+  const totalCount = testimonials.length;
+  const canPrev = index > 0;
+  const canNext = index < maxIndex;
 
   return (
     <>
@@ -197,40 +163,10 @@ export default function Testimonials() {
         :root {
           --tm-card-bg: #1a1a1a;
           --tm-card-border: rgba(255,255,255,0.06);
-          --tm-star-active: var(--ft-fg);
-          --tm-star-inactive: rgba(41,177,168,0.25);
-          --tm-heading-fg: #ffffff;
           --tm-body-fg: rgba(255,255,255,0.75);
-          --tm-author-fg: var(--ft-fg);
           --tm-meta-fg: rgba(255,255,255,0.45);
-          --tm-stat-value-fg: #ffffff;
-          --tm-stat-label-fg: rgba(255,255,255,0.5);
           --tm-subtitle-fg: rgba(255,255,255,0.55);
           --tm-divider: rgba(255,255,255,0.08);
-        }
-
-        .tm-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-          .tm-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        @media (min-width: 769px) and (max-width: 1024px) {
-          .tm-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-
-        .tm-overall-stars {
-          display: flex;
-          align-items: center;
-          gap: 6px;
         }
 
         .tm-stat-divider {
@@ -256,10 +192,9 @@ export default function Testimonials() {
       >
         <div
           ref={sectionRef}
+          className="mx-auto px-6"
           style={{
             maxWidth: 1100,
-            margin: "0 auto",
-            padding: "0 24px",
             opacity: visible ? 1 : 0,
             transform: visible ? "translateY(0)" : "translateY(28px)",
             transition:
@@ -267,126 +202,185 @@ export default function Testimonials() {
           }}
         >
           {/* Header */}
-          <div style={{ textAlign: "center", marginBottom: 56 }}>
+          <div className="text-center mb-14">
             <h2
+              className="font-bold m-0 mb-3"
               style={{
                 fontFamily: "var(--nav-font)",
                 fontSize: "clamp(1.75rem, 4vw, 2.5rem)",
-                fontWeight: 700,
-                color: "var(--tm-heading-fg)",
-                margin: "0 0 12px",
+                color: "#ffffff",
                 letterSpacing: "0.01em",
               }}
             >
               What Our Customers Say
             </h2>
             <p
-              style={{
-                color: "var(--tm-subtitle-fg)",
-                fontSize: "0.9rem",
-                margin: "0 0 20px",
-                lineHeight: 1.5,
-              }}
+              className="text-[0.9rem] m-0 mb-5 leading-relaxed"
+              style={{ color: "var(--tm-subtitle-fg)" }}
             >
-              Join thousands of satisfied customers who&apos;s made the switch
+              Join thousands of satisfied customers who&apos;ve made the switch
               to
               <br />
               sustainable comfort
             </p>
-            {/* Overall rating */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-              }}
-            >
-              <div className="tm-overall-stars">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={20}
-                    fill="var(--tm-star-active)"
-                    strokeWidth={0}
-                  />
-                ))}
+
+            {!loading && testimonials.length > 0 && (
+              <div className="flex items-center justify-center gap-2.5">
+                <div className="flex items-center gap-1.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      size={20}
+                      fill="var(--ft-fg)"
+                      strokeWidth={0}
+                    />
+                  ))}
+                </div>
+                <span
+                  className="font-semibold text-[1.1rem]"
+                  style={{ color: "#ffffff" }}
+                >
+                  {avgRating}/5
+                </span>
               </div>
-              <span
+            )}
+          </div>
+
+          {/* Carousel */}
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <div
+                className="w-6 h-6 rounded-full border-2 animate-spin"
                 style={{
-                  color: "var(--tm-heading-fg)",
-                  fontSize: "1.1rem",
-                  fontWeight: 600,
+                  borderColor: "var(--ft-fg)",
+                  borderTopColor: "transparent",
+                }}
+              />
+            </div>
+          ) : testimonials.length === 0 ? (
+            <p
+              className="text-center text-[0.9rem]"
+              style={{ color: "var(--tm-subtitle-fg)" }}
+            >
+              No reviews yet.
+            </p>
+          ) : (
+            <div className="flex items-center gap-4">
+              {/* Prev button */}
+              <button
+                onClick={prev}
+                disabled={!canPrev}
+                className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all"
+                style={{
+                  background: canPrev
+                    ? "rgba(41,177,168,0.15)"
+                    : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${canPrev ? "rgba(41,177,168,0.4)" : "rgba(255,255,255,0.08)"}`,
+                  color: canPrev ? "var(--ft-fg)" : "rgba(255,255,255,0.2)",
+                  cursor: canPrev ? "pointer" : "not-allowed",
                 }}
               >
-                4.0/5
-              </span>
-            </div>
-          </div>
+                <ChevronLeft size={18} />
+              </button>
 
-          {/* Cards grid */}
-          <div className="tm-grid">
-            {displayed.map((t, i) => (
-              <TestimonialCard
-                key={t.name}
-                {...t}
-                visible={visible}
-                delay={i * 100}
-              />
-            ))}
-          </div>
+              {/* Cards viewport */}
+              <div className="flex-1 overflow-hidden">
+                <div
+                  className="flex gap-5"
+                  style={{
+                    transform: `translateX(calc(-${index} * (100% / ${perPage} + ${20 / perPage}px)))`,
+                    transition: "transform 0.45s cubic-bezier(0.22,1,0.36,1)",
+                  }}
+                >
+                  {testimonials.map((t) => (
+                    <div
+                      key={t._id}
+                      className="shrink-0"
+                      style={{
+                        width: `calc(${100 / perPage}% - ${(20 * (perPage - 1)) / perPage}px)`,
+                      }}
+                    >
+                      <TestimonialCard {...t} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Next button */}
+              <button
+                onClick={next}
+                disabled={!canNext}
+                className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all"
+                style={{
+                  background: canNext
+                    ? "rgba(41,177,168,0.15)"
+                    : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${canNext ? "rgba(41,177,168,0.4)" : "rgba(255,255,255,0.08)"}`,
+                  color: canNext ? "var(--ft-fg)" : "rgba(255,255,255,0.2)",
+                  cursor: canNext ? "pointer" : "not-allowed",
+                }}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
+
+          {/* Dot indicators */}
+          {!loading && testimonials.length > perPage && (
+            <div className="flex items-center justify-center gap-2 mt-6">
+              {Array.from({ length: maxIndex + 1 }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setIndex(i)}
+                  className="rounded-full transition-all"
+                  style={{
+                    width: i === index ? 20 : 6,
+                    height: 6,
+                    background:
+                      i === index ? "var(--ft-fg)" : "rgba(41,177,168,0.25)",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Stats bar */}
-          <div
-            className="tm-stats-row"
-            style={{
-              marginTop: 56,
-              borderTop: "1px solid var(--tm-divider)",
-              paddingTop: 40,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 48,
-            }}
-          >
-            {[
-              { value: "5.0 / 5.0", label: "Average Rating" },
-              { value: "1,200+", label: "Happy Customers" },
-              { value: "98%", label: "Repeat Buyers" },
-            ].map((stat, i) => (
-              <div
-                key={stat.label}
-                style={{ display: "flex", alignItems: "center", gap: 48 }}
-              >
-                <div style={{ textAlign: "center" }}>
-                  <p
-                    style={{
-                      fontFamily: "var(--nav-font)",
-                      fontSize: "1.75rem",
-                      fontWeight: 700,
-                      color: "var(--tm-stat-value-fg)",
-                      margin: "0 0 4px",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {stat.value}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: "0.75rem",
-                      color: "var(--tm-stat-label-fg)",
-                      margin: 0,
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {stat.label}
-                  </p>
+          {!loading && testimonials.length > 0 && (
+            <div
+              className="tm-stats-row mt-14 pt-10 flex items-center justify-center gap-12"
+              style={{ borderTop: "1px solid var(--tm-divider)" }}
+            >
+              {[
+                { value: `${avgRating} / 5.0`, label: "Average Rating" },
+                { value: `${totalCount}`, label: "Happy Customers" },
+              ].map((stat, i) => (
+                <div key={stat.label} className="flex items-center gap-12">
+                  <div className="text-center">
+                    <p
+                      className="font-bold m-0 mb-1 leading-none"
+                      style={{
+                        fontFamily: "var(--nav-font)",
+                        fontSize: "1.75rem",
+                        color: "#ffffff",
+                      }}
+                    >
+                      {stat.value}
+                    </p>
+                    <p
+                      className="text-[0.75rem] m-0 tracking-widest uppercase"
+                      style={{ color: "var(--tm-meta-fg)" }}
+                    >
+                      {stat.label}
+                    </p>
+                  </div>
+                  {i < 1 && <div className="tm-stat-divider" />}
                 </div>
-                {i < 2 && <div className="tm-stat-divider" />}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </>

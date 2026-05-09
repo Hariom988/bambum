@@ -16,14 +16,11 @@ async function getUserId(req: NextRequest): Promise<string | null> {
 }
 
 const razorpay = new Razorpay({
-  key_id: process.env.NEXT_PUBLIC_TEST_RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_TEST_KEY_SECRET!,
+  key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
 
 export async function POST(req: NextRequest) {
-  // Allow both logged-in users and guests
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const userId = await getUserId(req); // may be null for guests — that's fine
 
   try {
     const { amount } = await req.json();
@@ -42,7 +39,7 @@ export async function POST(req: NextRequest) {
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
-      keyId: process.env.NEXT_PUBLIC_TEST_RAZORPAY_KEY_ID,
+      keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
     });
   } catch (err) {
     console.error("[payment/create-order]", err);
