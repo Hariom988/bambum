@@ -60,9 +60,9 @@ const STATUS_CONFIG: Record<
   },
   confirmed: {
     label: "Confirmed",
-    color: "var(--nav-accent)",
-    bg: "rgba(200,169,126,0.1)",
-    border: "rgba(200,169,126,0.3)",
+    color: "var(--brand-teal)",
+    bg: "rgba(25,99,94,0.08)",
+    border: "rgba(25,99,94,0.25)",
     icon: CheckCircle,
   },
   shipped: {
@@ -92,6 +92,7 @@ function OrderCard({ order }: { order: Order }) {
   const [expanded, setExpanded] = useState(false);
   const status = STATUS_CONFIG[order.status];
   const StatusIcon = status.icon;
+
   const date = new Date(order.createdAt).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
@@ -100,24 +101,21 @@ function OrderCard({ order }: { order: Order }) {
 
   return (
     <div
-      className="overflow-hidden transition-all duration-200"
+      className="overflow-hidden"
       style={{
         background: "#fff",
         border: "1px solid var(--nav-border)",
-        boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
+        borderTop: `2px solid ${status.color}`,
       }}
     >
-      {/* Status bar */}
-      <div className="h-0.5" style={{ background: status.color }} />
-
-      {/* Order summary row */}
+      {/* Main row — matches screenshot layout: image | orderId+status+name+date | price+details */}
       <div className="flex items-center gap-4 px-5 py-4">
-        {/* First product image */}
+        {/* Product thumbnail */}
         <div
           className="w-14 h-16 shrink-0 overflow-hidden"
           style={{
             border: "1px solid var(--nav-border)",
-            background: "var(--nav-bg)",
+            background: "var(--nav-dropdown-bg)",
           }}
         >
           {order.items[0]?.image ? (
@@ -130,14 +128,15 @@ function OrderCard({ order }: { order: Order }) {
             <div className="w-full h-full flex items-center justify-center">
               <Package
                 size={16}
-                style={{ color: "var(--nav-accent)", opacity: 0.4 }}
+                style={{ color: "var(--brand-teal)", opacity: 0.4 }}
               />
             </div>
           )}
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+          {/* Order ID + status badge */}
+          <div className="flex items-center gap-2 flex-wrap mb-1">
             <p
               className="text-[10px] font-bold tracking-[0.12em] uppercase"
               style={{ color: "var(--nav-fg-muted)" }}
@@ -145,7 +144,7 @@ function OrderCard({ order }: { order: Order }) {
               #{order.orderId}
             </p>
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold tracking-widest uppercase"
+              className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold tracking-widest uppercase rounded-sm"
               style={{
                 background: status.bg,
                 border: `1px solid ${status.border}`,
@@ -156,6 +155,8 @@ function OrderCard({ order }: { order: Order }) {
               {status.label}
             </span>
           </div>
+
+          {/* Product name */}
           <p
             className="text-sm font-bold truncate"
             style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
@@ -163,6 +164,8 @@ function OrderCard({ order }: { order: Order }) {
             {order.items[0]?.name}
             {order.items.length > 1 ? ` +${order.items.length - 1} more` : ""}
           </p>
+
+          {/* Date */}
           <p
             className="text-xs mt-0.5"
             style={{ color: "var(--nav-fg-muted)" }}
@@ -171,7 +174,8 @@ function OrderCard({ order }: { order: Order }) {
           </p>
         </div>
 
-        <div className="flex flex-col items-end gap-1.5 shrink-0">
+        {/* Price + details toggle */}
+        <div className="flex flex-col items-end gap-2 shrink-0">
           <p
             className="text-sm font-bold"
             style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
@@ -180,12 +184,12 @@ function OrderCard({ order }: { order: Order }) {
           </p>
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="flex items-center gap-1 text-[9px] font-bold tracking-widest uppercase transition-colors duration-150"
+            className="flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase"
             style={{
+              color: "var(--brand-teal)",
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "var(--nav-accent)",
             }}
           >
             {expanded ? "Less" : "Details"}
@@ -194,10 +198,10 @@ function OrderCard({ order }: { order: Order }) {
         </div>
       </div>
 
-      {/* Expanded details */}
+      {/* Expanded section */}
       {expanded && (
-        <div className="border-t" style={{ borderColor: "var(--nav-border)" }}>
-          {/* All items */}
+        <div style={{ borderTop: "1px solid var(--nav-border)" }}>
+          {/* Items list */}
           <div className="px-5 py-4 flex flex-col gap-3">
             <p
               className="text-[10px] font-bold tracking-[0.14em] uppercase"
@@ -211,7 +215,7 @@ function OrderCard({ order }: { order: Order }) {
                   className="w-10 h-12 shrink-0 overflow-hidden"
                   style={{
                     border: "1px solid var(--nav-border)",
-                    background: "var(--nav-bg)",
+                    background: "var(--nav-dropdown-bg)",
                   }}
                 >
                   {item.image && (
@@ -255,12 +259,12 @@ function OrderCard({ order }: { order: Order }) {
             ))}
           </div>
 
-          {/* Delivery address + total */}
+          {/* Address + total */}
           <div
-            className="px-5 py-4 border-t flex flex-col sm:flex-row sm:items-start gap-4"
+            className="px-5 py-4 flex flex-col sm:flex-row sm:items-start gap-4"
             style={{
-              borderColor: "var(--nav-border)",
-              background: "rgba(200,169,126,0.03)",
+              borderTop: "1px solid var(--nav-border)",
+              background: "rgba(25,99,94,0.02)",
             }}
           >
             <div className="flex-1">
@@ -295,7 +299,7 @@ function OrderCard({ order }: { order: Order }) {
                 className="text-base font-bold"
                 style={{
                   fontFamily: "var(--nav-font)",
-                  color: "var(--nav-accent)",
+                  color: "var(--brand-teal)",
                 }}
               >
                 ₹{order.total.toLocaleString("en-IN")}
@@ -321,37 +325,37 @@ export default function OrdersPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const FILTERS: Array<"all" | Order["status"]> = [
-    "all",
-    "pending",
-    "confirmed",
-    "shipped",
-    "delivered",
-    "cancelled",
+  const FILTERS: Array<{ key: "all" | Order["status"]; label: string }> = [
+    { key: "all", label: "All" },
+    { key: "pending", label: "Pending" },
+    { key: "confirmed", label: "Confirmed" },
+    { key: "shipped", label: "Shipped" },
+    { key: "delivered", label: "Delivered" },
+    { key: "cancelled", label: "Cancelled" },
   ];
 
   const filtered =
     filter === "all" ? orders : orders.filter((o) => o.status === filter);
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Header */}
+    <div className="flex flex-col gap-4">
+      {/* Header card — matches screenshot "PURCHASE HISTORY / My Orders / N Total" */}
       <div
-        className="flex items-center gap-3 px-6 py-4 overflow-hidden"
+        className="flex items-center gap-4 px-6 py-4"
         style={{
           background: "#fff",
           border: "1px solid var(--nav-border)",
-          boxShadow: "0 2px 16px rgba(200,169,126,0.06)",
+          boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
         }}
       >
         <div
-          className="w-8 h-8 flex items-center justify-center shrink-0"
+          className="w-9 h-9 flex items-center justify-center shrink-0"
           style={{
-            background: "rgba(200,169,126,0.12)",
+            background: "rgba(25,99,94,0.08)",
             border: "1px solid var(--nav-border)",
           }}
         >
-          <ShoppingBag size={14} style={{ color: "var(--nav-accent)" }} />
+          <ShoppingBag size={15} style={{ color: "var(--brand-teal)" }} />
         </div>
         <div className="flex-1">
           <p
@@ -368,69 +372,70 @@ export default function OrdersPage() {
           </p>
         </div>
         <span
-          className="text-[10px] font-bold px-2 py-1"
+          className="text-[10px] font-bold px-2.5 py-1"
           style={{
-            background: "rgba(200,169,126,0.12)",
-            border: "1px solid rgba(200,169,126,0.3)",
-            color: "var(--nav-accent)",
+            background: "rgba(25,99,94,0.08)",
+            border: "1px solid rgba(25,99,94,0.2)",
+            color: "var(--brand-teal)",
           }}
         >
           {orders.length} Total
         </span>
       </div>
 
-      {/* Filter pills */}
-      {orders.length > 0 && (
+      {/* Filter tabs — matches screenshot "ALL (1) | CONFIRMED (1)" style */}
+      {!loading && orders.length > 0 && (
         <div className="flex gap-2 flex-wrap">
-          {FILTERS.map((f) => {
+          {FILTERS.map(({ key, label }) => {
             const count =
-              f === "all"
+              key === "all"
                 ? orders.length
-                : orders.filter((o) => o.status === f).length;
-            if (f !== "all" && count === 0) return null;
+                : orders.filter((o) => o.status === key).length;
+            if (key !== "all" && count === 0) return null;
+            const isActive = filter === key;
             return (
               <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className="px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase transition-all duration-150"
+                key={key}
+                onClick={() => setFilter(key)}
+                className="px-4 py-1.5 text-[11px] font-bold tracking-widest uppercase transition-all"
                 style={{
-                  background: filter === f ? "var(--nav-accent)" : "#fff",
-                  color: filter === f ? "#fff" : "var(--nav-fg-muted)",
-                  border: `1px solid ${filter === f ? "var(--nav-accent)" : "var(--nav-border)"}`,
+                  background: isActive ? "var(--brand-teal)" : "#fff",
+                  color: isActive ? "#fff" : "var(--nav-fg-muted)",
+                  border: `1px solid ${isActive ? "var(--brand-teal)" : "var(--nav-border)"}`,
                   cursor: "pointer",
                 }}
               >
-                {f === "all" ? "All" : f} {count > 0 && `(${count})`}
+                {label} ({count})
               </button>
             );
           })}
         </div>
       )}
 
-      {/* Orders list */}
+      {/* Content */}
       {loading ? (
         <div className="flex justify-center py-16">
           <Loader2
             size={24}
             className="animate-spin"
-            style={{ color: "var(--nav-accent)" }}
+            style={{ color: "var(--brand-teal)" }}
           />
         </div>
       ) : filtered.length === 0 ? (
         <div
-          className="flex flex-col items-center justify-center py-16 text-center"
+          className="flex flex-col items-center justify-center py-20 text-center"
           style={{ background: "#fff", border: "1px solid var(--nav-border)" }}
         >
           <div
             className="w-14 h-14 flex items-center justify-center mb-4"
             style={{
-              background: "rgba(200,169,126,0.1)",
+              background: "rgba(25,99,94,0.08)",
               border: "1px solid var(--nav-border)",
             }}
           >
             <ShoppingBag
               size={22}
-              style={{ color: "var(--nav-accent)", opacity: 0.6 }}
+              style={{ color: "var(--brand-teal)", opacity: 0.6 }}
             />
           </div>
           <p
@@ -447,9 +452,9 @@ export default function OrdersPage() {
           {filter === "all" && (
             <a
               href="/products"
-              className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 text-[11px] font-bold tracking-[0.14em] uppercase"
+              className="inline-flex items-center gap-2 mt-6 px-5 py-2.5 text-[11px] font-bold tracking-[0.14em] uppercase"
               style={{
-                background: "var(--nav-accent)",
+                background: "var(--brand-teal)",
                 color: "#fff",
                 textDecoration: "none",
               }}

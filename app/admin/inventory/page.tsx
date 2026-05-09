@@ -21,9 +21,10 @@ import {
   Boxes,
   TrendingDown,
   AlertTriangle,
+  Navigation,
 } from "lucide-react";
 import CategoryManager from "./categoryManager";
-
+import NavManager from "@/components/navManager";
 // ─── Types
 
 interface ProductSize {
@@ -60,7 +61,7 @@ type ConfirmDialog = {
   currentActive?: boolean;
 } | null;
 
-type View = "products" | "add" | "categories";
+type View = "products" | "add" | "categories" | "navconfig";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const DEFAULT_SIZES = [
@@ -1201,6 +1202,16 @@ export default function InventoryPage() {
               >
                 <Tag size={15} /> Categories
               </button>
+              <button
+                className="adm-nav-item"
+                data-active={view === "navconfig"}
+                onClick={() => {
+                  setView("navconfig");
+                  setEditingProduct(null);
+                }}
+              >
+                <Navigation size={15} /> Nav Config
+              </button>
             </nav>
 
             {view === "products" && dbCategories.length > 0 && (
@@ -1458,6 +1469,13 @@ export default function InventoryPage() {
                   key="category-manager"
                   onCategoriesChange={fetchDbCategories}
                 />
+              </div>
+            )}
+
+            {/* ══ NAV CONFIG VIEW ══ */}
+            {view === "navconfig" && (
+              <div className="adm-view">
+                <NavManager key="nav-manager" />
               </div>
             )}
 
@@ -1864,6 +1882,15 @@ export default function InventoryPage() {
                 setEditingProduct(null);
               },
               active: view === "categories",
+            },
+            {
+              label: "Nav",
+              icon: <Navigation size={18} />,
+              action: () => {
+                setView("navconfig");
+                setEditingProduct(null);
+              },
+              active: view === "navconfig",
             },
             {
               label: "Back",

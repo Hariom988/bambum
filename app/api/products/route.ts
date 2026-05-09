@@ -27,7 +27,6 @@ export async function GET(request: Request) {
     const filter: Record<string, any> = { isActive: true };
 
     if (q) {
-      // Regex search — works without text index, no APIStrictError
       const regex = { $regex: q, $options: "i" };
       filter.$or = [{ name: regex }, { category: regex }, { description: regex }];
     }
@@ -45,9 +44,11 @@ export async function GET(request: Request) {
         price: 1,
         category: 1,
         stock: 1,
+        // ✅ include sizes so the card can show the size picker
         "variants.colorName": 1,
         "variants.colorHex": 1,
         "variants.images": { $slice: 1 },
+        "variants.sizes": 1,
       })
       .toArray();
 

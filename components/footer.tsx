@@ -65,18 +65,26 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 pt-10 pb-5 grid grid-cols-2 md:grid-cols-4 gap-10 relative z-10">
         {/* Brand column */}
         <div className="col-span-2 md:col-span-1 flex flex-col gap-5">
-          <Link href="/">
-            <img
-              src="/logo-removebg-preview.png"
-              alt="Bambumm"
-              className="w-20"
-              style={{
-                filter:
-                  "brightness(0) invert(1) sepia(1) saturate(0.4) brightness(1.15)",
-                opacity: 0.9,
-              }}
-            />
-          </Link>
+          <div className="flex w-full items-center justify-between">
+            <Link href="/">
+              <img
+                src="/logo.png"
+                alt="Bambumm"
+                className="w-15 rounded-2xl bg-white"
+              />
+            </Link>
+            <p className="flex w-full items-center justify-center gap-5">
+              <Link href="https://www.facebook.com/bambumm.in" target="_blank">
+                <img className="w-3" src="/vectors/facebook.svg" alt="" />
+              </Link>
+              <Link href="https://www.instagram.com/bambumm.in" target="_blank">
+                <img className="w-5" src="/vectors/instagram.svg" alt="" />
+              </Link>
+              <Link href="https://www.x.com/bambumm.in" target="_blank">
+                <img className="w-5" src="/vectors/twitter.svg" alt="" />
+              </Link>
+            </p>
+          </div>
 
           <p
             className="text-sm leading-relaxed max-w-[28ch]"
@@ -85,7 +93,6 @@ export default function Footer() {
             Crafted for the skin you live in. Premium bamboo-blend essentials
             built to breathe, move and last.
           </p>
-
           <ul className="flex flex-col gap-2 list-none p-0 m-0">
             {[
               {
@@ -142,7 +149,6 @@ export default function Footer() {
               className="text-[0.68rem] font-bold tracking-[0.18em] uppercase pb-3"
               style={{
                 color: "var(--ft-fg)",
-                borderBottom: "1px solid var(--ft-border)",
               }}
             >
               {col.heading}
@@ -187,7 +193,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 pb-8 flex flex-wrap items-center justify-between gap-4 relative z-10">
         <p
           className="text-[0.77rem] tracking-wide"
-          style={{ color: "var(--ft-fg-muted)" }}
+          style={{ color: "var(--adm-bg-white)" }}
         >
           © {new Date().getFullYear()} Bambumm. All rights reserved.
         </p>
@@ -195,21 +201,21 @@ export default function Footer() {
         <div className="flex items-center gap-2">
           <span
             className="text-[0.77rem] tracking-wide"
-            style={{ color: "var(--ft-fg-muted)" }}
+            style={{ color: "var(--adm-bg-white)" }}
           >
             Design & Powered by{" "}
-            <a
+            <Link
               href="https://www.ynrsgroup.com/"
               target="_blank"
               className="text-[0.77rem] font-bold tracking-wide underline"
+              style={{ color: "var(--ft-fg-link)" }}
             >
               YNRS Group.
-            </a>
+            </Link>
           </span>
         </div>
       </div>
 
-      {/* ══ WORDMARK BACKDROP ══ */}
       <div
         className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-none select-none z-0 leading-none"
         style={{
@@ -218,7 +224,7 @@ export default function Footer() {
           fontWeight: 700,
           letterSpacing: "0.12em",
           color: "transparent",
-          WebkitTextStroke: "1px rgba(200,169,126,0.07)",
+          WebkitTextStroke: "1px rgb(7, 33, 32)",
           whiteSpace: "nowrap",
         }}
         aria-hidden="true"

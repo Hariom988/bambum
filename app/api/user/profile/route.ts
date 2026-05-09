@@ -23,73 +23,117 @@ async function getDb() {
   return { client, col: db.collection("credentials") };
 }
 
-// GET — fetch profile
+// GET — fetch profile (name, email, phone, provider)
 export async function GET(req: NextRequest) {
   const userId = await getUserId(req);
-  if (!userId) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
   try {
     const { client, col } = await getDb();
     const user = await col.findOne(
       { _id: new ObjectId(userId) },
-      { projection: { name: 1, email: 1, provider: 1 } }
+      { projection: { name: 1, email: 1, phone: 1, provider: 1 } }
     );
     await client.close();
-    if (!user) return NextResponse.json({ error: "User not found." }, { status: 404 });
-    return NextResponse.json({ user: { ...user, _id: user._id.toString() } });
+    if (!user)
+      return NextResponse.json({ error: "User not found." }, { status: 404 });
+    return NextResponse.json({
+      user: { ...user, _id: user._id.toString() },
+    });
   } catch (err) {
     console.error("[user/profile GET]", err);
-    return NextResponse.json({ error: "Failed to fetch profile." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch profile." },
+      { status: 500 }
+    );
   }
 }
 
-// PUT — update name
+// PUT — update name and/or phone
 export async function PUT(req: NextRequest) {
   const userId = await getUserId(req);
-  if (!userId) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
   try {
-    const { name } = await req.json();
-    if (!name?.trim()) return NextResponse.json({ error: "Name is required." }, { status: 400 });
+    const { name, phone } = await req.json();
+
+    if (!name?.trim())
+      return NextResponse.json(
+        { error: "Name is required." },
+        { status: 400 }
+      );
+
+    const updateFields: Record<string, unknown> = {
+      name: name.trim(),
+      updatedAt: new Date(),
+    };
+
+    // Only set phone if provided (allow empty string to clear it)
+    if (phone !== undefined) {
+      updateFields.phone = phone.trim();
+    }
 
     const { client, col } = await getDb();
     await col.updateOne(
       { _id: new ObjectId(userId) },
-      { $set: { name: name.trim(), updatedAt: new Date() } }
+      { $set: updateFields }
     );
     await client.close();
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[user/profile PUT]", err);
-    return NextResponse.json({ error: "Failed to update profile." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update profile." },
+      { status: 500 }
+    );
   }
 }
 
 // PATCH — change password
 export async function PATCH(req: NextRequest) {
   const userId = await getUserId(req);
-  if (!userId) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
   try {
     const { currentPassword, newPassword } = await req.json();
+
     if (!currentPassword || !newPassword) {
-      return NextResponse.json({ error: "Both current and new password required." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Both current and new password required." },
+        { status: 400 }
+      );
     }
     if (newPassword.length < 8) {
-      return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Password must be at least 8 characters." },
+        { status: 400 }
+      );
     }
 
     const { client, col } = await getDb();
-    const user = await col.findOne({ _id: new ObjectId(userId), provider: "email" });
+    const user = await col.findOne({
+      _id: new ObjectId(userId),
+      provider: "email",
+    });
+
     if (!user) {
       await client.close();
-      return NextResponse.json({ error: "Password change not available for this account." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Password change not available for this account." },
+        { status: 400 }
+      );
     }
 
     const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!isValid) {
       await client.close();
-      return NextResponse.json({ error: "Current password is incorrect." }, { status: 401 });
+      return NextResponse.json(
+        { error: "Current password is incorrect." },
+        { status: 401 }
+      );
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
@@ -101,6 +145,9 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[user/profile PATCH]", err);
-    return NextResponse.json({ error: "Failed to change password." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to change password." },
+      { status: 500 }
+    );
   }
 }

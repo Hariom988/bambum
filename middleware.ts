@@ -57,12 +57,18 @@ export async function middleware(req: NextRequest) {
       return response;
     }
   }
+
+  // ── AUTH ROUTE ────────────────────────────────────────────────────────────
   if (pathname === "/auth") {
     const token = req.cookies.get("user_token")?.value;
     if (token) {
       try {
         await jwtVerify(token, JWT_SECRET);
-        return NextResponse.redirect(new URL("/", req.url));
+        // Already logged in — redirect to redirectTo param or home
+        const redirectTo = req.nextUrl.searchParams.get("redirectTo") ?? "/";
+        // Safety: only allow same-origin redirects
+        const safeRedirect = redirectTo.startsWith("/") ? redirectTo : "/";
+        return NextResponse.redirect(new URL(safeRedirect, req.url));
       } catch {
         // Invalid token, let them through to /auth
       }
