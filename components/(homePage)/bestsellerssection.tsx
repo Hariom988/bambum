@@ -36,7 +36,7 @@ function BestsellerCard({
   return (
     <div
       className="flex-none cursor-pointer group"
-      style={{ width: 180 }}
+      style={{ width: 180, background: "var(--brand-background-page)" }}
       onClick={() => onNavigate(product.slug)}
     >
       {/* Image */}
@@ -144,7 +144,10 @@ export default function BestsellersSection() {
   return (
     <section
       className="w-full py-10 md:py-14"
-      style={{ background: "var(--nav-bg)", fontFamily: "var(--nav-font-ui)" }}
+      style={{
+        backgroundColor: "var(--brand-background-page)",
+        fontFamily: "var(--nav-font-ui)",
+      }}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         {/* Header */}

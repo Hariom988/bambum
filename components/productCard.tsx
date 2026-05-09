@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useCart } from "@/context/cartContext";
 import { Minus, Plus, ShoppingBag, X, ChevronUp } from "lucide-react";
+import Link from "next/link";
 
 interface ProductSize {
   size: string;
@@ -202,7 +203,7 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
   };
 
   return (
-    <a
+    <Link
       href={`/products/${product.slug}`}
       onClick={handleCardClick}
       className="group block no-underline h-full"
@@ -552,6 +553,6 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
           </div>
         </div>
       </div>
-    </a>
+    </Link>
   );
 }

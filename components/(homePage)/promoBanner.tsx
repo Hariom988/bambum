@@ -55,16 +55,17 @@ export function PromoBanner({
     <div
       ref={ref}
       className="rounded-md relative overflow-hidden flex flex-col"
-      style={{ background: bgColor, minHeight: 280 }}
+      style={{ background: bgColor, minHeight: 200 }}
     >
+      {/* Text block — width capped so image always has room */}
       <div
-        className={`pb-text-block relative z-10 flex flex-col justify-center p-6 md:p-8 flex-1 ${
-          imagePosition === "right" ? "items-start" : "items-start"
-        }`}
-        style={{ maxWidth: imagePosition === "right" ? "55%" : "55%" }}
+        className="relative z-10 flex flex-col justify-center p-3 min-[375px]:p-4 min-[480px]:p-5 md:p-8 flex-1 items-start"
+        style={{ maxWidth: "52%" }}
       >
+        {/* Title */}
         <h3
-          className="pb-title text-2xl md:text-4xl font-bold uppercase leading-tight mb-1"
+          className="font-bold uppercase leading-tight mb-0.5
+                     text-base min-[360px]:text-lg min-[480px]:text-xl md:text-4xl"
           style={{
             fontFamily: "var(--nav-font)",
             color: fgColor,
@@ -73,61 +74,63 @@ export function PromoBanner({
         >
           {title}
         </h3>
+
+        {/* Subtitle */}
         <p
-          className="pb-title text-md md:text-lg uppercase leading-tight mb-1"
-          style={{
-            color: fgColor,
-          }}
+          className="uppercase leading-tight mb-0.5
+                     text-[0.6rem] min-[360px]:text-[0.65rem] min-[480px]:text-sm md:text-lg"
+          style={{ color: fgColor }}
         >
           {subtitle}
         </p>
+
+        {/* Tagline */}
         <p
-          className="pb-tagline text-xs md:text-sm mb-5"
+          className="mb-3 min-[375px]:mb-4
+                     text-[0.55rem] min-[360px]:text-[0.6rem] min-[480px]:text-xs md:text-sm"
           style={{ color: mutedColor }}
         >
           {tagline}
         </p>
+
+        {/* CTA */}
         <Link
           href={ctaHref}
-          className="pb-cta rounded-md inline-flex items-center gap-2 px-5 py-3 text-[11px] font-bold tracking-[0.16em] uppercase transition-all duration-200"
+          className="rounded-md inline-flex items-center gap-1.5
+                     px-2.5 py-1.5 min-[375px]:px-3 min-[375px]:py-2 min-[480px]:px-4 min-[480px]:py-2.5 md:px-5 md:py-3
+                     font-bold uppercase tracking-[0.12em] transition-all duration-200
+                     text-[0.55rem] min-[360px]:text-[0.6rem] min-[480px]:text-[0.65rem] md:text-[11px]"
           style={{
             background: "#fff",
-            color: "var( --bg-color)",
+            color: "var(--bg-color)",
             textDecoration: "none",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var( --bg-color)";
-            e.currentTarget.style.color = "#fff";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "#fff";
-            e.currentTarget.style.color = "#1a1a1a";
+            whiteSpace: "nowrap",
           }}
         >
           {ctaLabel}
         </Link>
       </div>
 
-      {/* Model Image — absolute positioned on the correct side */}
+      {/* Model image — absolute on the correct side */}
       <div
         className="absolute inset-y-0 bottom-0"
         style={{
           [imagePosition === "right" ? "right" : "left"]: 0,
-          width: "55%",
+          width: "52%",
         }}
         aria-hidden="true"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageSrc}
           alt={imageAlt}
-          className="w-full h-full object-cover object-top"
+          className="w-full h-full"
           style={{ objectFit: "cover", objectPosition: "top center" }}
         />
       </div>
     </div>
   );
 }
+
 export default function PromoBanners() {
   return (
     <>
@@ -140,20 +143,17 @@ export default function PromoBanners() {
           transform: scale(1.03);
           transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        img:hover {
-          transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-        }
       `}</style>
 
       <section
         className="w-full"
         style={{
-          background: "var(--nav-bg)",
+          background: "var(--brand-background-page)",
           fontFamily: "var(--nav-font-ui)",
         }}
       >
         <div className="max-w-7xl mx-auto px-4 md:px-6 pb-10 md:pb-14">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 min-[375px]:gap-4 md:gap-5">
             <PromoBanner
               theme="dark"
               title="BAMBUMM"

@@ -284,7 +284,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--nav-fg);
+  color: var(--brand-background-page);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -296,7 +296,7 @@
   position: relative;
 }
 .icon-btn:hover {
-  color: var(--nav-accent-hover);
+  color: var(--adm-accent);
   background: rgba(42, 122, 114, 0.08);
 }
 .cart-badge {
