@@ -1,46 +1,44 @@
 "use client";
+
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import {
   Plus,
   Package,
   X,
-  ChevronLeft,
   Trash2,
   Save,
   Loader2,
-  Tag,
-  LogOut,
   AlertCircle,
   CheckCircle2,
   Edit3,
   Upload,
-  LayoutGrid,
   ArrowLeft,
-  SlidersHorizontal,
   Boxes,
   TrendingDown,
   AlertTriangle,
-  Navigation,
+  Search,
+  Eye,
+  ToggleLeft,
+  ToggleRight,
+  ChevronDown,
 } from "lucide-react";
-import CategoryManager from "./categoryManager";
-import NavManager from "@/components/navManager";
-// ─── Types
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ProductSize {
   size: string;
   stock: number;
 }
+
 interface ProductVariant {
   colorName: string;
   colorHex: string;
   images: string[];
   imageFiles?: File[];
-  sizes: ProductSize[]; // <-- New sizes array
+  sizes: ProductSize[];
 }
 
 interface Product {
-  isActive: boolean;
   _id?: string;
   name: string;
   slug: string;
@@ -48,7 +46,8 @@ interface Product {
   price: number;
   category: string;
   variants: ProductVariant[];
-  stock: number; // ← new field, stored in same products document
+  stock: number;
+  isActive: boolean;
   createdAt?: string;
 }
 
@@ -61,417 +60,1525 @@ type ConfirmDialog = {
   currentActive?: boolean;
 } | null;
 
-type View = "products" | "add" | "categories" | "navconfig";
+type PageView = "list" | "view" | "form";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-const DEFAULT_SIZES = [
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const DEFAULT_SIZES: ProductSize[] = [
   { size: "Small", stock: 0 },
   { size: "Medium", stock: 0 },
   { size: "Large", stock: 0 },
   { size: "Extra Large", stock: 0 },
   { size: "XXL", stock: 0 },
 ];
-const EMPTY_PRODUCT: FormProduct = {
+
+const EMPTY_FORM: FormProduct = {
   name: "",
   slug: "",
   description: "",
   price: 0,
   category: "",
-  stock: 0, // ← default
+  stock: 0,
   variants: [
     {
       colorName: "",
-      colorHex: "#c8a97e",
+      colorHex: "#19635e",
       images: [],
       imageFiles: [],
-      sizes: [],
+      sizes: [...DEFAULT_SIZES],
     },
   ],
   isActive: true,
 };
 
-// ─── Stock badge helper ───────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function StockBadge({ stock }: { stock: number }) {
-  if (stock === 0) {
+  if (stock === 0)
     return (
       <span
-        className="inline-flex items-center gap-1 px-2 py-0.5 font-sans text-[9px] font-bold tracking-widest uppercase"
+        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold tracking-widest uppercase rounded-sm"
         style={{
-          background: "rgba(192,57,43,0.1)",
-          border: "1px solid rgba(192,57,43,0.25)",
-          color: "#c0392b",
+          background: "var(--adm-bg-danger-lt)",
+          border: "1px solid var(--adm-danger-border)",
+          color: "var(--adm-danger)",
         }}
       >
-        <AlertTriangle size={9} /> Out of Stock
+        <AlertTriangle size={8} /> Out of Stock
       </span>
     );
-  }
-  if (stock <= 10) {
+  if (stock <= 10)
     return (
       <span
-        className="inline-flex items-center gap-1 px-2 py-0.5 font-sans text-[9px] font-bold tracking-widest uppercase"
+        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold tracking-widest uppercase rounded-sm"
         style={{
-          background: "rgba(230,126,34,0.1)",
+          background: "rgba(230,126,34,0.08)",
           border: "1px solid rgba(230,126,34,0.25)",
           color: "#e67e22",
         }}
       >
-        <TrendingDown size={9} /> Low: {stock}
+        <TrendingDown size={8} /> Low: {stock}
       </span>
     );
-  }
   return (
     <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 font-sans text-[9px] font-bold tracking-widest uppercase"
+      className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold tracking-widest uppercase rounded-sm"
       style={{
         background: "rgba(39,174,96,0.08)",
         border: "1px solid rgba(39,174,96,0.2)",
         color: "#27ae60",
       }}
     >
-      <Boxes size={9} /> {stock} in stock
+      <Boxes size={8} /> {stock} in stock
     </span>
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Product Card ─────────────────────────────────────────────────────────────
 
-const FormSection = ({
-  title,
-  children,
-  headerRight,
-}: {
-  title: string;
-  children: React.ReactNode;
-  headerRight?: React.ReactNode;
-}) => (
-  <div className="adm-card mb-4 overflow-hidden">
-    <div
-      className="flex items-center justify-between gap-2.5 px-5 py-3.5 border-b"
-      style={{
-        background: "var(--adm-bg-soft)",
-        borderColor: "var(--adm-border-soft)",
-      }}
-    >
-      <div className="flex items-center gap-2.5">
-        <span
-          className="font-sans text-[10px] font-bold tracking-[0.14em] uppercase"
-          style={{ color: "var(--adm-fg)" }}
-        >
-          {title}
-        </span>
-      </div>
-      {headerRight}
-    </div>
-    <div className="p-5">{children}</div>
-  </div>
-);
-
-const FieldLabel = ({ children }: { children: React.ReactNode }) => (
-  <label
-    className="block font-sans text-[10px] font-bold tracking-[0.12em] uppercase mb-1.5"
-    style={{ color: "var(--adm-fg-muted)" }}
-  >
-    {children}
-  </label>
-);
-
-const inputCls =
-  "w-full px-3.5 py-2.5 border font-sans text-[13px] outline-none transition-all duration-150 adm-input";
-
-// ─── ProductRow (desktop) ─────────────────────────────────────────────────────
-
-const ProductRow = ({
+function ProductCard({
   product,
+  onView,
   onEdit,
-  activeProducts,
-  setConfirmDialog,
+  onDelete,
+  onToggle,
+  isActive,
 }: {
   product: Product;
-  onEdit: (p: Product) => void;
-  activeProducts: Record<string, boolean>;
-  setConfirmDialog: React.Dispatch<React.SetStateAction<ConfirmDialog>>;
-}) => {
-  const isActive = activeProducts[product._id!] !== false;
+  onView: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggle: () => void;
+  isActive: boolean;
+}) {
   const firstImage = product.variants[0]?.images[0];
-  const stock = product.stock ?? 0;
 
   return (
     <div
-      className="adm-table-row grid gap-3 px-4 py-3 items-center border-b"
+      className="flex flex-col overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg rounded-sm"
       style={{
-        // Added stock column (110px) after price
-        gridTemplateColumns: "60px 1fr 120px 100px 70px 110px 60px 100px 60px",
-        borderColor: "var(--adm-border-soft)",
+        background: "var(--adm-bg-white)",
+        border: "1px solid var(--adm-border-soft)",
+        boxShadow: "var(--adm-shadow-card)",
       }}
     >
+      {/* Image */}
       <div
-        className="w-12 h-14 border overflow-hidden shrink-0"
-        style={{
-          borderColor: "var(--adm-border)",
-          background: "var(--adm-bg-input)",
-        }}
+        className="relative overflow-hidden flex-shrink-0"
+        style={{ aspectRatio: "3/4", background: "var(--adm-bg-input)" }}
       >
-        {firstImage && (
+        {firstImage ? (
           <img
             src={firstImage}
             alt={product.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-top"
           />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Package size={32} style={{ color: "var(--adm-fg-faint)" }} />
+          </div>
         )}
+        {/* Active badge */}
+        <div className="absolute top-2 right-2">
+          <span
+            className="text-[8px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded-sm"
+            style={{
+              background: isActive
+                ? "rgba(39,174,96,0.9)"
+                : "rgba(192,57,43,0.85)",
+              color: "#fff",
+            }}
+          >
+            {isActive ? "Live" : "Off"}
+          </span>
+        </div>
       </div>
-      <div>
-        <div
-          className="font-bold text-[13px]"
-          style={{ color: "var(--adm-fg)" }}
+
+      {/* Info */}
+      <div className="flex flex-col gap-1.5 p-3 flex-1">
+        <p
+          className="text-[0.6rem] font-bold tracking-[0.14em] uppercase"
+          style={{ color: "var(--adm-accent)" }}
+        >
+          {product.category}
+        </p>
+        <h3
+          className="text-[0.8125rem] font-bold leading-tight line-clamp-1"
+          style={{ fontFamily: "var(--nav-font)", color: "var(--adm-fg)" }}
         >
           {product.name}
-        </div>
-        <div
-          className="font-sans text-[10px] mt-0.5"
-          style={{ color: "var(--adm-fg-muted)" }}
+        </h3>
+        <p
+          className="text-[0.75rem] font-bold"
+          style={{ color: "var(--adm-fg)" }}
         >
-          /{product.slug}
-        </div>
-      </div>
-      <div
-        className="font-sans text-[11px] font-semibold tracking-wide"
-        style={{ color: "var(--adm-fg-muted)" }}
-      >
-        {product.category}
-      </div>
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {product.variants.map((v, i) => (
-          <div
-            key={i}
-            title={v.colorName}
-            className="w-4 h-4 rounded-full border-2 shrink-0"
-            style={{ background: v.colorHex, borderColor: "var(--adm-border)" }}
-          />
-        ))}
-      </div>
-      <div className="font-bold text-[13px]" style={{ color: "var(--adm-fg)" }}>
-        ₹{product.price}
-      </div>
-      {/* ── Stock cell ── */}
-      <div>
-        <StockBadge stock={stock} />
-      </div>
-      <button
-        className="adm-btn-ghost flex items-center justify-center gap-1.5 px-2.5 py-1.5"
-        onClick={() => onEdit(product)}
-      >
-        <Edit3 size={11} /> Edit
-      </button>
-      <button
-        onClick={() =>
-          setConfirmDialog({
-            type: "toggle",
-            productId: product._id!,
-            productName: product.name,
-            currentActive: isActive,
-          })
-        }
-        className="adm-toggle-btn flex items-center gap-1.5 px-2.5 py-1.5 whitespace-nowrap"
-        data-active={isActive}
-      >
-        <div
-          className="adm-toggle-track w-7 h-3.5 rounded-full relative shrink-0"
-          data-active={isActive}
-        >
-          <div
-            className="adm-toggle-thumb absolute top-0.5 rounded-full w-2.5 h-2.5 bg-white"
-            data-active={isActive}
-          />
-        </div>
-        {isActive ? "Active" : "Inactive"}
-      </button>
-      <button
-        className="adm-btn-danger flex items-center justify-center p-1.5"
-        onClick={() =>
-          setConfirmDialog({
-            type: "delete",
-            productId: product._id!,
-            productName: product.name,
-          })
-        }
-      >
-        <Trash2 size={13} />
-      </button>
-    </div>
-  );
-};
+          ₹{product.price.toLocaleString("en-IN")}
+        </p>
 
-// ─── MobileProductCard ────────────────────────────────────────────────────────
-
-const MobileProductCard = ({
-  product,
-  onEdit,
-  activeProducts,
-  setConfirmDialog,
-}: {
-  product: Product;
-  onEdit: (p: Product) => void;
-  activeProducts: Record<string, boolean>;
-  setConfirmDialog: React.Dispatch<React.SetStateAction<ConfirmDialog>>;
-}) => {
-  const isActive = activeProducts[product._id!] !== false;
-  const firstImage = product.variants[0]?.images[0];
-  const stock = product.stock ?? 0;
-
-  return (
-    <div className="adm-card overflow-hidden adm-card-enter">
-      <div
-        className="h-0.5 opacity-40"
-        style={{ background: "var(--adm-accent)" }}
-      />
-      <div className="flex gap-3 p-3">
-        <div
-          className="w-16 h-20 shrink-0 border overflow-hidden"
-          style={{
-            borderColor: "var(--adm-border)",
-            background: "var(--adm-bg-input)",
-          }}
-        >
-          {firstImage ? (
-            <img
-              src={firstImage}
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Package
-                size={18}
-                style={{ color: "var(--adm-accent)", opacity: 0.5 }}
-              />
-            </div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div
-            className="font-serif font-bold text-sm leading-tight"
-            style={{ color: "var(--adm-fg)" }}
-          >
-            {product.name}
-          </div>
-          <div
-            className="font-sans text-[9px] font-bold tracking-[0.14em] uppercase mt-0.5"
-            style={{ color: "var(--adm-accent)" }}
-          >
-            {product.category}
-          </div>
-          <div
-            className="font-sans text-[10px] mt-0.5"
-            style={{ color: "var(--adm-fg-muted)" }}
-          >
-            /{product.slug}
-          </div>
-          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-            {product.variants.map((v, i) => (
-              <div
-                key={i}
-                title={v.colorName}
-                className="w-3.5 h-3.5 rounded-full border-2"
-                style={{
-                  background: v.colorHex,
-                  borderColor: "var(--adm-border)",
-                }}
-              />
-            ))}
-          </div>
-          {/* Stock badge on mobile */}
-          <div className="mt-1.5">
-            <StockBadge stock={stock} />
-          </div>
-        </div>
-        <div className="flex flex-col items-end justify-between shrink-0">
-          <div
-            className="font-serif font-bold text-base"
-            style={{ color: "var(--adm-fg)" }}
-          >
-            ₹{product.price}
-          </div>
-          <button
-            onClick={() =>
-              setConfirmDialog({
-                type: "toggle",
-                productId: product._id!,
-                productName: product.name,
-                currentActive: isActive,
-              })
-            }
-            className="adm-toggle-btn flex items-center gap-1 px-2 py-1"
-            data-active={isActive}
-          >
+        {/* Color swatches */}
+        <div className="flex items-center gap-1 flex-wrap">
+          {product.variants.map((v, i) => (
             <div
-              className="adm-toggle-track w-5 h-2.5 rounded-full relative shrink-0"
-              data-active={isActive}
-            >
-              <div
-                className="adm-toggle-thumb absolute top-0.5 rounded-full w-1.5 h-1.5 bg-white"
-                data-active={isActive}
-              />
-            </div>
-            {isActive ? "Live" : "Off"}
-          </button>
+              key={i}
+              title={v.colorName}
+              className="w-3.5 h-3.5 rounded-full border-2 flex-shrink-0"
+              style={{
+                background: v.colorHex,
+                borderColor: "var(--adm-border)",
+              }}
+            />
+          ))}
         </div>
+
+        <StockBadge stock={product.stock ?? 0} />
       </div>
+
+      {/* Actions */}
       <div
         className="flex border-t"
         style={{ borderColor: "var(--adm-border-soft)" }}
       >
         <button
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 font-sans text-[10px] font-bold tracking-widest uppercase border-r adm-btn-row"
-          style={{ borderColor: "var(--adm-border-soft)" }}
-          onClick={() => onEdit(product)}
+          onClick={onView}
+          className="flex-1 cursor-pointer flex items-center justify-center gap-1.5 py-2.5 text-[0.625rem] font-bold tracking-widest uppercase transition-colors duration-150 border-r"
+          style={{
+            background: "var(--adm-bg-white)",
+            color: "var(--adm-fg-muted)",
+            borderColor: "var(--adm-border-soft)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--adm-bg-active)";
+            e.currentTarget.style.color = "var(--adm-accent)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--adm-bg-white)";
+            e.currentTarget.style.color = "var(--adm-fg-muted)";
+          }}
         >
-          <Edit3 size={11} /> Edit Product
+          <Eye size={11} /> View
         </button>
         <button
-          className="flex items-center justify-center gap-1.5 px-5 py-2.5 font-sans text-[10px] font-bold tracking-widest uppercase adm-btn-danger-ghost"
-          onClick={() =>
-            setConfirmDialog({
-              type: "delete",
-              productId: product._id!,
-              productName: product.name,
-            })
-          }
+          onClick={onEdit}
+          className="flex-1 cursor-pointer flex items-center justify-center gap-1.5 py-2.5 text-[0.625rem] font-bold tracking-widest uppercase transition-colors duration-150 border-r"
+          style={{
+            background: "var(--adm-bg-white)",
+            color: "var(--adm-fg-muted)",
+            borderColor: "var(--adm-border-soft)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--adm-bg-active)";
+            e.currentTarget.style.color = "var(--adm-accent)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--adm-bg-white)";
+            e.currentTarget.style.color = "var(--adm-fg-muted)";
+          }}
+        >
+          <Edit3 size={11} /> Edit
+        </button>
+        <button
+          onClick={onDelete}
+          className="flex items-center justify-center px-3 py-2.5 cursor-pointer transition-colors duration-150"
+          style={{
+            background: "var(--adm-bg-white)",
+            color: "var(--adm-fg-faint)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--adm-bg-danger-lt)";
+            e.currentTarget.style.color = "var(--adm-danger)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--adm-bg-white)";
+            e.currentTarget.style.color = "var(--adm-fg-faint)";
+          }}
         >
           <Trash2 size={11} />
         </button>
       </div>
     </div>
   );
-};
+}
+
+// ─── View Mode ────────────────────────────────────────────────────────────────
+
+function ProductView({
+  product,
+  onEdit,
+  onBack,
+}: {
+  product: Product;
+  onEdit: () => void;
+  onBack: () => void;
+}) {
+  const [activeVariant, setActiveVariant] = useState(0);
+  const variant = product.variants[activeVariant];
+
+  return (
+    <div className="max-w-full px-6 py-6">
+      {/* Breadcrumb */}
+      <div
+        className="flex items-center gap-2 mb-5 text-[0.7rem]"
+        style={{ color: "var(--adm-fg-muted)" }}
+      >
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1 bg-transparent border-none cursor-pointer p-0 transition-colors duration-150 text-[0.7rem]"
+          style={{ color: "var(--adm-fg-muted)" }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.color = "var(--adm-accent)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.color = "var(--adm-fg-muted)")
+          }
+        >
+          <ArrowLeft size={12} /> Products
+        </button>
+        <span>/</span>
+        <span style={{ color: "var(--adm-fg)" }}>{product.name}</span>
+      </div>
+
+      {/* Header row */}
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div>
+          <h1
+            className="text-[1.4rem] font-bold"
+            style={{ fontFamily: "var(--nav-font)", color: "var(--adm-fg)" }}
+          >
+            {product.name}
+          </h1>
+          <p
+            className="text-[0.75rem] mt-1"
+            style={{ color: "var(--adm-fg-muted)" }}
+          >
+            /{product.slug}
+          </p>
+        </div>
+        <button
+          onClick={onEdit}
+          className="flex items-center gap-2 px-5 py-2.5 text-[0.65rem] font-bold tracking-[0.14em] uppercase flex-shrink-0 transition-colors duration-150 rounded-sm"
+          style={{
+            background: "var(--adm-accent)",
+            color: "#fff",
+            border: "none",
+            cursor: "pointer",
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = "var(--adm-accent-hover)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "var(--adm-accent)")
+          }
+        >
+          <Edit3 size={12} /> Edit Product
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
+        {/* Left */}
+        <div className="flex flex-col gap-4">
+          {/* Basic Info */}
+          <div
+            className="rounded-sm p-5"
+            style={{
+              background: "var(--adm-bg-white)",
+              border: "1px solid var(--adm-border-soft)",
+            }}
+          >
+            <p
+              className="text-[0.6rem] font-bold tracking-[0.16em] uppercase mb-4"
+              style={{ color: "var(--adm-fg-muted)" }}
+            >
+              Basic Information
+            </p>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              {[
+                { label: "Category", value: product.category },
+                {
+                  label: "Price",
+                  value: `₹${product.price.toLocaleString("en-IN")}`,
+                },
+                {
+                  label: "Status",
+                  value: product.isActive ? "Active" : "Inactive",
+                },
+                { label: "Total Stock", value: String(product.stock ?? 0) },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <p
+                    className="text-[0.6rem] font-bold tracking-widest uppercase mb-0.5"
+                    style={{ color: "var(--adm-fg-faint)" }}
+                  >
+                    {label}
+                  </p>
+                  <p
+                    className="text-[0.8125rem] font-semibold"
+                    style={{ color: "var(--adm-fg)" }}
+                  >
+                    {value}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {product.description && (
+              <div
+                className="mt-4 pt-4"
+                style={{ borderTop: "1px solid var(--adm-border-soft)" }}
+              >
+                <p
+                  className="text-[0.6rem] font-bold tracking-widest uppercase mb-1.5"
+                  style={{ color: "var(--adm-fg-faint)" }}
+                >
+                  Description
+                </p>
+                <p
+                  className="text-[0.8125rem] leading-relaxed"
+                  style={{ color: "var(--adm-fg-muted)" }}
+                >
+                  {product.description}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Variants */}
+          <div
+            className="rounded-sm p-5"
+            style={{
+              background: "var(--adm-bg-white)",
+              border: "1px solid var(--adm-border-soft)",
+            }}
+          >
+            <p
+              className="text-[0.6rem] font-bold tracking-[0.16em] uppercase mb-3"
+              style={{ color: "var(--adm-fg-muted)" }}
+            >
+              Colour Variants
+            </p>
+            {/* Swatch picker */}
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              {product.variants.map((v, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveVariant(i)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-[0.6rem] font-semibold rounded-sm transition-all duration-150"
+                  style={{
+                    background:
+                      activeVariant === i
+                        ? "var(--adm-bg-active)"
+                        : "var(--adm-bg-soft)",
+                    border: `1px solid ${activeVariant === i ? "var(--adm-accent-border)" : "var(--adm-border-soft)"}`,
+                    color:
+                      activeVariant === i
+                        ? "var(--adm-accent)"
+                        : "var(--adm-fg-muted)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <span
+                    className="w-3 h-3 rounded-full inline-block flex-shrink-0"
+                    style={{ background: v.colorHex }}
+                  />
+                  {v.colorName || `Variant ${i + 1}`}
+                </button>
+              ))}
+            </div>
+
+            {/* Images */}
+            {variant?.images?.length > 0 && (
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {variant.images.map((img, i) => (
+                  <div
+                    key={i}
+                    className="aspect-square overflow-hidden rounded-sm"
+                    style={{ border: "1px solid var(--adm-border)" }}
+                  >
+                    <img
+                      src={img}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Sizes */}
+            {variant?.sizes?.length > 0 && (
+              <div>
+                <p
+                  className="text-[0.6rem] font-bold tracking-widest uppercase mb-2"
+                  style={{ color: "var(--adm-fg-faint)" }}
+                >
+                  Stock by Size — {variant.colorName || "this colour"}
+                </p>
+                <div className="grid grid-cols-5 gap-2">
+                  {variant.sizes.map((sz) => (
+                    <div
+                      key={sz.size}
+                      className="flex flex-col items-center gap-1 py-2 px-1 rounded-sm"
+                      style={{
+                        background:
+                          sz.stock === 0
+                            ? "var(--adm-bg-danger-lt)"
+                            : "var(--adm-bg-soft)",
+                        border: `1px solid ${sz.stock === 0 ? "var(--adm-danger-border)" : "var(--adm-border-soft)"}`,
+                      }}
+                    >
+                      <span
+                        className="text-[0.55rem] font-bold tracking-widest uppercase"
+                        style={{ color: "var(--adm-fg-muted)" }}
+                      >
+                        {sz.size}
+                      </span>
+                      <span
+                        className="text-[0.875rem] font-bold"
+                        style={{
+                          color:
+                            sz.stock === 0
+                              ? "var(--adm-danger)"
+                              : "var(--adm-fg)",
+                        }}
+                      >
+                        {sz.stock}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right */}
+        <div className="flex flex-col gap-4">
+          <div
+            className="rounded-sm p-4"
+            style={{
+              background: "var(--adm-bg-white)",
+              border: "1px solid var(--adm-border-soft)",
+            }}
+          >
+            <p
+              className="text-[0.6rem] font-bold tracking-[0.16em] uppercase mb-3"
+              style={{ color: "var(--adm-fg-muted)" }}
+            >
+              Product Status
+            </p>
+            <div
+              className="flex items-center gap-2 px-3 py-2 rounded-sm"
+              style={{
+                background: product.isActive
+                  ? "rgba(39,174,96,0.08)"
+                  : "var(--adm-bg-danger-lt)",
+                border: `1px solid ${product.isActive ? "rgba(39,174,96,0.2)" : "var(--adm-danger-border)"}`,
+              }}
+            >
+              {product.isActive ? (
+                <ToggleRight size={14} style={{ color: "#27ae60" }} />
+              ) : (
+                <ToggleLeft size={14} style={{ color: "var(--adm-danger)" }} />
+              )}
+              <span
+                className="text-[0.75rem] font-semibold"
+                style={{
+                  color: product.isActive ? "#27ae60" : "var(--adm-danger)",
+                }}
+              >
+                {product.isActive
+                  ? "Active — visible to customers"
+                  : "Inactive — hidden from store"}
+              </span>
+            </div>
+          </div>
+
+          <div
+            className="rounded-sm p-4"
+            style={{
+              background: "var(--adm-bg-white)",
+              border: "1px solid var(--adm-border-soft)",
+            }}
+          >
+            <p
+              className="text-[0.6rem] font-bold tracking-[0.16em] uppercase mb-3"
+              style={{ color: "var(--adm-fg-muted)" }}
+            >
+              Stock Summary
+            </p>
+            <StockBadge stock={product.stock ?? 0} />
+            <div className="mt-3 flex flex-col gap-1.5">
+              {product.variants.map((v, i) => {
+                const total = v.sizes?.reduce((s, sz) => s + sz.stock, 0) ?? 0;
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between text-[0.7rem]"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ background: v.colorHex }}
+                      />
+                      <span style={{ color: "var(--adm-fg-muted)" }}>
+                        {v.colorName || `Variant ${i + 1}`}
+                      </span>
+                    </div>
+                    <span
+                      className="font-bold"
+                      style={{ color: "var(--adm-fg)" }}
+                    >
+                      {total}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Form ─────────────────────────────────────────────────────────────────────
+
+function ProductForm({
+  form,
+  setForm,
+  editingProduct,
+  saving,
+  dbCategories,
+  onSave,
+  onCancel,
+  onDelete,
+  fileInputRefs,
+  handleImageUpload,
+  removeImg,
+  addVariant,
+  removeVariant,
+  updateVariant,
+  updateVariantSizeStock,
+}: {
+  form: FormProduct;
+  setForm: React.Dispatch<React.SetStateAction<FormProduct>>;
+  editingProduct: Product | null;
+  saving: boolean;
+  dbCategories: string[];
+  onSave: () => void;
+  onCancel: () => void;
+  onDelete: () => void;
+  fileInputRefs: React.MutableRefObject<(HTMLInputElement | null)[]>;
+  handleImageUpload: (vi: number, files: FileList | null) => Promise<void>;
+  removeImg: (vi: number, ii: number) => void;
+  addVariant: () => void;
+  removeVariant: (i: number) => void;
+  updateVariant: (
+    i: number,
+    field: "colorName" | "colorHex",
+    value: string,
+  ) => void;
+  updateVariantSizeStock: (vi: number, si: number, stock: number) => void;
+}) {
+  const inputCls =
+    "w-full px-3.5 py-2.5 text-[0.8125rem] outline-none transition-all duration-150 rounded-sm";
+
+  return (
+    <div className="max-w-full px-6 py-6">
+      {/* Breadcrumb */}
+      <div
+        className="flex items-center gap-2 mb-5 text-[0.7rem]"
+        style={{ color: "var(--adm-fg-muted)" }}
+      >
+        <button
+          onClick={onCancel}
+          className="flex items-center gap-1 bg-transparent border-none cursor-pointer p-0 text-[0.7rem] transition-colors duration-150"
+          style={{ color: "var(--adm-fg-muted)" }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.color = "var(--adm-accent)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.color = "var(--adm-fg-muted)")
+          }
+        >
+          <ArrowLeft size={12} /> Products
+        </button>
+        <span>/</span>
+        <span style={{ color: "var(--adm-fg)" }}>
+          {editingProduct ? "Edit Product" : "Add New Product"}
+        </span>
+      </div>
+
+      <div className="mb-6">
+        <h1
+          className="text-[1.4rem] font-bold"
+          style={{ fontFamily: "var(--nav-font)", color: "var(--adm-fg)" }}
+        >
+          {editingProduct ? "Edit Product" : "Add New Product"}
+        </h1>
+        <p
+          className="text-[0.75rem] mt-1"
+          style={{ color: "var(--adm-fg-muted)" }}
+        >
+          {editingProduct
+            ? "Update your product details below."
+            : "Create a new product for your store"}
+        </p>
+      </div>
+
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
+        {/* ── LEFT COLUMN ── */}
+        <div className="flex flex-col gap-4">
+          {/* Basic Information */}
+          <div
+            className="rounded-sm overflow-hidden"
+            style={{
+              background: "var(--adm-bg-white)",
+              border: "1px solid var(--adm-border-soft)",
+            }}
+          >
+            <div
+              className="px-5 py-3 border-b"
+              style={{
+                background: "var(--adm-bg-soft)",
+                borderColor: "var(--adm-border-soft)",
+              }}
+            >
+              <p
+                className="text-[0.6rem] font-bold tracking-[0.16em] uppercase"
+                style={{ color: "var(--adm-fg)" }}
+              >
+                Basic Information
+              </p>
+            </div>
+            <div className="p-5 flex flex-col gap-4">
+              {/* Product Name */}
+              <div>
+                <label
+                  className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
+                  style={{ color: "var(--adm-fg-muted)" }}
+                >
+                  Product Name *
+                </label>
+                <input
+                  className={inputCls}
+                  style={{
+                    background: "var(--adm-bg-input)",
+                    border: "1px solid var(--adm-border)",
+                    color: "var(--adm-fg)",
+                  }}
+                  onFocus={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--adm-accent)")
+                  }
+                  onBlur={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--adm-border)")
+                  }
+                  type="text"
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, name: e.target.value }))
+                  }
+                  placeholder="e.g. Men's Bamboo Trunk"
+                />
+              </div>
+
+              {/* SKU + Category */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label
+                    className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
+                    style={{ color: "var(--adm-fg-muted)" }}
+                  >
+                    SKU *
+                  </label>
+                  <input
+                    className={inputCls}
+                    style={{
+                      background: "var(--adm-bg-input)",
+                      border: "1px solid var(--adm-border)",
+                      color: "var(--adm-fg)",
+                    }}
+                    onFocus={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--adm-accent)")
+                    }
+                    onBlur={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--adm-border)")
+                    }
+                    type="text"
+                    value={form.slug}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, slug: e.target.value }))
+                    }
+                    placeholder="auto-generated"
+                  />
+                </div>
+                <div>
+                  <label
+                    className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
+                    style={{ color: "var(--adm-fg-muted)" }}
+                  >
+                    Category *
+                  </label>
+                  <div className="relative">
+                    <select
+                      className={`${inputCls} appearance-none pr-8`}
+                      style={{
+                        background: "var(--adm-bg-input)",
+                        border: "1px solid var(--adm-border)",
+                        color: "var(--adm-fg)",
+                        cursor: "pointer",
+                      }}
+                      onFocus={(e) =>
+                        (e.currentTarget.style.borderColor =
+                          "var(--adm-accent)")
+                      }
+                      onBlur={(e) =>
+                        (e.currentTarget.style.borderColor =
+                          "var(--adm-border)")
+                      }
+                      value={form.category}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, category: e.target.value }))
+                      }
+                    >
+                      <option value="">Select Category</option>
+                      {dbCategories.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      size={12}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                      style={{ color: "var(--adm-fg-muted)" }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label
+                  className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
+                  style={{ color: "var(--adm-fg-muted)" }}
+                >
+                  Description
+                </label>
+                <textarea
+                  className={`${inputCls} resize-none leading-relaxed`}
+                  style={{
+                    background: "var(--adm-bg-input)",
+                    border: "1px solid var(--adm-border)",
+                    color: "var(--adm-fg)",
+                  }}
+                  onFocus={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--adm-accent)")
+                  }
+                  onBlur={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--adm-border)")
+                  }
+                  rows={3}
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, description: e.target.value }))
+                  }
+                  placeholder="Describe your product…"
+                />
+              </div>
+
+              {/* Size / Color / Material row */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label
+                    className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
+                    style={{ color: "var(--adm-fg-muted)" }}
+                  >
+                    Size
+                  </label>
+                  <div className="relative">
+                    <select
+                      className={`${inputCls} appearance-none pr-8`}
+                      style={{
+                        background: "var(--adm-bg-input)",
+                        border: "1px solid var(--adm-border)",
+                        color: "var(--adm-fg-muted)",
+                        cursor: "pointer",
+                      }}
+                      defaultValue=""
+                    >
+                      <option value="">Select Size</option>
+                      {DEFAULT_SIZES.map((s) => (
+                        <option key={s.size} value={s.size}>
+                          {s.size}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      size={12}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                      style={{ color: "var(--adm-fg-muted)" }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label
+                    className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
+                    style={{ color: "var(--adm-fg-muted)" }}
+                  >
+                    Color
+                  </label>
+                  <input
+                    className={inputCls}
+                    style={{
+                      background: "var(--adm-bg-input)",
+                      border: "1px solid var(--adm-border)",
+                      color: "var(--adm-fg-muted)",
+                    }}
+                    type="text"
+                    placeholder="e.g., Black, White"
+                    onFocus={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--adm-accent)")
+                    }
+                    onBlur={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--adm-border)")
+                    }
+                  />
+                </div>
+                <div>
+                  <label
+                    className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
+                    style={{ color: "var(--adm-fg-muted)" }}
+                  >
+                    Material
+                  </label>
+                  <input
+                    className={inputCls}
+                    style={{
+                      background: "var(--adm-bg-input)",
+                      border: "1px solid var(--adm-border)",
+                      color: "var(--adm-fg-muted)",
+                    }}
+                    type="text"
+                    placeholder="e.g., Cotton, Silk"
+                    onFocus={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--adm-accent)")
+                    }
+                    onBlur={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--adm-border)")
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label
+                  className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
+                  style={{ color: "var(--adm-fg-muted)" }}
+                >
+                  Tags
+                </label>
+                <input
+                  className={inputCls}
+                  style={{
+                    background: "var(--adm-bg-input)",
+                    border: "1px solid var(--adm-border)",
+                    color: "var(--adm-fg-muted)",
+                  }}
+                  type="text"
+                  placeholder="comma separated tags"
+                  onFocus={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--adm-accent)")
+                  }
+                  onBlur={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--adm-border)")
+                  }
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Pricing */}
+          <div
+            className="rounded-sm overflow-hidden"
+            style={{
+              background: "var(--adm-bg-white)",
+              border: "1px solid var(--adm-border-soft)",
+            }}
+          >
+            <div
+              className="px-5 py-3 border-b"
+              style={{
+                background: "var(--adm-bg-soft)",
+                borderColor: "var(--adm-border-soft)",
+              }}
+            >
+              <p
+                className="text-[0.6rem] font-bold tracking-[0.16em] uppercase"
+                style={{ color: "var(--adm-fg)" }}
+              >
+                Pricing
+              </p>
+            </div>
+            <div className="p-5">
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "Price *", key: "price", placeholder: "₹0.00" },
+                  {
+                    label: "Compare at Price *",
+                    key: "comparePrice",
+                    placeholder: "₹0.00",
+                  },
+                  {
+                    label: "Cost per item",
+                    key: "costPerItem",
+                    placeholder: "₹0.00",
+                  },
+                ].map(({ label, key, placeholder }) => (
+                  <div key={key}>
+                    <label
+                      className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
+                      style={{ color: "var(--adm-fg-muted)" }}
+                    >
+                      {label}
+                    </label>
+                    <div className="relative">
+                      <span
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[0.8125rem] font-bold"
+                        style={{ color: "var(--adm-fg-faint)" }}
+                      >
+                        ₹
+                      </span>
+                      <input
+                        className={`${inputCls} pl-7`}
+                        style={{
+                          background: "var(--adm-bg-input)",
+                          border: "1px solid var(--adm-border)",
+                          color: "var(--adm-fg)",
+                        }}
+                        onFocus={(e) =>
+                          (e.currentTarget.style.borderColor =
+                            "var(--adm-accent)")
+                        }
+                        onBlur={(e) =>
+                          (e.currentTarget.style.borderColor =
+                            "var(--adm-border)")
+                        }
+                        type="number"
+                        min={0}
+                        defaultValue={""}
+                        value={key === "price" ? form.price || "" : ""}
+                        placeholder="0.00"
+                        onChange={
+                          key === "price"
+                            ? (e) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  price: Number(e.target.value),
+                                }))
+                            : undefined
+                        }
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Inventory (Stock per size/colour) */}
+          <div
+            className="rounded-sm overflow-hidden"
+            style={{
+              background: "var(--adm-bg-white)",
+              border: "1px solid var(--adm-border-soft)",
+            }}
+          >
+            <div
+              className="px-5 py-3 border-b flex items-center justify-between"
+              style={{
+                background: "var(--adm-bg-soft)",
+                borderColor: "var(--adm-border-soft)",
+              }}
+            >
+              <p
+                className="text-[0.6rem] font-bold tracking-[0.16em] uppercase"
+                style={{ color: "var(--adm-fg)" }}
+              >
+                Inventory
+              </p>
+              <button
+                onClick={addVariant}
+                className="flex items-center gap-1 px-3 py-1 text-[0.6rem] font-bold tracking-widest uppercase rounded-sm transition-colors duration-150"
+                style={{
+                  background: "var(--adm-bg-accent-lt)",
+                  border: "1px solid var(--adm-accent-border)",
+                  color: "var(--adm-accent)",
+                  cursor: "pointer",
+                }}
+              >
+                <Plus size={9} /> Add Colour
+              </button>
+            </div>
+            <div className="p-5 flex flex-col gap-4">
+              {/* Stock qty + low stock */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label
+                    className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
+                    style={{ color: "var(--adm-fg-muted)" }}
+                  >
+                    Stock Quantity *
+                  </label>
+                  <input
+                    className={inputCls}
+                    style={{
+                      background: "var(--adm-bg-input)",
+                      border: "1px solid var(--adm-border)",
+                      color: "var(--adm-fg)",
+                    }}
+                    type="number"
+                    min={0}
+                    value={form.stock || ""}
+                    placeholder="0"
+                    readOnly
+                    onFocus={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--adm-accent)")
+                    }
+                    onBlur={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--adm-border)")
+                    }
+                  />
+                </div>
+                <div>
+                  <label
+                    className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
+                    style={{ color: "var(--adm-fg-muted)" }}
+                  >
+                    Low Stock Threshold
+                  </label>
+                  <input
+                    className={inputCls}
+                    style={{
+                      background: "var(--adm-bg-input)",
+                      border: "1px solid var(--adm-border)",
+                      color: "var(--adm-fg-muted)",
+                    }}
+                    type="number"
+                    min={0}
+                    defaultValue={10}
+                    placeholder="10"
+                    onFocus={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--adm-accent)")
+                    }
+                    onBlur={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--adm-border)")
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Per-variant size stock */}
+              {form.variants.map((variant, vi) => (
+                <div
+                  key={vi}
+                  className="overflow-hidden rounded-sm"
+                  style={{ border: "1px solid var(--adm-border)" }}
+                >
+                  {/* Variant header */}
+                  <div
+                    className="flex items-center gap-2.5 px-4 py-2.5 border-b"
+                    style={{
+                      background: "var(--adm-bg-soft)",
+                      borderColor: "var(--adm-border-soft)",
+                    }}
+                  >
+                    <input
+                      type="color"
+                      value={variant.colorHex}
+                      onChange={(e) =>
+                        updateVariant(vi, "colorHex", e.target.value)
+                      }
+                      className="w-7 h-7 rounded-sm cursor-pointer border-2 p-0 flex-shrink-0"
+                      style={{ borderColor: "var(--adm-border)" }}
+                    />
+                    <input
+                      type="text"
+                      className="flex-1 bg-transparent border-none outline-none text-[0.8125rem] font-semibold"
+                      style={{ color: "var(--adm-fg)" }}
+                      value={variant.colorName}
+                      onChange={(e) =>
+                        updateVariant(vi, "colorName", e.target.value)
+                      }
+                      placeholder="Colour name (e.g. Black)"
+                    />
+                    {form.variants.length > 1 && (
+                      <button
+                        onClick={() => removeVariant(vi)}
+                        className="w-5 h-5 flex items-center justify-center bg-transparent border-none cursor-pointer transition-colors duration-150"
+                        style={{ color: "var(--adm-fg-faint)" }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.color = "var(--adm-danger)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.color = "var(--adm-fg-faint)")
+                        }
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Sizes */}
+                  <div className="p-4">
+                    <p
+                      className="text-[0.55rem] font-bold tracking-[0.16em] uppercase mb-2.5"
+                      style={{ color: "var(--adm-fg-muted)" }}
+                    >
+                      Sizes & Stock
+                    </p>
+                    <div className="grid grid-cols-5 gap-2">
+                      {(variant.sizes?.length
+                        ? variant.sizes
+                        : DEFAULT_SIZES
+                      ).map((sz, si) => (
+                        <div key={sz.size} className="flex flex-col gap-1">
+                          <label
+                            className="text-[0.55rem] font-bold tracking-widest uppercase text-center"
+                            style={{ color: "var(--adm-fg-muted)" }}
+                          >
+                            {sz.size === "Extra Large"
+                              ? "XL"
+                              : sz.size === "Small"
+                                ? "S"
+                                : sz.size === "Medium"
+                                  ? "M"
+                                  : sz.size === "Large"
+                                    ? "L"
+                                    : "XXL"}
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            className="w-full py-1.5 text-center text-[0.8125rem] font-semibold outline-none transition-colors rounded-sm"
+                            style={{
+                              border: "1px solid var(--adm-border)",
+                              background: "var(--adm-bg-white)",
+                              color: "var(--adm-fg)",
+                            }}
+                            onFocus={(e) =>
+                              (e.currentTarget.style.borderColor =
+                                "var(--adm-accent)")
+                            }
+                            onBlur={(e) =>
+                              (e.currentTarget.style.borderColor =
+                                "var(--adm-border)")
+                            }
+                            value={sz.stock === 0 ? "" : sz.stock}
+                            placeholder="0"
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              updateVariantSizeStock(
+                                vi,
+                                si,
+                                isNaN(val) || val < 0 ? 0 : val,
+                              );
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── RIGHT COLUMN ── */}
+        <div className="flex flex-col gap-4">
+          {/* Variant Images (per colour) */}
+          {form.variants.map((variant, vi) => (
+            <div
+              key={vi}
+              className="rounded-sm overflow-hidden"
+              style={{
+                background: "var(--adm-bg-white)",
+                border: "1px solid var(--adm-border-soft)",
+              }}
+            >
+              <div
+                className="px-4 py-3 border-b"
+                style={{
+                  background: "var(--adm-bg-soft)",
+                  borderColor: "var(--adm-border-soft)",
+                }}
+              >
+                <p
+                  className="text-[0.6rem] font-bold tracking-[0.16em] uppercase"
+                  style={{ color: "var(--adm-fg)" }}
+                >
+                  {variant.colorName
+                    ? `${variant.colorName} Images`
+                    : `Variant ${vi + 1} Images`}
+                </p>
+              </div>
+              <div className="p-4">
+                {/* Existing images */}
+                {variant.images.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    {variant.images.map((img, ii) =>
+                      img ? (
+                        <div
+                          key={ii}
+                          className="relative aspect-square overflow-hidden rounded-sm group"
+                          style={{ border: "1px solid var(--adm-border)" }}
+                        >
+                          <img
+                            src={img}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            onClick={() => removeImg(vi, ii)}
+                            className="absolute top-0.5 right-0.5 w-4 h-4 flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                            style={{
+                              background: "rgba(192,57,43,0.9)",
+                              color: "#fff",
+                            }}
+                          >
+                            <X size={9} />
+                          </button>
+                        </div>
+                      ) : null,
+                    )}
+                  </div>
+                )}
+
+                {/* Upload zone */}
+                <div
+                  className="flex flex-col items-center justify-center gap-2 py-8 px-3 border-2 border-dashed cursor-pointer transition-all duration-200 rounded-sm"
+                  style={{ borderColor: "var(--adm-border)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "var(--adm-accent)";
+                    e.currentTarget.style.background = "var(--adm-bg-hover)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--adm-border)";
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                  onClick={() => fileInputRefs.current[vi]?.click()}
+                >
+                  <div
+                    className="w-10 h-10 flex items-center justify-center rounded-sm"
+                    style={{
+                      background: "var(--adm-bg-accent-lt)",
+                      border: "1px solid var(--adm-accent-border)",
+                      color: "var(--adm-accent)",
+                    }}
+                  >
+                    <Upload size={16} />
+                  </div>
+                  <p
+                    className="text-[0.7rem] font-semibold text-center"
+                    style={{ color: "var(--adm-fg-muted)" }}
+                  >
+                    Click to Upload images
+                  </p>
+                  <p
+                    className="text-[0.6rem]"
+                    style={{ color: "var(--adm-fg-faint)" }}
+                  >
+                    PNG, JPG up to 5MB each
+                  </p>
+                </div>
+                <input
+                  ref={(el) => {
+                    fileInputRefs.current[vi] = el;
+                  }}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleImageUpload(vi, e.target.files)}
+                />
+              </div>
+            </div>
+          ))}
+
+          {/* Product Status */}
+          <div
+            className="rounded-sm overflow-hidden"
+            style={{
+              background: "var(--adm-bg-white)",
+              border: "1px solid var(--adm-border-soft)",
+            }}
+          >
+            <div
+              className="px-4 py-3 border-b"
+              style={{
+                background: "var(--adm-bg-soft)",
+                borderColor: "var(--adm-border-soft)",
+              }}
+            >
+              <p
+                className="text-[0.6rem] font-bold tracking-[0.16em] uppercase"
+                style={{ color: "var(--adm-fg)" }}
+              >
+                Product Status
+              </p>
+            </div>
+            <div className="p-4">
+              <div className="relative">
+                <select
+                  className="w-full px-3.5 py-2.5 text-[0.8125rem] outline-none appearance-none rounded-sm pr-8"
+                  style={{
+                    background: "var(--adm-bg-input)",
+                    border: "1px solid var(--adm-border)",
+                    color: "var(--adm-fg)",
+                    cursor: "pointer",
+                  }}
+                  onFocus={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--adm-accent)")
+                  }
+                  onBlur={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--adm-border)")
+                  }
+                  value={form.isActive ? "active" : "inactive"}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      isActive: e.target.value === "active",
+                    }))
+                  }
+                >
+                  <option value="active" className="cursor-pointer">
+                    Active
+                  </option>
+                  <option value="inactive" className="cursor-pointer">
+                    Inactive
+                  </option>
+                </select>
+                <ChevronDown
+                  size={12}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ color: "var(--adm-fg-muted)" }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Save / Cancel */}
+          <div
+            className="rounded-sm p-4 flex flex-col gap-2.5"
+            style={{
+              background: "var(--adm-bg-white)",
+              border: "1px solid var(--adm-border-soft)",
+            }}
+          >
+            {editingProduct && (
+              <button
+                onClick={onDelete}
+                className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer text-[0.6rem] font-bold tracking-widest uppercase mb-1 p-0 transition-opacity duration-150 hover:opacity-70"
+                style={{ color: "var(--adm-danger)" }}
+              >
+                <Trash2 size={10} /> Delete this product
+              </button>
+            )}
+            <button
+              onClick={onSave}
+              disabled={saving}
+              className="w-full flex items-center justify-center gap-2 py-3 text-[0.7rem] font-bold tracking-[0.14em] uppercase rounded-sm transition-colors duration-150"
+              style={{
+                background: "var(--adm-accent)",
+                color: "#fff",
+                border: "none",
+                cursor: saving ? "not-allowed" : "pointer",
+                opacity: saving ? 0.7 : 1,
+              }}
+              onMouseEnter={(e) => {
+                if (!saving)
+                  e.currentTarget.style.background = "var(--adm-accent-hover)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--adm-accent)";
+              }}
+            >
+              {saving
+                ? "Saving…"
+                : editingProduct
+                  ? "Update Product"
+                  : "Add Product"}
+            </button>
+            <button
+              onClick={onCancel}
+              className="w-full py-2.5 text-[0.7rem] font-bold tracking-[0.14em] uppercase rounded-sm transition-colors duration-150"
+              style={{
+                background: "transparent",
+                border: "1px solid var(--adm-border)",
+                color: "var(--adm-fg-muted)",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--adm-accent)";
+                e.currentTarget.style.color = "var(--adm-accent)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--adm-border)";
+                e.currentTarget.style.color = "var(--adm-fg-muted)";
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function InventoryPage() {
-  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<View>("products");
+  const [pageView, setPageView] = useState<PageView>("list");
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [form, setForm] = useState<FormProduct>(EMPTY_PRODUCT);
+  const [form, setForm] = useState<FormProduct>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{
     type: "success" | "error";
     msg: string;
   } | null>(null);
-  const [time, setTime] = useState("");
   const [activeProducts, setActiveProducts] = useState<Record<string, boolean>>(
     {},
   );
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>(null);
+  const [dbCategories, setDbCategories] = useState<string[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [search, setSearch] = useState("");
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const [dbCategories, setDbCategories] = useState<string[]>([]);
-  const [activeCategoryFilter, setActiveCategoryFilter] =
-    useState<string>("all");
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
-  const fetchDbCategories = useCallback(async () => {
+  // Auto-slug from name
+  useEffect(() => {
+    setForm((f) => ({
+      ...f,
+      slug: f.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, ""),
+    }));
+  }, [form.name]);
+
+  const fetchCategories = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/category");
       if (res.ok) {
@@ -483,48 +1590,6 @@ export default function InventoryPage() {
     } catch {}
   }, []);
 
-  useEffect(() => {
-    fetchDbCategories();
-  }, [fetchDbCategories]);
-
-  const filteredProducts =
-    activeCategoryFilter === "all"
-      ? products
-      : products.filter((p) => p.category === activeCategoryFilter);
-
-  // Clock
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      setTime(
-        now.toLocaleTimeString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        }),
-      );
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3500);
-    return () => clearTimeout(t);
-  }, [toast]);
-
-  useEffect(() => {
-    setForm((f) => ({
-      ...f,
-      slug: f.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, ""),
-    }));
-  }, [form.name]);
-
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
@@ -533,11 +1598,11 @@ export default function InventoryPage() {
         const d = await res.json();
         const list: Product[] = d.products || [];
         setProducts(list);
-        const activeMap: Record<string, boolean> = {};
+        const map: Record<string, boolean> = {};
         list.forEach((p) => {
-          activeMap[p._id!] = p.isActive !== false;
+          map[p._id!] = p.isActive !== false;
         });
-        setActiveProducts(activeMap);
+        setActiveProducts(map);
       }
     } catch {}
     setLoading(false);
@@ -545,16 +1610,27 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+    fetchCategories();
+  }, [fetchProducts, fetchCategories]);
 
-  const openAdd = useCallback(() => {
+  // Filtered + searched products
+  const filteredProducts = products.filter((p) => {
+    const matchCat = categoryFilter === "all" || p.category === categoryFilter;
+    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
+
+  // ── Navigation helpers ────────────────────────────────────────────────────
+
+  const openView = useCallback((p: Product) => {
+    setViewingProduct(p);
     setEditingProduct(null);
-    setForm(EMPTY_PRODUCT);
-    setView("add");
+    setPageView("view");
   }, []);
 
   const openEdit = useCallback((p: Product) => {
     setEditingProduct(p);
+    setViewingProduct(null);
     setForm({
       name: p.name,
       slug: p.slug,
@@ -566,39 +1642,47 @@ export default function InventoryPage() {
         ...v,
         images: v.images.filter(Boolean),
         imageFiles: [],
-        sizes: v.sizes?.length ? v.sizes : [...DEFAULT_SIZES], // Load existing sizes or defaults
+        sizes: v.sizes?.length ? v.sizes : [...DEFAULT_SIZES],
       })),
       isActive: p.isActive,
     });
-    setView("add");
+    setPageView("form");
   }, []);
 
+  const openAdd = useCallback(() => {
+    setEditingProduct(null);
+    setViewingProduct(null);
+    setForm(EMPTY_FORM);
+    setPageView("form");
+  }, []);
+
+  const goBack = useCallback(() => {
+    setPageView("list");
+    setEditingProduct(null);
+    setViewingProduct(null);
+  }, []);
+
+  // ── Stock helpers ─────────────────────────────────────────────────────────
+
   const updateVariantSizeStock = useCallback(
-    (vi: number, sizeIndex: number, stock: number) => {
+    (vi: number, si: number, stock: number) => {
       setForm((f) => {
         const v = [...f.variants];
         const newSizes = [...(v[vi].sizes || DEFAULT_SIZES)];
-        newSizes[sizeIndex] = { ...newSizes[sizeIndex], stock };
+        newSizes[si] = { ...newSizes[si], stock };
         v[vi] = { ...v[vi], sizes: newSizes };
-
-        // Auto-calculate total stock across all variants/sizes
         const totalStock = v.reduce(
           (acc, curr) =>
-            acc + (curr.sizes?.reduce((sAcc, s) => sAcc + s.stock, 0) || 0),
+            acc + (curr.sizes?.reduce((s, sz) => s + sz.stock, 0) || 0),
           0,
         );
-
         return { ...f, variants: v, stock: totalStock };
       });
     },
     [],
   );
 
-  const cancel = useCallback(() => {
-    setEditingProduct(null);
-    setForm(EMPTY_PRODUCT);
-    setView("products");
-  }, []);
+  // ── Variant helpers ───────────────────────────────────────────────────────
 
   const addVariant = useCallback(
     () =>
@@ -608,7 +1692,7 @@ export default function InventoryPage() {
           ...f.variants,
           {
             colorName: "",
-            colorHex: "#c8a97e",
+            colorHex: "#19635e",
             images: [],
             imageFiles: [],
             sizes: [...DEFAULT_SIZES],
@@ -637,6 +1721,8 @@ export default function InventoryPage() {
     [],
   );
 
+  // ── Image helpers ─────────────────────────────────────────────────────────
+
   const handleImageUpload = useCallback(
     async (vi: number, files: FileList | null) => {
       if (!files) return;
@@ -651,62 +1737,45 @@ export default function InventoryPage() {
         };
         return { ...f, variants: v };
       });
-
-      const uploadFile = async (file: File): Promise<string> => {
-        const formData = new FormData();
-        formData.append("file", file);
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          body: formData,
-        });
-        if (!res.ok) throw new Error("Upload failed");
-        const data = await res.json();
-        return data.url;
-      };
-
       try {
-        const cloudinaryUrls = await Promise.all(
-          arr.map((file) => uploadFile(file)),
+        const urls = await Promise.all(
+          arr.map(async (file) => {
+            const fd = new FormData();
+            fd.append("file", file);
+            const res = await fetch("/api/admin/upload", {
+              method: "POST",
+              body: fd,
+            });
+            if (!res.ok) throw new Error("Upload failed");
+            return (await res.json()).url as string;
+          }),
         );
         setForm((f) => {
           const v = [...f.variants];
           if (!v[vi]) return f;
-          const existingImages = (v[vi].images || []).filter(
+          const existing = v[vi].images.filter(
             (img) => !img.startsWith("blob:"),
           );
-          const blobImages = (v[vi].images || []).filter((img) =>
-            img.startsWith("blob:"),
-          );
-          blobImages.forEach((url) => URL.revokeObjectURL(url));
-          v[vi] = {
-            ...v[vi],
-            images: [...existingImages, ...cloudinaryUrls],
-            imageFiles: [],
-          };
+          v[vi].images
+            .filter((img) => img.startsWith("blob:"))
+            .forEach((u) => URL.revokeObjectURL(u));
+          v[vi] = { ...v[vi], images: [...existing, ...urls], imageFiles: [] };
           return { ...f, variants: v };
         });
-        setToast({
-          type: "success",
-          msg: `${arr.length} image(s) uploaded successfully.`,
-        });
+        setToast({ type: "success", msg: `${arr.length} image(s) uploaded.` });
       } catch {
         setForm((f) => {
           const v = [...f.variants];
           if (!v[vi]) return f;
           v[vi] = {
             ...v[vi],
-            images: (v[vi].images || []).filter(
-              (img) => !img.startsWith("blob:"),
-            ),
+            images: v[vi].images.filter((img) => !img.startsWith("blob:")),
             imageFiles: [],
           };
           return { ...f, variants: v };
         });
-        previews.forEach((url) => URL.revokeObjectURL(url));
-        setToast({
-          type: "error",
-          msg: "Image upload failed. Please try again.",
-        });
+        previews.forEach((u) => URL.revokeObjectURL(u));
+        setToast({ type: "error", msg: "Image upload failed." });
       }
     },
     [],
@@ -717,18 +1786,19 @@ export default function InventoryPage() {
       setForm((f) => {
         const v = [...f.variants];
         if (!v[vi]) return f;
-        const removedImage = v[vi].images[ii];
-        if (removedImage && removedImage.startsWith("blob:"))
-          URL.revokeObjectURL(removedImage);
+        const removed = v[vi].images[ii];
+        if (removed?.startsWith("blob:")) URL.revokeObjectURL(removed);
         v[vi] = {
           ...v[vi],
-          images: v[vi].images.filter((_, index) => index !== ii),
+          images: v[vi].images.filter((_, idx) => idx !== ii),
           imageFiles: [],
         };
         return { ...f, variants: v };
       }),
     [],
   );
+
+  // ── Save ──────────────────────────────────────────────────────────────────
 
   const handleSave = useCallback(async () => {
     if (!form.name || !form.category || form.price <= 0) {
@@ -738,17 +1808,12 @@ export default function InventoryPage() {
       });
       return;
     }
-    const hasBlobUrls = form.variants.some((v) =>
-      v.images.some((img) => img.startsWith("blob:")),
-    );
-    if (hasBlobUrls) {
-      setToast({
-        type: "error",
-        msg: "Images are still uploading. Please wait and try again.",
-      });
+    if (
+      form.variants.some((v) => v.images.some((img) => img.startsWith("blob:")))
+    ) {
+      setToast({ type: "error", msg: "Images still uploading. Please wait." });
       return;
     }
-
     setSaving(true);
     try {
       const body = editingProduct ? { ...form, _id: editingProduct._id } : form;
@@ -763,7 +1828,7 @@ export default function InventoryPage() {
           msg: editingProduct ? "Product updated!" : "Product added!",
         });
         await fetchProducts();
-        cancel();
+        goBack();
       } else {
         const d = await res.json();
         setToast({ type: "error", msg: d.error || "Failed to save." });
@@ -772,7 +1837,9 @@ export default function InventoryPage() {
       setToast({ type: "error", msg: "Network error." });
     }
     setSaving(false);
-  }, [form, editingProduct, fetchProducts, cancel]);
+  }, [form, editingProduct, fetchProducts, goBack]);
+
+  // ── Delete ────────────────────────────────────────────────────────────────
 
   const handleDelete = useCallback(
     async (id: string) => {
@@ -783,12 +1850,15 @@ export default function InventoryPage() {
         if (res.ok) {
           setToast({ type: "success", msg: "Product deleted." });
           fetchProducts();
-          if (editingProduct?._id === id) cancel();
+          if (editingProduct?._id === id || viewingProduct?._id === id)
+            goBack();
         }
       } catch {}
     },
-    [editingProduct, fetchProducts, cancel],
+    [editingProduct, viewingProduct, fetchProducts, goBack],
   );
+
+  // ── Toggle active ─────────────────────────────────────────────────────────
 
   const toggleActive = useCallback(
     async (id: string) => {
@@ -815,154 +1885,27 @@ export default function InventoryPage() {
     setConfirmDialog(null);
   }, [confirmDialog, handleDelete, toggleActive]);
 
-  const handleLogout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
-  };
+  // ─────────────────────────────────────────────────────────────────────────
 
-  const categoryCount = (cat: string) =>
-    products.filter((p) => p.category === cat).length;
-
-  // ── Stock summary stats ────────────────────────────────────────────────────
-  const totalStock = products.reduce((sum, p) => sum + (p.stock ?? 0), 0);
-  const outOfStock = products.filter((p) => (p.stock ?? 0) === 0).length;
-  const lowStock = products.filter(
-    (p) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= 10,
-  ).length;
-
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
       <style>{`
-        .adm-card {
-          background: var(--adm-bg-white);
-          border: 1px solid var(--adm-border);
-          box-shadow: var(--adm-shadow-card);
-        }
-        .adm-input {
-          background: var(--adm-bg-input);
-          border-color: var(--adm-border);
-          color: var(--adm-fg);
-        }
-        .adm-input::placeholder { color: var(--adm-fg-faint); }
-        .adm-input:focus {
-          border-color: var(--adm-accent);
-          background: var(--adm-bg-white);
-        }
-        .adm-btn-primary {
-          background: var(--adm-accent); color: #fff; border: none;
-          cursor: pointer; font-family: sans-serif; font-size: 10px;
-          font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-          transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
-        }
-        .adm-btn-primary:hover:not(:disabled) {
-          background: var(--adm-accent-hover); transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(184,148,94,0.25);
-        }
-        .adm-btn-primary:active:not(:disabled) { transform: translateY(0); }
-        .adm-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .adm-btn-ghost {
-          border: 1px solid var(--adm-border); background: transparent;
-          color: var(--adm-fg-muted); cursor: pointer; font-family: sans-serif;
-          font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
-          text-transform: uppercase; transition: border-color 0.15s, color 0.15s, transform 0.12s;
-        }
-        .adm-btn-ghost:hover { border-color: var(--adm-accent); color: var(--adm-accent); transform: translateY(-1px); }
-        .adm-btn-ghost:active { transform: translateY(0); }
-        .adm-btn-danger {
-          border: 1px solid var(--adm-border); background: transparent;
-          color: var(--adm-fg-muted); cursor: pointer;
-          transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.12s;
-        }
-        .adm-btn-danger:hover {
-          border-color: var(--adm-danger); color: var(--adm-danger);
-          background: var(--adm-bg-danger-lt); transform: translateY(-1px);
-        }
-        .adm-btn-danger-ghost {
-          background: transparent; color: var(--adm-fg-muted); cursor: pointer;
-          transition: background 0.15s, color 0.15s; font-family: sans-serif;
-          font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-        }
-        .adm-btn-danger-ghost:hover { background: var(--adm-bg-danger-lt); color: var(--adm-danger); }
-        .adm-btn-row {
-          background: transparent; color: var(--adm-fg-muted); border: none;
-          cursor: pointer; transition: background 0.15s, color 0.15s;
-        }
-        .adm-btn-row:hover { background: var(--adm-bg-active); color: var(--adm-accent); }
-        .adm-toggle-btn {
-          border: 1px solid var(--adm-border); background: rgba(0,0,0,0.03);
-          color: var(--adm-fg-muted); cursor: pointer; font-family: sans-serif;
-          font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-          transition: border-color 0.2s, background 0.2s, color 0.2s;
-        }
-        .adm-toggle-btn[data-active="true"] {
-          border-color: var(--adm-accent-border-md); background: var(--adm-bg-active); color: var(--adm-accent);
-        }
-        .adm-toggle-track { background: #ccc; transition: background 0.2s; }
-        .adm-toggle-track[data-active="true"] { background: var(--adm-accent); }
-        .adm-toggle-thumb { left: 2px; transition: left 0.2s; }
-        .adm-toggle-thumb[data-active="true"] { left: 14px; }
-        .adm-nav-item {
-          display: flex; align-items: center; gap: 10px; width: 100%;
-          padding: 10px 20px; background: transparent; border: none;
-          border-right: 2px solid transparent; color: var(--adm-fg-muted);
-          cursor: pointer; font-family: sans-serif; font-size: 13px;
-          font-weight: 600; text-align: left;
-          transition: background 0.15s, color 0.15s, border-color 0.15s;
-        }
-        .adm-nav-item:hover { background: var(--adm-bg-hover); color: var(--adm-fg); }
-        .adm-nav-item[data-active="true"] {
-          background: var(--adm-bg-active); color: var(--adm-fg); border-right-color: var(--adm-accent);
-        }
-        .adm-cat-item {
-          display: flex; align-items: center; justify-content: space-between;
-          width: 100%; padding: 8px 20px 8px 28px; background: transparent;
-          border: none; border-right: 2px solid transparent; color: var(--adm-fg-muted);
-          cursor: pointer; font-family: sans-serif; font-size: 12px; font-weight: 500;
-          text-align: left; transition: background 0.15s, color 0.15s, border-color 0.15s;
-        }
-        .adm-cat-item:hover { background: var(--adm-bg-hover); color: var(--adm-fg); }
-        .adm-cat-item[data-active="true"] {
-          background: var(--adm-bg-active); color: var(--adm-accent);
-          border-right-color: var(--adm-accent); font-weight: 600;
-        }
-        .adm-table-row { background: var(--adm-bg-white); transition: background 0.15s; }
-        .adm-table-row:hover { background: var(--adm-bg-hover); }
-        @keyframes admCardIn {
-          from { opacity: 0; transform: translateY(10px); }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(12px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        .adm-card-enter { animation: admCardIn 0.3s cubic-bezier(0.22,1,0.36,1) both; }
-        .adm-card-enter:nth-child(1) { animation-delay: 0.03s; }
-        .adm-card-enter:nth-child(2) { animation-delay: 0.07s; }
-        .adm-card-enter:nth-child(3) { animation-delay: 0.11s; }
-        .adm-card-enter:nth-child(4) { animation-delay: 0.15s; }
-        .adm-card-enter:nth-child(5) { animation-delay: 0.19s; }
-        .adm-card-enter:nth-child(n+6) { animation-delay: 0.22s; }
-        @keyframes admRowIn {
-          from { opacity: 0; transform: translateX(-6px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-        .adm-table-row { animation: admRowIn 0.25s cubic-bezier(0.22,1,0.36,1) both; }
-        .adm-table-row:nth-child(1) { animation-delay: 0.04s; }
-        .adm-table-row:nth-child(2) { animation-delay: 0.08s; }
-        .adm-table-row:nth-child(3) { animation-delay: 0.12s; }
-        .adm-table-row:nth-child(n+4) { animation-delay: 0.15s; }
-        .adm-pill {
-          flex-shrink: 0; padding: 5px 14px; border: 1px solid var(--adm-border);
-          background: var(--adm-bg-white); color: var(--adm-fg-muted);
-          font-family: sans-serif; font-size: 11px; font-weight: 600;
-          white-space: nowrap; cursor: pointer; border-radius: 999px;
-          transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.12s;
-        }
-        .adm-pill:hover { border-color: var(--adm-accent); color: var(--adm-accent); }
-        .adm-pill:active { transform: scale(0.96); }
-        .adm-pill[data-active="true"] { background: var(--adm-accent); border-color: var(--adm-accent); color: #fff; }
+        .card-enter { animation: fadeUp 0.35s cubic-bezier(0.22,1,0.36,1) both; }
+        .card-enter:nth-child(1) { animation-delay: 0.03s; }
+        .card-enter:nth-child(2) { animation-delay: 0.07s; }
+        .card-enter:nth-child(3) { animation-delay: 0.11s; }
+        .card-enter:nth-child(4) { animation-delay: 0.15s; }
+        .card-enter:nth-child(5) { animation-delay: 0.18s; }
+        .card-enter:nth-child(n+6) { animation-delay: 0.21s; }
         @keyframes toastIn {
-          from { opacity: 0; transform: translateY(10px) scale(0.97); }
+          from { opacity: 0; transform: translateY(8px) scale(0.97); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .adm-toast { animation: toastIn 0.28s cubic-bezier(0.22,1,0.36,1) both; }
+        .toast-enter { animation: toastIn 0.28s cubic-bezier(0.22,1,0.36,1) both; }
         @keyframes admFadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes admModalIn {
           from { opacity: 0; transform: scale(0.96) translateY(8px); }
@@ -970,1039 +1913,365 @@ export default function InventoryPage() {
         }
         .adm-backdrop { animation: admFadeIn 0.2s ease both; }
         .adm-modal    { animation: admModalIn 0.25s cubic-bezier(0.22,1,0.36,1) both; }
-        @keyframes admViewIn {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .adm-view { animation: admViewIn 0.3s cubic-bezier(0.22,1,0.36,1) both; }
-        .adm-section-label {
-          padding: 12px 20px 4px; font-family: sans-serif; font-size: 9px;
-          font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--adm-fg-muted);
-        }
-
-        /* Stock number input spinner remove */
-        .adm-stock-input::-webkit-inner-spin-button,
-        .adm-stock-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        .adm-stock-input { -moz-appearance: textfield; }
-
-        /* Stock stepper buttons */
-        .stock-stepper-btn {
-          width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-          border: 1px solid var(--adm-border); background: var(--adm-bg-soft);
-          cursor: pointer; font-size: 16px; font-weight: 700; color: var(--adm-fg-muted);
-          transition: background 0.15s, border-color 0.15s, color 0.15s; user-select: none;
-          flex-shrink: 0;
-        }
-        .stock-stepper-btn:hover { background: var(--adm-bg-active); border-color: var(--adm-accent); color: var(--adm-accent); }
-        .stock-stepper-btn:active { transform: scale(0.95); }
       `}</style>
 
       <div
-        className="font-serif min-h-screen"
-        style={{ background: "var(--adm-bg)", color: "var(--adm-fg)" }}
+        className="min-h-screen"
+        style={{ fontFamily: "var(--nav-font-ui)", color: "var(--adm-fg)" }}
       >
-        {/* ── Header ── */}
-        <header
-          className="sticky top-0 z-50 flex items-center justify-between px-5"
-          style={{
-            height: 60,
-            background: "var(--adm-bg-white)",
-            borderBottom: "1px solid var(--adm-border)",
-            boxShadow: "var(--adm-shadow-nav)",
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <button
-              className="adm-btn-ghost flex items-center gap-1.5 px-2.5 py-1.5 font-sans text-[11px]"
-              onClick={() => router.push("/admin/dashboard")}
-            >
-              <ChevronLeft size={13} />
-              <span className="hidden sm:inline">Dashboard</span>
-            </button>
+        {/* ══ LIST VIEW ══ */}
+        {pageView === "list" && (
+          <div>
+            {/* Page header */}
             <div
-              className="w-px h-5"
-              style={{ background: "var(--adm-border)" }}
-            />
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1 font-sans text-[10px] font-bold tracking-[0.14em] uppercase"
+              className="flex items-center justify-between px-6 py-5 border-b"
               style={{
-                background: "var(--adm-bg-active)",
-                border: "1px solid var(--adm-accent-border)",
-                color: "var(--adm-accent)",
+                background: "var(--adm-bg-white)",
+                borderColor: "var(--adm-border-soft)",
               }}
             >
-              Inventory
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {time && (
-              <span
-                className="hidden sm:block font-sans text-[11px] tracking-[0.04em]"
-                style={{ color: "var(--adm-fg-muted)" }}
-              >
-                {time}
-              </span>
-            )}
-            <button
-              className="adm-btn-ghost flex items-center gap-1.5 px-3 py-1.5 font-sans text-[10px]"
-              onClick={handleLogout}
-              style={{
-                transition: "border-color 0.15s, color 0.15s, background 0.15s",
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget;
-                el.style.borderColor = "var(--adm-danger-border)";
-                el.style.color = "var(--adm-danger)";
-                el.style.background = "var(--adm-bg-danger-lt)";
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget;
-                el.style.borderColor = "var(--adm-border)";
-                el.style.color = "var(--adm-fg-muted)";
-                el.style.background = "transparent";
-              }}
-            >
-              <LogOut size={11} />
-              <span className="hidden sm:inline">Sign Out</span>
-            </button>
-          </div>
-        </header>
-
-        {/* ── Body ── */}
-        <div className="flex" style={{ height: "calc(100vh - 60px)" }}>
-          {/* Desktop Sidebar */}
-          <aside
-            className="hidden md:flex flex-col sticky overflow-y-auto"
-            style={{
-              width: 260,
-              flexShrink: 0,
-              top: 60,
-              height: "calc(100vh - 60px)",
-              background: "var(--adm-bg-white)",
-              borderRight: "1px solid var(--adm-border)",
-            }}
-          >
-            <div
-              className="px-5 py-5 pb-4"
-              style={{ borderBottom: "1px solid var(--adm-border-soft)" }}
-            >
-              <div
-                className="font-sans text-[9px] font-bold tracking-widest uppercase mb-1"
-                style={{ color: "var(--adm-accent)" }}
-              >
-                Bambumm Admin
-              </div>
-              <div
-                className="font-serif text-[18px] font-bold"
-                style={{ color: "var(--adm-fg)" }}
-              >
-                Inventory
-              </div>
-            </div>
-
-            {/* ── Stock summary in sidebar ── */}
-            <div
-              className="px-4 py-3"
-              style={{ borderBottom: "1px solid var(--adm-border-soft)" }}
-            >
-              <p
-                className="font-sans text-[9px] font-bold tracking-[0.16em] uppercase mb-2"
-                style={{ color: "var(--adm-fg-muted)" }}
-              >
-                Stock Overview
-              </p>
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                  <span
-                    className="font-sans text-[11px]"
-                    style={{ color: "var(--adm-fg-muted)" }}
-                  >
-                    Total units
-                  </span>
-                  <span
-                    className="font-sans text-[11px] font-bold"
-                    style={{ color: "var(--adm-fg)" }}
-                  >
-                    {totalStock}
-                  </span>
-                </div>
-                {outOfStock > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span
-                      className="font-sans text-[11px] flex items-center gap-1"
-                      style={{ color: "#c0392b" }}
-                    >
-                      <AlertTriangle size={10} /> Out of stock
-                    </span>
-                    <span
-                      className="font-sans text-[11px] font-bold"
-                      style={{ color: "#c0392b" }}
-                    >
-                      {outOfStock}
-                    </span>
-                  </div>
-                )}
-                {lowStock > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span
-                      className="font-sans text-[11px] flex items-center gap-1"
-                      style={{ color: "#e67e22" }}
-                    >
-                      <TrendingDown size={10} /> Low stock
-                    </span>
-                    <span
-                      className="font-sans text-[11px] font-bold"
-                      style={{ color: "#e67e22" }}
-                    >
-                      {lowStock}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <nav className="py-2">
-              <button
-                className="adm-nav-item"
-                data-active={view === "add" && !editingProduct}
-                onClick={openAdd}
-              >
-                <Plus size={15} /> Add Product
-              </button>
-              <button
-                className="adm-nav-item"
-                data-active={
-                  view === "products" && activeCategoryFilter === "all"
-                }
-                onClick={() => {
-                  setView("products");
-                  setEditingProduct(null);
-                  setActiveCategoryFilter("all");
-                }}
-              >
-                <LayoutGrid size={15} /> All Products
-                <span
-                  className="ml-auto font-sans text-[9px] font-bold px-1.5 py-0.5"
+              <div>
+                <h1
+                  className="text-[1.25rem] font-bold"
                   style={{
-                    background: "var(--adm-bg-accent-md)",
-                    border: "1px solid var(--adm-accent-border)",
-                    color: "var(--adm-accent)",
+                    fontFamily: "var(--nav-font)",
+                    color: "var(--adm-fg)",
                   }}
                 >
-                  {products.length}
-                </span>
-              </button>
-              <button
-                className="adm-nav-item"
-                data-active={view === "categories"}
-                onClick={() => {
-                  setView("categories");
-                  setEditingProduct(null);
-                }}
-              >
-                <Tag size={15} /> Categories
-              </button>
-              <button
-                className="adm-nav-item"
-                data-active={view === "navconfig"}
-                onClick={() => {
-                  setView("navconfig");
-                  setEditingProduct(null);
-                }}
-              >
-                <Navigation size={15} /> Nav Config
-              </button>
-            </nav>
-
-            {view === "products" && dbCategories.length > 0 && (
-              <>
-                <div
-                  className="h-px mx-4"
-                  style={{ background: "var(--adm-border-soft)" }}
-                />
-                <div className="adm-section-label">Filter by Category</div>
-                <div className="pb-3">
-                  <button
-                    className="adm-cat-item"
-                    data-active={activeCategoryFilter === "all"}
-                    onClick={() => setActiveCategoryFilter("all")}
-                  >
-                    <span>All</span>
-                    <span
-                      className="font-sans text-[9px] font-bold px-1.5 py-0.5"
-                      style={{
-                        background:
-                          activeCategoryFilter === "all"
-                            ? "var(--adm-bg-accent-md)"
-                            : "transparent",
-                        border: "1px solid var(--adm-accent-border)",
-                        color: "var(--adm-accent)",
-                      }}
-                    >
-                      {products.length}
-                    </span>
-                  </button>
-                  {dbCategories.map((cat) => {
-                    const count = categoryCount(cat);
-                    if (count === 0) return null;
-                    return (
-                      <button
-                        key={cat}
-                        className="adm-cat-item"
-                        data-active={activeCategoryFilter === cat}
-                        onClick={() => setActiveCategoryFilter(cat)}
-                      >
-                        <span className="truncate">{cat}</span>
-                        <span
-                          className="font-sans text-[9px] font-bold px-1.5 py-0.5 shrink-0 ml-1"
-                          style={{
-                            background:
-                              activeCategoryFilter === cat
-                                ? "var(--adm-bg-accent-md)"
-                                : "transparent",
-                            border: "1px solid var(--adm-accent-border)",
-                            color: "var(--adm-accent)",
-                          }}
-                        >
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </aside>
-
-          {/* Main content */}
-          <main className="flex-1 overflow-y-auto">
-            {/* ══ PRODUCTS VIEW ══ */}
-            {view === "products" && (
-              <div className="adm-view">
-                <div
-                  className="hidden md:flex items-center justify-between px-8 py-6 border-b"
-                  style={{ borderColor: "var(--adm-border-soft)" }}
-                >
-                  <div>
-                    <div
-                      className="font-serif text-[22px] font-bold"
-                      style={{ color: "var(--adm-fg)" }}
-                    >
-                      {activeCategoryFilter === "all"
-                        ? "All Products"
-                        : activeCategoryFilter}
-                    </div>
-                    <div
-                      className="font-sans text-[12px] mt-0.5"
-                      style={{ color: "var(--adm-fg-muted)" }}
-                    >
-                      {filteredProducts.length} product
-                      {filteredProducts.length !== 1 ? "s" : ""}
-                      {activeCategoryFilter !== "all" && " in this category"}
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  className="md:hidden flex items-center justify-between px-4 py-3 border-b"
-                  style={{ borderColor: "var(--adm-border-soft)" }}
-                >
-                  <div>
-                    <div
-                      className="font-serif text-lg font-bold"
-                      style={{ color: "var(--adm-fg)" }}
-                    >
-                      All Products
-                    </div>
-                    <div
-                      className="font-sans text-[11px] mt-0.5"
-                      style={{ color: "var(--adm-fg-muted)" }}
-                    >
-                      {filteredProducts.length} item
-                      {filteredProducts.length !== 1 ? "s" : ""}
-                    </div>
-                  </div>
-                  <button
-                    className="adm-btn-primary flex items-center gap-1.5 px-4 py-2"
-                    onClick={openAdd}
-                  >
-                    <Plus size={12} /> Add
-                  </button>
-                </div>
-
-                {dbCategories.length > 0 && (
-                  <div
-                    className="md:hidden flex items-center gap-2 px-4 py-3 overflow-x-auto border-b"
-                    style={{
-                      borderColor: "var(--adm-border-soft)",
-                      background: "var(--adm-bg-soft)",
-                    }}
-                  >
-                    <SlidersHorizontal
-                      size={13}
-                      style={{ color: "var(--adm-fg-muted)", flexShrink: 0 }}
-                    />
-                    <button
-                      className="adm-pill"
-                      data-active={activeCategoryFilter === "all"}
-                      onClick={() => setActiveCategoryFilter("all")}
-                    >
-                      All ({products.length})
-                    </button>
-                    {dbCategories.map((cat) => {
-                      const count = categoryCount(cat);
-                      if (count === 0) return null;
-                      return (
-                        <button
-                          key={cat}
-                          className="adm-pill"
-                          data-active={activeCategoryFilter === cat}
-                          onClick={() => setActiveCategoryFilter(cat)}
-                        >
-                          {cat} ({count})
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {loading ? (
-                  <div
-                    className="flex items-center justify-center gap-2.5 py-20 font-sans text-[13px]"
-                    style={{ color: "var(--adm-fg-muted)" }}
-                  >
-                    <Loader2 size={18} className="animate-spin" /> Loading
-                    inventory…
-                  </div>
-                ) : filteredProducts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 px-5 text-center">
-                    <div
-                      className="w-14 h-14 flex items-center justify-center mb-4"
-                      style={{
-                        background: "var(--adm-bg-accent-lt)",
-                        border: "1px solid var(--adm-accent-border)",
-                        color: "var(--adm-accent)",
-                      }}
-                    >
-                      <Package size={22} />
-                    </div>
-                    <div
-                      className="font-serif text-[16px] font-bold mb-1.5"
-                      style={{ color: "var(--adm-fg)" }}
-                    >
-                      {activeCategoryFilter === "all"
-                        ? "No products yet"
-                        : `No products in "${activeCategoryFilter}"`}
-                    </div>
-                    <div
-                      className="font-sans text-[13px] mb-5"
-                      style={{ color: "var(--adm-fg-muted)" }}
-                    >
-                      {activeCategoryFilter === "all"
-                        ? "Add your first product to get started."
-                        : "Try a different category or add a new product."}
-                    </div>
-                    {activeCategoryFilter === "all" && (
-                      <button
-                        className="adm-btn-primary flex items-center gap-1.5 px-4 py-2.5"
-                        onClick={openAdd}
-                      >
-                        <Plus size={13} /> Add Product
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    {/* Desktop table */}
-                    <div className="hidden md:block px-8 py-4">
-                      <div
-                        className="grid gap-3 px-4 py-2 font-sans text-[10px] font-bold tracking-[0.14em] uppercase border-b mb-1"
-                        style={{
-                          gridTemplateColumns:
-                            "60px 1fr 120px 100px 70px 110px 60px 100px 60px",
-                          color: "var(--adm-fg-muted)",
-                          borderColor: "var(--adm-border)",
-                        }}
-                      >
-                        <span>Image</span>
-                        <span>Product Name</span>
-                        <span>Category</span>
-                        <span>Colours</span>
-                        <span>Price</span>
-                        <span>Stock</span>
-                        <span>Edit</span>
-                        <span>Active</span>
-                        <span>Delete</span>
-                      </div>
-                      {filteredProducts.map((product) => (
-                        <ProductRow
-                          key={product._id}
-                          product={product}
-                          onEdit={openEdit}
-                          activeProducts={activeProducts}
-                          setConfirmDialog={setConfirmDialog}
-                        />
-                      ))}
-                    </div>
-
-                    {/* Mobile cards */}
-                    <div className="md:hidden px-4 py-4 pb-24 flex flex-col gap-3">
-                      {filteredProducts.map((product) => (
-                        <MobileProductCard
-                          key={product._id}
-                          product={product}
-                          onEdit={openEdit}
-                          activeProducts={activeProducts}
-                          setConfirmDialog={setConfirmDialog}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* ══ CATEGORIES VIEW ══ */}
-            {view === "categories" && (
-              <div className="adm-view">
-                <CategoryManager
-                  key="category-manager"
-                  onCategoriesChange={fetchDbCategories}
-                />
-              </div>
-            )}
-
-            {/* ══ NAV CONFIG VIEW ══ */}
-            {view === "navconfig" && (
-              <div className="adm-view">
-                <NavManager key="nav-manager" />
-              </div>
-            )}
-
-            {/* ══ FORM VIEW ══ */}
-            {view === "add" && (
-              <div className="adm-view max-w-4xl px-8 py-7 md:pb-16 pb-24">
-                <div
-                  className="flex items-center gap-2 mb-5 font-sans text-[11px]"
+                  Products
+                </h1>
+                <p
+                  className="text-[0.75rem] mt-0.5"
                   style={{ color: "var(--adm-fg-muted)" }}
                 >
-                  <button
-                    className="flex items-center gap-1 font-sans text-[11px] bg-transparent border-none cursor-pointer p-0 transition-colors duration-150"
-                    style={{ color: "var(--adm-fg-muted)" }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.color = "var(--adm-accent)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.color = "var(--adm-fg-muted)")
-                    }
-                    onClick={cancel}
-                  >
-                    <ArrowLeft size={12} /> All Products
-                  </button>
-                  <span>/</span>
-                  <span style={{ color: "var(--adm-fg)" }}>
-                    {editingProduct ? "Edit" : "New Product"}
-                  </span>
-                </div>
+                  Manage your product inventory
+                </p>
+              </div>
+              <button
+                onClick={openAdd}
+                className="flex items-center gap-2 px-5 py-2.5 text-[0.7rem] font-bold tracking-[0.12em] uppercase rounded-sm transition-colors duration-150"
+                style={{
+                  background: "var(--adm-accent)",
+                  color: "#fff",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "var(--adm-accent-hover)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "var(--adm-accent)")
+                }
+              >
+                <Plus size={13} /> Add Products
+              </button>
+            </div>
 
-                <div
-                  className="font-serif text-[22px] font-bold mb-6"
+            {/* Search + Filters */}
+            <div
+              className="flex flex-wrap items-center gap-3 px-6 py-4 border-b"
+              style={{
+                background: "var(--adm-bg-white)",
+                borderColor: "var(--adm-border-soft)",
+              }}
+            >
+              {/* Search */}
+              <div
+                className="flex items-center gap-2 flex-1 min-w-[200px] px-3.5 py-2 rounded-sm"
+                style={{
+                  background: "var(--adm-bg-input)",
+                  border: "1px solid var(--adm-border)",
+                }}
+              >
+                <Search
+                  size={13}
+                  style={{ color: "var(--adm-fg-faint)", flexShrink: 0 }}
+                />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search Product By Name......"
+                  className="flex-1 bg-transparent border-none outline-none text-[0.8125rem]"
                   style={{ color: "var(--adm-fg)" }}
-                >
-                  {editingProduct ? editingProduct.name : "Add to Inventory"}
-                </div>
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="bg-transparent border-none cursor-pointer p-0"
+                    style={{ color: "var(--adm-fg-faint)" }}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
 
-                {/* Basic Info — now includes stock */}
-                <FormSection title="Basic Info">
-                  <div className="mb-4">
-                    <FieldLabel>Product Name *</FieldLabel>
-                    <input
-                      className={inputCls}
-                      type="text"
-                      value={form.name}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, name: e.target.value }))
-                      }
-                      placeholder=""
-                    />
-                  </div>
-
-                  {/* Price + Category row */}
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div>
-                      <FieldLabel>Price (₹) *</FieldLabel>
-                      <div className="relative">
-                        <span
-                          className="absolute left-3 top-1/2 -translate-y-1/2 font-sans text-[13px] font-bold"
-                          style={{ color: "var(--adm-accent)" }}
-                        >
-                          ₹
-                        </span>
-                        <input
-                          className={`${inputCls} pl-7`}
-                          type="number"
-                          value={form.price || ""}
-                          onChange={(e) =>
-                            setForm((f) => ({
-                              ...f,
-                              price: Number(e.target.value),
-                            }))
-                          }
-                          placeholder="0"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <FieldLabel>Category *</FieldLabel>
-                      <select
-                        className={`${inputCls} appearance-none`}
-                        value={form.category}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, category: e.target.value }))
-                        }
-                      >
-                        <option value="">Select…</option>
-                        {dbCategories.length === 0 ? (
-                          <option value="" disabled>
-                            No categories — add via Categories tab
-                          </option>
-                        ) : (
-                          dbCategories.map((c) => (
-                            <option key={c} value={c}>
-                              {c}
-                            </option>
-                          ))
-                        )}
-                      </select>
-                    </div>
-                  </div>
-                </FormSection>
-
-                {/* Description */}
-                <FormSection title="Description">
-                  <textarea
-                    className={`${inputCls} resize-none leading-relaxed`}
-                    rows={3}
-                    value={form.description}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, description: e.target.value }))
-                    }
-                    placeholder="Describe your product…"
-                  />
-                </FormSection>
-
-                {/* Variants */}
-                <FormSection
-                  title="Colour Variants"
-                  headerRight={
-                    <button
-                      className="adm-btn-ghost flex items-center gap-1.5 px-3 py-1.5"
-                      style={{ borderColor: "var(--adm-accent-border)" }}
-                      onClick={addVariant}
-                    >
-                      <Plus size={10} /> Add Variant
-                    </button>
-                  }
-                >
-                  {form.variants.map((variant, vi) => (
-                    <div
-                      key={vi}
-                      className="mb-3 last:mb-0 overflow-hidden"
-                      style={{ border: "1px solid var(--adm-border)" }}
-                    >
-                      <div
-                        className="flex items-center gap-2.5 px-3.5 py-2.5 border-b"
-                        style={{
-                          background: "var(--adm-bg-soft)",
-                          borderColor: "var(--adm-border-soft)",
-                        }}
-                      >
-                        <input
-                          type="color"
-                          value={variant.colorHex}
-                          onChange={(e) =>
-                            updateVariant(vi, "colorHex", e.target.value)
-                          }
-                          className="w-8 h-8 border-2 cursor-pointer rounded-sm shrink-0 p-0"
-                          style={{ borderColor: "var(--adm-border)" }}
-                        />
-                        <input
-                          type="text"
-                          className="flex-1 bg-transparent border-none outline-none font-sans text-[13px] font-semibold"
-                          style={{ color: "var(--adm-fg)" }}
-                          value={variant.colorName}
-                          onChange={(e) =>
-                            updateVariant(vi, "colorName", e.target.value)
-                          }
-                          placeholder="Colour name (e.g. Black)"
-                        />
-                        {form.variants.length > 1 && (
-                          <button
-                            className="w-6 h-6 flex items-center justify-center bg-transparent border-none cursor-pointer transition-colors duration-150"
-                            style={{ color: "var(--adm-fg-faint)" }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.color =
-                                "var(--adm-danger)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.color =
-                                "var(--adm-fg-faint)")
-                            }
-                            onClick={() => removeVariant(vi)}
-                          >
-                            <X size={13} />
-                          </button>
-                        )}
-                      </div>
-                      <div className="p-3.5">
-                        <div
-                          className="font-sans text-[9px] font-bold tracking-[0.16em] uppercase mb-2.5"
-                          style={{ color: "var(--adm-fg-muted)" }}
-                        >
-                          Images
-                        </div>
-                        {variant.images.length > 0 && (
-                          <div className="grid grid-cols-5 gap-2 mb-2.5">
-                            {variant.images.map((img, ii) =>
-                              img ? (
-                                <div
-                                  key={ii}
-                                  className="relative aspect-square overflow-hidden group"
-                                  style={{
-                                    border: "1px solid var(--adm-border)",
-                                  }}
-                                >
-                                  <img
-                                    src={img}
-                                    alt="preview"
-                                    className="w-full h-full object-cover"
-                                  />
-                                  <button
-                                    className="absolute top-0.5 right-0.5 w-4 h-4 text-white flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-                                    style={{
-                                      background: "rgba(192,57,43,0.9)",
-                                    }}
-                                    onClick={() => removeImg(vi, ii)}
-                                  >
-                                    <X size={9} />
-                                  </button>
-                                </div>
-                              ) : null,
-                            )}
-                          </div>
-                        )}
-                        <div
-                          className="flex flex-col items-center justify-center gap-2 py-6 px-3 border-2 border-dashed cursor-pointer transition-all duration-200"
-                          style={{ borderColor: "var(--adm-border)" }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor =
-                              "var(--adm-accent)";
-                            e.currentTarget.style.background =
-                              "var(--adm-bg-hover)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor =
-                              "var(--adm-border)";
-                            e.currentTarget.style.background = "transparent";
-                          }}
-                          onClick={() => fileInputRefs.current[vi]?.click()}
-                        >
-                          <div
-                            className="w-9 h-9 flex items-center justify-center"
-                            style={{
-                              background: "var(--adm-bg-accent-lt)",
-                              border: "1px solid var(--adm-accent-border)",
-                              color: "var(--adm-accent)",
-                            }}
-                          >
-                            <Upload size={14} />
-                          </div>
-                          <span
-                            className="font-sans text-[12px] font-semibold"
-                            style={{ color: "var(--adm-fg-muted)" }}
-                          >
-                            Click to upload images
-                          </span>
-                        </div>
-                        <input
-                          ref={(el) => {
-                            fileInputRefs.current[vi] = el;
-                          }}
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          className="hidden"
-                          onChange={(e) =>
-                            handleImageUpload(vi, e.target.files)
-                          }
-                        />
-                      </div>
-                      <div
-                        className="p-3.5 border-t bg-[#fdfaf7]"
-                        style={{ borderColor: "var(--adm-border-soft)" }}
-                      >
-                        <div
-                          className="font-sans text-[9px] font-bold tracking-[0.16em] uppercase mb-2.5"
-                          style={{ color: "var(--adm-fg-muted)" }}
-                        >
-                          Sizes & Stock for {variant.colorName || "this colour"}
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                          {(variant.sizes || DEFAULT_SIZES).map((sz, si) => (
-                            <div
-                              key={sz.size}
-                              className="flex flex-col gap-1.5"
-                            >
-                              <label
-                                className="font-sans text-[10px] font-bold text-center uppercase tracking-widest"
-                                style={{ color: "var(--adm-fg)" }}
-                              >
-                                {sz.size}
-                              </label>
-                              <input
-                                type="number"
-                                min={0}
-                                className="w-full border px-2 py-1.5 text-center font-sans text-[13px] font-semibold outline-none transition-colors"
-                                style={{
-                                  borderColor: "var(--adm-border)",
-                                  background: "var(--adm-bg-white)",
-                                  color: "var(--adm-fg)",
-                                }}
-                                onFocus={(e) =>
-                                  (e.currentTarget.style.borderColor =
-                                    "var(--adm-accent)")
-                                }
-                                onBlur={(e) =>
-                                  (e.currentTarget.style.borderColor =
-                                    "var(--adm-border)")
-                                }
-                                value={sz.stock === 0 ? "" : sz.stock} // Blank if 0 for cleaner UI
-                                placeholder="0"
-                                onChange={(e) => {
-                                  const val = parseInt(e.target.value, 10);
-                                  updateVariantSizeStock(
-                                    vi,
-                                    si,
-                                    isNaN(val) || val < 0 ? 0 : val,
-                                  );
-                                }}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </FormSection>
-
-                {/* Actions */}
-                <div
-                  className="p-5"
+              {/* Category filter */}
+              <div className="relative">
+                <select
+                  className="pl-3 pr-8 py-2 text-[0.75rem] font-semibold appearance-none rounded-sm cursor-pointer"
                   style={{
                     background: "var(--adm-bg-white)",
                     border: "1px solid var(--adm-border)",
+                    color: "var(--adm-fg-muted)",
                   }}
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
                 >
-                  {editingProduct && (
+                  <option value="all">All Categories</option>
+                  {dbCategories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={11}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ color: "var(--adm-fg-muted)" }}
+                />
+              </div>
+
+              {/* Filters placeholder */}
+              <button
+                className="flex items-center gap-2 px-4 py-2 text-[0.75rem] font-semibold rounded-sm transition-colors duration-150"
+                style={{
+                  background: "var(--adm-bg-white)",
+                  border: "1px solid var(--adm-border)",
+                  color: "var(--adm-fg-muted)",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--adm-accent)";
+                  e.currentTarget.style.color = "var(--adm-accent)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--adm-border)";
+                  e.currentTarget.style.color = "var(--adm-fg-muted)";
+                }}
+              >
+                <Search size={12} /> Filters
+              </button>
+            </div>
+
+            {/* Cards grid */}
+            <div className="px-6 py-6">
+              {loading ? (
+                <div
+                  className="flex items-center justify-center gap-2.5 py-20 text-[0.8125rem]"
+                  style={{ color: "var(--adm-fg-muted)" }}
+                >
+                  <Loader2 size={18} className="animate-spin" /> Loading
+                  inventory…
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <p
+                    className="text-[0.9rem] font-bold mb-1.5"
+                    style={{
+                      fontFamily: "var(--nav-font)",
+                      color: "var(--adm-fg)",
+                    }}
+                  >
+                    {search ? `No results for "${search}"` : "No products yet"}
+                  </p>
+                  <p
+                    className="text-[0.8125rem] mb-5"
+                    style={{ color: "var(--adm-fg-muted)" }}
+                  >
+                    {search
+                      ? "Try a different search term."
+                      : "Add your first product to get started."}
+                  </p>
+                  {!search && (
                     <button
-                      className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer font-sans text-[10px] font-bold tracking-widest uppercase mb-3.5 p-0 transition-opacity duration-150 hover:opacity-70"
-                      style={{ color: "var(--adm-danger)" }}
-                      onClick={() =>
-                        setConfirmDialog({
-                          type: "delete",
-                          productId: editingProduct._id!,
-                          productName: editingProduct.name,
-                        })
-                      }
+                      onClick={openAdd}
+                      className="flex items-center gap-2 px-5 py-2.5 text-[0.7rem] font-bold tracking-[0.12em] uppercase rounded-sm"
+                      style={{
+                        background: "var(--adm-accent)",
+                        color: "#fff",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
                     >
-                      <Trash2 size={11} /> Delete this product
+                      <Plus size={12} /> Add Product
                     </button>
                   )}
-                  <div className="flex gap-2.5">
-                    <button
-                      className="adm-btn-ghost flex-1 py-3 font-sans text-[11px]"
-                      onClick={cancel}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="adm-btn-primary flex flex-[1.5] items-center justify-center gap-2 py-3 font-sans text-[11px]"
-                      onClick={handleSave}
-                      disabled={saving}
-                    >
-                      {saving ? (
-                        <Loader2 size={13} className="animate-spin" />
-                      ) : (
-                        <Save size={13} />
-                      )}
-                      {saving
-                        ? "Saving…"
-                        : editingProduct
-                          ? "Update Product"
-                          : "Save Product"}
-                    </button>
-                  </div>
                 </div>
-              </div>
-            )}
-          </main>
-        </div>
-
-        {/* ── Mobile Bottom Nav ── */}
-        <nav
-          className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex"
-          style={{
-            height: 56,
-            background: "var(--adm-bg-white)",
-            borderTop: "1px solid var(--adm-border)",
-            boxShadow: "0 -4px 20px rgba(0,0,0,0.08)",
-          }}
-        >
-          {[
-            {
-              label: "Add",
-              icon: <Plus size={18} />,
-              action: openAdd,
-              active: view === "add" && !editingProduct,
-            },
-            {
-              label: "Products",
-              icon: <LayoutGrid size={18} />,
-              action: () => {
-                setView("products");
-                setEditingProduct(null);
-              },
-              active: view === "products",
-            },
-            {
-              label: "Categories",
-              icon: <Tag size={18} />,
-              action: () => {
-                setView("categories");
-                setEditingProduct(null);
-              },
-              active: view === "categories",
-            },
-            {
-              label: "Nav",
-              icon: <Navigation size={18} />,
-              action: () => {
-                setView("navconfig");
-                setEditingProduct(null);
-              },
-              active: view === "navconfig",
-            },
-            {
-              label: "Back",
-              icon: <ChevronLeft size={18} />,
-              action: () => router.push("/admin/dashboard"),
-              active: false,
-            },
-          ].map(({ label, icon, action, active }) => (
-            <button
-              key={label}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 bg-transparent border-none cursor-pointer font-sans text-[9px] font-bold tracking-widest uppercase border-t-2 transition-all duration-150"
-              style={{
-                color: active ? "var(--adm-accent)" : "var(--adm-fg-muted)",
-                borderColor: active ? "var(--adm-accent)" : "transparent",
-              }}
-              onClick={action}
-            >
-              {icon} {label}
-            </button>
-          ))}
-        </nav>
-
-        {/* ── Toast ── */}
-        {toast && (
-          <div
-            className="adm-toast fixed bottom-6 right-6 z-999 flex items-center gap-2.5 px-4 py-3"
-            style={{
-              background: "var(--adm-bg-white)",
-              border: `1px solid ${toast.type === "success" ? "var(--adm-accent)" : "var(--adm-danger)"}`,
-              boxShadow: "var(--adm-shadow-toast)",
-            }}
-          >
-            {toast.type === "success" ? (
-              <CheckCircle2
-                size={15}
-                style={{ color: "var(--adm-accent)", flexShrink: 0 }}
-              />
-            ) : (
-              <AlertCircle
-                size={15}
-                style={{ color: "var(--adm-danger)", flexShrink: 0 }}
-              />
-            )}
-            <span
-              className="font-sans text-[13px] font-semibold"
-              style={{ color: "var(--adm-fg)" }}
-            >
-              {toast.msg}
-            </span>
-          </div>
-        )}
-
-        {/* ── Confirm Dialog ── */}
-        {confirmDialog && (
-          <div
-            className="adm-backdrop fixed inset-0 z-1000 flex items-center justify-center p-5"
-            style={{ background: "rgba(0,0,0,0.4)" }}
-          >
-            <div
-              className="adm-modal p-7 max-w-90 w-full"
-              style={{
-                background: "var(--adm-bg-white)",
-                border: "1px solid var(--adm-border)",
-                boxShadow: "var(--adm-shadow-modal)",
-              }}
-            >
-              <h3
-                className="font-serif text-[16px] font-bold mb-2"
-                style={{ color: "var(--adm-fg)" }}
-              >
-                {confirmDialog.type === "delete"
-                  ? "Delete Product?"
-                  : confirmDialog.currentActive
-                    ? "Deactivate Product?"
-                    : "Activate Product?"}
-              </h3>
-              <p
-                className="font-sans text-[13px] leading-relaxed mb-5"
-                style={{ color: "var(--adm-fg-muted)" }}
-              >
-                {confirmDialog.type === "delete"
-                  ? `Permanently delete "${confirmDialog.productName}"? This cannot be undone.`
-                  : `${confirmDialog.currentActive ? "Deactivate" : "Activate"} "${confirmDialog.productName}"?`}
-              </p>
-              <div className="flex gap-2.5">
-                <button
-                  className="adm-btn-ghost flex-1 py-2.5 font-sans text-[11px]"
-                  onClick={() => setConfirmDialog(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="flex-[1.5] py-2.5 border-none cursor-pointer font-sans text-[11px] font-bold tracking-widest uppercase text-white transition-opacity duration-150 hover:opacity-90"
-                  style={{
-                    background:
-                      confirmDialog.type === "delete"
-                        ? "var(--adm-danger)"
-                        : "var(--adm-accent)",
-                  }}
-                  onClick={handleConfirmAction}
-                >
-                  {confirmDialog.type === "delete"
-                    ? "Yes, Delete"
-                    : confirmDialog.currentActive
-                      ? "Yes, Deactivate"
-                      : "Yes, Activate"}
-                </button>
-              </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {filteredProducts.map((p) => (
+                    <div key={p._id} className="card-enter">
+                      <ProductCard
+                        product={p}
+                        isActive={activeProducts[p._id!] !== false}
+                        onView={() => openView(p)}
+                        onEdit={() => openEdit(p)}
+                        onDelete={() =>
+                          setConfirmDialog({
+                            type: "delete",
+                            productId: p._id!,
+                            productName: p.name,
+                          })
+                        }
+                        onToggle={() =>
+                          setConfirmDialog({
+                            type: "toggle",
+                            productId: p._id!,
+                            productName: p.name,
+                            currentActive: activeProducts[p._id!] !== false,
+                          })
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
+
+        {/* ══ VIEW MODE ══ */}
+        {pageView === "view" && viewingProduct && (
+          <ProductView
+            product={viewingProduct}
+            onEdit={() => openEdit(viewingProduct)}
+            onBack={goBack}
+          />
+        )}
+
+        {/* ══ FORM VIEW ══ */}
+        {pageView === "form" && (
+          <ProductForm
+            form={form}
+            setForm={setForm}
+            editingProduct={editingProduct}
+            saving={saving}
+            dbCategories={dbCategories}
+            onSave={handleSave}
+            onCancel={goBack}
+            onDelete={() =>
+              editingProduct &&
+              setConfirmDialog({
+                type: "delete",
+                productId: editingProduct._id!,
+                productName: editingProduct.name,
+              })
+            }
+            fileInputRefs={fileInputRefs}
+            handleImageUpload={handleImageUpload}
+            removeImg={removeImg}
+            addVariant={addVariant}
+            removeVariant={removeVariant}
+            updateVariant={updateVariant}
+            updateVariantSizeStock={updateVariantSizeStock}
+          />
+        )}
       </div>
+
+      {/* ── Toast ── */}
+      {toast && (
+        <div
+          className="toast-enter fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-sm"
+          style={{
+            background: "var(--adm-bg-white)",
+            border: `1px solid ${toast.type === "success" ? "var(--adm-accent)" : "var(--adm-danger)"}`,
+            boxShadow: "var(--adm-shadow-toast)",
+          }}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle2
+              size={15}
+              style={{ color: "var(--adm-accent)", flexShrink: 0 }}
+            />
+          ) : (
+            <AlertCircle
+              size={15}
+              style={{ color: "var(--adm-danger)", flexShrink: 0 }}
+            />
+          )}
+          <span
+            className="text-[0.8125rem] font-semibold"
+            style={{ color: "var(--adm-fg)" }}
+          >
+            {toast.msg}
+          </span>
+        </div>
+      )}
+
+      {/* ── Confirm Dialog ── */}
+      {confirmDialog && (
+        <div
+          className="adm-backdrop fixed inset-0 z-50 flex items-center justify-center p-5"
+          style={{ background: "rgba(0,0,0,0.45)" }}
+        >
+          <div
+            className="adm-modal p-7 w-full max-w-sm rounded-sm"
+            style={{
+              background: "var(--adm-bg-white)",
+              border: "1px solid var(--adm-border)",
+              boxShadow: "var(--adm-shadow-modal)",
+            }}
+          >
+            <h3
+              className="text-[1rem] font-bold mb-2"
+              style={{ fontFamily: "var(--nav-font)", color: "var(--adm-fg)" }}
+            >
+              {confirmDialog.type === "delete"
+                ? "Delete Product?"
+                : confirmDialog.currentActive
+                  ? "Deactivate?"
+                  : "Activate?"}
+            </h3>
+            <p
+              className="text-[0.8125rem] leading-relaxed mb-5"
+              style={{ color: "var(--adm-fg-muted)" }}
+            >
+              {confirmDialog.type === "delete"
+                ? `Permanently delete "${confirmDialog.productName}"? This cannot be undone.`
+                : `${confirmDialog.currentActive ? "Deactivate" : "Activate"} "${confirmDialog.productName}"?`}
+            </p>
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => setConfirmDialog(null)}
+                className="flex-1 py-2.5 text-[0.7rem] font-bold tracking-widest uppercase rounded-sm transition-colors duration-150"
+                style={{
+                  border: "1px solid var(--adm-border)",
+                  background: "transparent",
+                  color: "var(--adm-fg-muted)",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--adm-accent)";
+                  e.currentTarget.style.color = "var(--adm-accent)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--adm-border)";
+                  e.currentTarget.style.color = "var(--adm-fg-muted)";
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmAction}
+                className="flex-[1.5] py-2.5 border-none text-[0.7rem] font-bold tracking-widest uppercase text-white rounded-sm cursor-pointer transition-opacity duration-150 hover:opacity-90"
+                style={{
+                  background:
+                    confirmDialog.type === "delete"
+                      ? "var(--adm-danger)"
+                      : "var(--adm-accent)",
+                }}
+              >
+                {confirmDialog.type === "delete"
+                  ? "Yes, Delete"
+                  : confirmDialog.currentActive
+                    ? "Deactivate"
+                    : "Activate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

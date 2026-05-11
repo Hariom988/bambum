@@ -55,11 +55,9 @@ export async function POST(req: NextRequest) {
     const client = await MongoClient.connect(MONGODB_URI);
     const db = client.db("users"); 
 
-    // 1. Save Guest Info to the "guest" collection
     let savedGuestId = null;
     if (isGuest && guestInfo) {
       const guestCol = db.collection("guest");
-      // Prevent duplicates by checking phone number
       const existingGuest = await guestCol.findOne({ phone: guestInfo.phone });
       
       if (existingGuest) {

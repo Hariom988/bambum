@@ -2,15 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Package,
-  ShoppingBag,
-  Clock,
-  LogOut,
-  ArrowRight,
-  Users,
-  ShoppingCart,
-} from "lucide-react";
+import { Package, Users, ShoppingCart, Clock3 } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
 interface Stats {
   totalProducts: number;
@@ -19,45 +12,83 @@ interface Stats {
   totalOrders: number;
 }
 
+interface StatConfig {
+  key: keyof Stats;
+  label: string;
+  sub: string;
+  icon: LucideIcon;
+  iconBgVar: string;
+  iconColorVar: string;
+  trendVar: string;
+  trendUp: boolean;
+}
+
+const STAT_CONFIG: StatConfig[] = [
+  {
+    key: "totalProducts",
+    label: "Total Products",
+    sub: "Active listings",
+    icon: Package,
+    iconBgVar: "var(--adm-bg-accent-lt)",
+    iconColorVar: "var(--adm-accent)",
+    trendVar: "var(--adm-accent)",
+    trendUp: true,
+  },
+  {
+    key: "menProducts",
+    label: "Men's Products",
+    sub: "Men's category",
+    icon: Users,
+    iconBgVar: "var(--adm-bg-accent-lt)",
+    iconColorVar: "var(--adm-accent)",
+    trendVar: "var(--adm-accent)",
+    trendUp: true,
+  },
+  {
+    key: "womenProducts",
+    label: "Women's Products",
+    sub: "Women's category",
+    icon: ShoppingCart,
+    iconBgVar: "var(--adm-bg-danger-lt)",
+    iconColorVar: "var(--adm-danger)",
+    trendVar: "var(--adm-danger)",
+    trendUp: false,
+  },
+  {
+    key: "totalOrders",
+    label: "Total Orders",
+    sub: "All time orders",
+    icon: Clock3,
+    iconBgVar: "var(--adm-bg-accent-md)",
+    iconColorVar: "var(--adm-accent)",
+    trendVar: "var(--adm-accent)",
+    trendUp: true,
+  },
+];
+
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [time, setTime] = useState("");
   const [mounted, setMounted] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [loadingStats, setLoadingStats] = useState(true);
   const [stats, setStats] = useState<Stats>({
     totalProducts: 0,
     menProducts: 0,
     womenProducts: 0,
     totalOrders: 0,
   });
-  const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
     const isActive = sessionStorage.getItem("admin_session_active");
     if (!isActive) {
-      fetch("/api/admin/logout", { method: "POST" }).finally(() => {
-        router.replace("/admin/login");
-      });
+      fetch("/api/admin/logout", { method: "POST" }).finally(() =>
+        router.replace("/admin/login"),
+      );
       return;
     }
-
     setChecking(false);
     setMounted(true);
 
-    const tick = () => {
-      const now = new Date();
-      setTime(
-        now.toLocaleTimeString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        }),
-      );
-    };
-    tick();
-    const interval = setInterval(tick, 1000);
-
-    // Fetch real-time stats
     fetch("/api/admin/stats")
       .then((r) => r.json())
       .then((d) => {
@@ -65,396 +96,203 @@ export default function AdminDashboardPage() {
         setLoadingStats(false);
       })
       .catch(() => setLoadingStats(false));
-
-    return () => clearInterval(interval);
   }, [router]);
 
-  const handleLogout = async () => {
-    sessionStorage.removeItem("admin_session_active");
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
-  };
-
-  const statusCards = [
-    {
-      icon: Package,
-      label: "Total Products",
-      value: loadingStats ? "—" : String(stats.totalProducts),
-      sub: "Active listings",
-      accent: false,
-    },
-    {
-      icon: Users,
-      label: "Men's Products",
-      value: loadingStats ? "—" : String(stats.menProducts),
-      sub: "Men's category",
-      accent: false,
-    },
-    {
-      icon: ShoppingBag,
-      label: "Women's Products",
-      value: loadingStats ? "—" : String(stats.womenProducts),
-      sub: "Women's category",
-      accent: false,
-    },
-    {
-      icon: ShoppingCart,
-      label: "Total Orders",
-      value: loadingStats ? "—" : String(stats.totalOrders),
-      sub: "All time orders",
-      accent: true,
-    },
-  ];
   if (checking) return null;
 
   return (
     <>
       <style>{`
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(16px); }
+          from { opacity: 0; transform: translateY(18px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        .dash-card {
-          animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) both;
-        }
-        .dash-card:nth-child(1) { animation-delay: 0.05s; }
-        .dash-card:nth-child(2) { animation-delay: 0.10s; }
-        .dash-card:nth-child(3) { animation-delay: 0.15s; }
-        .dash-card:nth-child(4) { animation-delay: 0.20s; }
+        .dash-fade { animation: fadeUp 0.42s cubic-bezier(0.22,1,0.36,1) both; }
+        .dash-fade:nth-child(1) { animation-delay: 0.04s; }
+        .dash-fade:nth-child(2) { animation-delay: 0.09s; }
+        .dash-fade:nth-child(3) { animation-delay: 0.14s; }
+        .dash-fade:nth-child(4) { animation-delay: 0.19s; }
 
-        .stat-val {
-          font-family: var(--nav-font);
-          font-size: 2rem;
-          font-weight: 700;
-          color: var(--nav-fg);
-          line-height: 1;
+        @keyframes shimmer {
+          0%   { background-position: -200% center; }
+          100% { background-position:  200% center; }
+        }
+        .stat-shimmer {
+          background: linear-gradient(
+            90deg,
+            var(--adm-fg-faint) 25%,
+            var(--adm-border) 50%,
+            var(--adm-fg-faint) 75%
+          );
+          background-size: 200% auto;
+          animation: shimmer 1.4s linear infinite;
+          border-radius: 2px;
         }
 
-        .action-card {
-          animation: fadeUp 0.45s 0.25s cubic-bezier(0.22,1,0.36,1) both;
+        .stat-card:hover {
+          border-color: var(--adm-accent-border) !important;
         }
-
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
+        .quick-link-card:hover {
+          border-color: var(--adm-accent-border) !important;
+          background: var(--adm-bg-soft) !important;
+          box-shadow: var(--adm-shadow-card) !important;
         }
-        .loading-val { animation: pulse 1.2s ease-in-out infinite; }
+        .quick-link-card:hover .ql-arrow {
+          transform: translateX(4px);
+        }
       `}</style>
 
       <div
-        className={`min-h-screen transition-opacity duration-500 ${mounted ? "opacity-100" : "opacity-0"}`}
-        style={{
-          background: "var(--nav-bg)",
-          color: "var(--nav-fg)",
-          fontFamily: "var(--nav-font-ui)",
-        }}
+        className={`transition-opacity duration-500 ${mounted ? "opacity-100" : "opacity-0"}`}
+        style={{ fontFamily: "var(--nav-font-ui)", color: "var(--adm-fg)" }}
       >
-        {/* TOP BAR */}
-        <header
-          className="sticky top-0 z-50 flex items-center justify-between px-7"
-          style={{
-            height: "var(--nav-height)",
-            background: "#fff",
-            borderBottom: "1px solid var(--nav-border)",
-            boxShadow: "0 1px 8px rgba(0,0,0,0.05)",
-          }}
-        >
-          <div className="flex items-center gap-4">
-            <img className="w-22" src="/logo.png" alt="Bambumm" />
-          </div>
-
-          <div className="flex items-center gap-4">
-            {time && (
-              <div
-                className="hidden sm:flex items-center gap-1.5 text-[0.7rem] tracking-wide"
-                style={{ color: "var(--nav-fg-muted)" }}
-              >
-                <Clock size={12} />
-                {time}
-              </div>
-            )}
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3.5 py-2 text-[0.65rem] tracking-[0.16em] uppercase transition-all duration-200"
-              style={{
-                border: "1px solid var(--nav-border)",
-                color: "var(--nav-fg-muted)",
-                background: "transparent",
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "rgba(217,79,61,0.4)";
-                e.currentTarget.style.color = "var(--nav-sale)";
-                e.currentTarget.style.background = "rgba(217,79,61,0.05)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--nav-border)";
-                e.currentTarget.style.color = "var(--nav-fg-muted)";
-                e.currentTarget.style.background = "transparent";
-              }}
+        <div className="max-w-5xl mx-auto px-6 py-8">
+          {/* ── PAGE HEADING ── */}
+          <div className="mb-8">
+            <h1
+              className="text-[1.6rem] font-bold tracking-tight"
+              style={{ fontFamily: "var(--nav-font)", color: "var(--adm-fg)" }}
             >
-              <LogOut size={12} />
-              Sign Out
-            </button>
+              Dashboard
+            </h1>
+            <p
+              className="text-[0.8125rem] mt-1"
+              style={{ color: "var(--adm-fg-muted)" }}
+            >
+              Welcome back! Here's what's happening with your store today.
+            </p>
           </div>
-        </header>
 
-        {/* MAIN */}
-        <main className="max-w-5xl mx-auto px-6 py-8">
-          {/* Stats Cards */}
+          {/* ── STAT CARDS ── */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-            {statusCards.map((card) => {
-              const Icon = card.icon;
+            {STAT_CONFIG.map((cfg) => {
+              const Icon = cfg.icon;
+              const value = stats[cfg.key];
               return (
                 <div
-                  key={card.label}
-                  className="dash-card relative overflow-hidden p-6 transition-all duration-200"
+                  key={cfg.key}
+                  className="stat-card dash-fade rounded-2xl p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
                   style={{
-                    background: "#fff",
-                    border: "1px solid var(--nav-border)",
-                    boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
+                    background: "var(--adm-bg-white)",
+                    border: "1px solid var(--adm-border-soft)",
+                    boxShadow: "var(--adm-shadow-card)",
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.borderColor = "var(--nav-accent)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.borderColor = "var(--nav-border)")
-                  }
                 >
+                  {/* Icon badge */}
                   <div
-                    className="w-9 h-9 flex items-center justify-center mb-4"
-                    style={{
-                      background: "rgba(200,169,126,0.1)",
-                      border: "1px solid var(--nav-border)",
-                    }}
+                    className="w-9 h-9 rounded-lg flex items-center justify-center mb-3.5"
+                    style={{ background: cfg.iconBgVar }}
                   >
                     <Icon
-                      size={16}
-                      style={{ color: "var(--nav-accent)" }}
-                      strokeWidth={1.5}
+                      size={17}
+                      strokeWidth={1.7}
+                      style={{ color: cfg.iconColorVar }}
                     />
                   </div>
+
+                  {/* Label */}
                   <p
-                    className="text-[0.6rem] tracking-[0.18em] uppercase mb-1"
-                    style={{ color: "var(--nav-fg-muted)" }}
+                    className="text-[0.625rem] font-bold tracking-[0.14em] uppercase mb-1.5"
+                    style={{ color: "var(--adm-fg-muted)" }}
                   >
-                    {card.label}
+                    {cfg.label}
                   </p>
-                  <p
-                    className={`stat-val mb-1 ${loadingStats ? "loading-val" : ""}`}
-                  >
-                    {card.value}
-                  </p>
+
+                  {/* Value or shimmer */}
+                  {loadingStats ? (
+                    <div className="stat-shimmer h-8 w-3/5 mb-2" />
+                  ) : (
+                    <p
+                      className="text-[2rem] font-bold leading-none tracking-tight mb-2"
+                      style={{
+                        fontFamily: "var(--nav-font)",
+                        color: "var(--adm-fg)",
+                      }}
+                    >
+                      {value.toLocaleString("en-IN")}
+                    </p>
+                  )}
+
+                  {/* Sub label */}
                   <p
                     className="text-[0.6rem] tracking-wide"
-                    style={{ color: "var(--nav-fg-muted)" }}
+                    style={{ color: "var(--adm-fg-faint)" }}
                   >
-                    {card.sub}
+                    {cfg.sub}
                   </p>
                 </div>
               );
             })}
           </div>
 
-          {/* Action Cards */}
-          <div className="grid gap-4">
-            {/* Inventory */}
-            <div
-              className="action-card p-8 overflow-hidden"
-              style={{
-                background: "rgba(200,169,126,0.08)",
-                border: "1px solid rgba(200,169,126,0.2)",
-              }}
-            >
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div
-                      className="w-8 h-8 flex items-center justify-center"
-                      style={{
-                        background: "rgba(200,169,126,0.15)",
-                        border: "1px solid rgba(200,169,126,0.3)",
-                      }}
-                    >
-                      <Package
-                        size={14}
-                        style={{ color: "var(--nav-accent)" }}
-                      />
-                    </div>
-                    <h2
-                      className="text-base font-bold"
-                      style={{
-                        fontFamily: "var(--nav-font)",
-                        color: "var(--nav-fg)",
-                      }}
-                    >
-                      Inventory Management
-                    </h2>
-                  </div>
-                  <p
-                    className="text-sm leading-relaxed"
-                    style={{ color: "var(--nav-fg-muted)" }}
+          {/* ── QUICK ACTIONS ── */}
+          <p
+            className="text-[0.65rem] font-bold tracking-[0.16em] uppercase mb-4"
+            style={{ color: "var(--adm-fg-muted)" }}
+          >
+            Quick Actions
+          </p>
+
+          <div className="flex flex-col gap-3">
+            {[
+              {
+                label: "Inventory Management",
+                sub: "Add, edit, and manage your product catalogue.",
+                href: "/admin/inventory",
+                icon: Package,
+              },
+              {
+                label: "Orders Management",
+                sub: "View, filter, and manage all customer orders.",
+                href: "/admin/orders",
+                icon: ShoppingCart,
+              },
+            ].map(({ label, sub, href, icon: Icon }) => (
+              <div
+                key={label}
+                className="quick-link-card flex items-center justify-between gap-4 rounded px-6 py-5 cursor-pointer transition-all duration-200"
+                style={{
+                  background: "var(--adm-bg-white)",
+                  border: "1px solid var(--adm-border-soft)",
+                }}
+                onClick={() => router.push(href)}
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-[38px] h-[38px] rounded flex items-center justify-center flex-shrink-0"
+                    style={{ background: "var(--adm-bg-accent-lt)" }}
                   >
-                    Add, edit, and manage your product catalogue.
-                  </p>
-                </div>
-                <button
-                  onClick={() => router.push("/admin/inventory")}
-                  className="group flex items-center gap-2.5 px-6 py-3 text-[0.65rem] font-bold tracking-[0.18em] uppercase transition-colors duration-200 shrink-0"
-                  style={{
-                    background: "var(--nav-accent)",
-                    color: "#fff",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background =
-                      "var(--nav-accent-hover)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "var(--nav-accent)")
-                  }
-                >
-                  Open Inventory
-                  <ArrowRight
-                    size={13}
-                    className="group-hover:translate-x-0.5 transition-transform"
-                  />
-                </button>
-              </div>
-            </div>
-            {/* Orders */}
-            <div
-              className="action-card p-8 overflow-hidden"
-              style={{
-                background: "rgba(200,169,126,0.04)",
-                border: "1px solid var(--nav-border)",
-              }}
-            >
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div
-                      className="w-8 h-8 flex items-center justify-center"
-                      style={{
-                        background: "rgba(200,169,126,0.1)",
-                        border: "1px solid var(--nav-border)",
-                      }}
-                    >
-                      <ShoppingCart
-                        size={14}
-                        style={{ color: "var(--nav-accent)" }}
-                      />
-                    </div>
-                    <h2
-                      className="text-base font-bold"
-                      style={{
-                        fontFamily: "var(--nav-font)",
-                        color: "var(--nav-fg)",
-                      }}
-                    >
-                      Orders Management
-                    </h2>
+                    <Icon
+                      size={16}
+                      strokeWidth={1.7}
+                      style={{ color: "var(--adm-accent)" }}
+                    />
                   </div>
-                  <p
-                    className="text-sm leading-relaxed"
-                    style={{ color: "var(--nav-fg-muted)" }}
-                  >
-                    View, filter, and manage all customer orders.
-                  </p>
-                </div>
-                <button
-                  onClick={() => router.push("/admin/orders")}
-                  className="group flex items-center gap-2.5 px-6 py-3 text-[0.65rem] font-bold tracking-[0.18em] uppercase transition-colors duration-200 shrink-0"
-                  style={{
-                    background: "var(--nav-accent)",
-                    color: "#fff",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background =
-                      "var(--nav-accent-hover)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "var(--nav-accent)")
-                  }
-                >
-                  Open Orders
-                  <ArrowRight
-                    size={13}
-                    className="group-hover:translate-x-0.5 transition-transform"
-                  />
-                </button>
-              </div>
-            </div>
-            {/* Content */}
-            <div
-              className="action-card p-8 overflow-hidden"
-              style={{
-                background: "rgba(200,169,126,0.04)",
-                border: "1px solid var(--nav-border)",
-              }}
-            >
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div
-                      className="w-8 h-8 flex items-center justify-center"
-                      style={{
-                        background: "rgba(200,169,126,0.1)",
-                        border: "1px solid var(--nav-border)",
-                      }}
+                  <div>
+                    <p
+                      className="text-[0.875rem] font-semibold mb-0.5"
+                      style={{ color: "var(--adm-fg)" }}
                     >
-                      <ShoppingCart
-                        size={14}
-                        style={{ color: "var(--nav-accent)" }}
-                      />
-                    </div>
-                    <h2
-                      className="text-base font-bold"
-                      style={{
-                        fontFamily: "var(--nav-font)",
-                        color: "var(--nav-fg)",
-                      }}
+                      {label}
+                    </p>
+                    <p
+                      className="text-[0.75rem]"
+                      style={{ color: "var(--adm-fg-muted)" }}
                     >
-                      Content Management
-                    </h2>
+                      {sub}
+                    </p>
                   </div>
-                  <p
-                    className="text-sm leading-relaxed"
-                    style={{ color: "var(--nav-fg-muted)" }}
-                  >
-                    View, filter, and manage all Content.
-                  </p>
                 </div>
-                <button
-                  onClick={() => router.push("/admin/content")}
-                  className="group flex items-center gap-2.5 px-6 py-3 text-[0.65rem] font-bold tracking-[0.18em] uppercase transition-colors duration-200 shrink-0"
-                  style={{
-                    background: "var(--nav-accent)",
-                    color: "#fff",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background =
-                      "var(--nav-accent-hover)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "var(--nav-accent)")
-                  }
+                <span
+                  className="ql-arrow text-lg flex-shrink-0 transition-transform duration-200"
+                  style={{ color: "var(--adm-accent)" }}
                 >
-                  Open Contents
-                  <ArrowRight
-                    size={13}
-                    className="group-hover:translate-x-0.5 transition-transform"
-                  />
-                </button>
+                  →
+                </span>
               </div>
-            </div>
+            ))}
           </div>
-        </main>
+        </div>
       </div>
     </>
   );
