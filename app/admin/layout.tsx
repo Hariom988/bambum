@@ -77,7 +77,7 @@ export default function AdminLayout({
     <div className="min-h-screen flex" style={{ background: "var(--adm-bg)" }}>
       {/* ── SIDEBAR (desktop) ── */}
       <aside
-        className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-[200px] z-40"
+        className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-50 z-40"
         style={{ background: "var(--brand-teal)" }}
       >
         {/* Logo */}
@@ -100,17 +100,17 @@ export default function AdminLayout({
                 key={label}
                 onClick={() => active && handleNav(href)}
                 className={[
-                  "flex items-center gap-3 px-5 py-[13px] text-[0.8125rem] font-medium tracking-wide my-px transition-colors duration-150",
+                  "flex items-center gap-3 px-5 py-3 text-[0.8125rem] font-medium tracking-wide my-px transition-colors duration-150",
                   isCurrent
-                    ? "bg-white/[0.12] text-white border-l-[3px] border-white/80"
-                    : "border-l-[3px] border-transparent text-white/65 hover:bg-white/[0.08] hover:text-white",
+                    ? "bg-white/12 text-white border-l-[3px] border-white/80"
+                    : "border-l-[3px] border-transparent text-white/65 hover:bg-white/8 hover:text-white",
                   !active ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
                 ].join(" ")}
               >
                 <Icon size={16} strokeWidth={1.8} />
                 <span>{label}</span>
                 {!active && (
-                  <span className="ml-auto text-[0.5rem] tracking-widest uppercase bg-white/[0.12] text-white/50 px-1.5 py-0.5 rounded-sm">
+                  <span className="ml-auto text-[0.5rem] tracking-widest uppercase bg-white/12 text-white/50 px-1.5 py-0.5 rounded-sm">
                     Soon
                   </span>
                 )}
