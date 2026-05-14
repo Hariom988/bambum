@@ -88,7 +88,12 @@ export default function AdminLayout({
             borderBottom: "1px solid rgba(255,255,255,0.1)",
           }}
         >
-          <Image src={logo} alt="BAMBUMM" width={100} height={80} />
+          <span
+            className="md:flex hidden text-lg font-bold tracking-widest uppercase flex-1"
+            style={{ fontFamily: "var(--nav-font)", color: "white" }}
+          >
+            BAMBUMM
+          </span>
         </div>
 
         {/* Nav */}
