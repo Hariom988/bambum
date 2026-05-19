@@ -16,11 +16,11 @@ export default function Home() {
     <>
       <HeroSection />
       {/* <HeroSection2 /> */}
+      <ProductsSection />
       <ShopByCity />
       {/* <FeatureBadges /> */}
       {/* <BestsellersSection /> */}
       {/* <CollectionsSection /> */}
-      <ProductsSection />
       <PromoBanner />
       {/* <BambooProcess /> */}
       {/* <WhyUs /> */}

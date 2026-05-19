@@ -1,67 +1,134 @@
-// app/api/navconfig/route.ts
-import { NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
-import { MongoClient } from "mongodb";
+import { NextRequest, NextResponse } from "next/server";
+import { MongoClient, ObjectId } from "mongodb";
+import { revalidateTag } from "next/cache";
 
 const MONGODB_URI = process.env.MONGODB_URI!;
 
-export interface NavLink {
-  label: string;
-  href: string;
-}
-
-export interface NavCategory {
-  id: string;        // stable client-side DnD key
-  title: string;
-  order: number;
-  links: NavLink[];
-}
-
-export interface NavItem {
-  _id: string;
-  label: string;
-  order: number;
-  isActive: boolean;
-  categories: NavCategory[];
-}
-
-async function fetchNavFromDB(): Promise<NavItem[]> {
+async function getCol() {
   const client = await MongoClient.connect(MONGODB_URI);
-  try {
-    const col = client.db("content").collection("navConfig");
-    const docs = await col
-      .find({ isActive: true })
-      .sort({ order: 1 })
-      .toArray();
-    return docs.map((d) => ({
-      ...d,
-      _id: d._id.toString(),
-    })) as NavItem[];
-  } finally {
-    await client.close();
-  }
+  const col = client.db("content").collection("navConfig");
+  return { client, col };
 }
-
-// Cache for 60 seconds on the server — revalidated on every admin save via
-// the admin route calling revalidateTag("navconfig")
-const getCachedNav = unstable_cache(fetchNavFromDB, ["navconfig"], {
-  revalidate: 60,
-  tags: ["navconfig"],
-});
 
 export async function GET() {
   try {
-    const items = await getCachedNav();
-    return NextResponse.json(
-      { items },
+    const { client, col } = await getCol();
+    const docs = await col.find({}).sort({ order: 1 }).toArray();
+    await client.close();
+    return NextResponse.json({
+      items: docs.map((d) => ({ ...d, _id: d._id.toString() })),
+    });
+  } catch (err) {
+    console.error("[navconfig GET]", err);
+    return NextResponse.json({ error: "Failed to fetch." }, { status: 500 });
+  }
+}
+
+// ── POST — create a new top-level nav item (e.g. "Men")
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { label, order = 0 } = body;
+    if (!label?.trim()) {
+      return NextResponse.json({ error: "Label is required." }, { status: 400 });
+    }
+    const { client, col } = await getCol();
+
+    const existing = await col.findOne({
+      label: { $regex: new RegExp(`^${label.trim()}$`, "i") },
+    });
+    if (existing) {
+      await client.close();
+      return NextResponse.json({ error: "Nav item already exists." }, { status: 409 });
+    }
+
+    const result = await col.insertOne({
+      label: label.trim(),
+      order,
+      isActive: true,
+      categories: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    await client.close();
+    revalidateTag("navconfig","default"); // ✅ single arg only
+    return NextResponse.json({ ok: true, id: result.insertedId }, { status: 201 });
+  } catch (err) {
+    console.error("[navconfig POST]", err);
+    return NextResponse.json({ error: "Failed to create." }, { status: 500 });
+  }
+}
+
+// ── PUT — full replace of a nav item
+export async function PUT(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { _id, label, order, isActive, categories } = body;
+    if (!_id || !label?.trim()) {
+      return NextResponse.json({ error: "_id and label are required." }, { status: 400 });
+    }
+    const { client, col } = await getCol();
+    await col.updateOne(
+      { _id: new ObjectId(_id) },
       {
-        headers: {
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+        $set: {
+          label: label.trim(),
+          order: order ?? 0,
+          isActive: isActive ?? true,
+          categories: categories ?? [],
+          updatedAt: new Date(),
         },
       }
     );
+    await client.close();
+    revalidateTag("navconfig", "default"); 
+    return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[/api/navconfig GET]", err);
-    return NextResponse.json({ items: [] }, { status: 500 });
+    console.error("[navconfig PUT]", err);
+    return NextResponse.json({ error: "Failed to update." }, { status: 500 });
+  }
+}
+
+// ── PATCH — bulk reorder all nav items
+export async function PATCH(req: NextRequest) {
+  try {
+    const { items } = await req.json();
+    if (!Array.isArray(items)) {
+      return NextResponse.json({ error: "items array required." }, { status: 400 });
+    }
+    const { client, col } = await getCol();
+    await Promise.all(
+      items.map(({ _id, order }: { _id: string; order: number }) =>
+        col.updateOne(
+          { _id: new ObjectId(_id) },
+          { $set: { order, updatedAt: new Date() } }
+        )
+      )
+    );
+    await client.close();
+    revalidateTag("navconfig", "default");
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[navconfig PATCH]", err);
+    return NextResponse.json({ error: "Failed to reorder." }, { status: 500 });
+  }
+}
+
+// ── DELETE — remove a nav item
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "id required." }, { status: 400 });
+    }
+    const { client, col } = await getCol();
+    await col.deleteOne({ _id: new ObjectId(id) });
+    await client.close();
+    revalidateTag("navconfig", "default"); 
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[navconfig DELETE]", err);
+    return NextResponse.json({ error: "Failed to delete." }, { status: 500 });
   }
 }
