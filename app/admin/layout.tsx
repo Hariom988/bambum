@@ -4,18 +4,22 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
-  TrendingUp,
   ShoppingCart,
-  Settings,
-  LogOut,
   Clock,
-  Tag,
   Navigation,
+  MessageSquare,
+  Star,
+  ThumbsUp,
+  LogOut,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import logo from "@/public/logo.png";
 
+// ─── Nav config ───────────────────────────────────────────────────────────────
+//
+// Each entry maps to a sidebar link. Set active: false for "coming soon" items.
+//
 const NAV_ITEMS = [
   {
     icon: LayoutDashboard,
@@ -23,18 +27,53 @@ const NAV_ITEMS = [
     href: "/admin/dashboard",
     active: true,
   },
-  { icon: Package, label: "Product", href: "/admin/inventory", active: true },
-  { icon: TrendingUp, label: "Income", href: null, active: false },
-  { icon: ShoppingCart, label: "Orders", href: "/admin/orders", active: true },
-  { icon: Tag, label: "Categories", href: "/admin/categories", active: true },
+  {
+    icon: Package,
+    label: "Product",
+    href: "/admin/inventory",
+    active: true,
+  },
+  {
+    icon: ShoppingCart,
+    label: "Orders",
+    href: "/admin/orders",
+    active: true,
+  },
+  // ── Content group ──
+  {
+    icon: MessageSquare,
+    label: "FAQs",
+    href: "/admin/faq",
+    active: true,
+  },
+  {
+    icon: Star,
+    label: "Testimonials",
+    href: "/admin/testimonials",
+    active: true,
+  },
+  {
+    icon: ThumbsUp,
+    label: "Reviews",
+    href: "/admin/reviews",
+    active: true,
+  },
+  // ── Config ──
   {
     icon: Navigation,
     label: "Nav Config",
     href: "/admin/navconfig",
     active: true,
   },
-  { icon: Settings, label: "Settings", href: null, active: false },
+  {
+    icon: LayoutDashboard,
+    label: "Categories",
+    href: "/admin/categories",
+    active: true,
+  },
 ];
+
+// ─── Layout ───────────────────────────────────────────────────────────────────
 
 export default function AdminLayout({
   children,
@@ -71,18 +110,19 @@ export default function AdminLayout({
     if (href) router.push(href);
   };
 
+  // Login page renders without the shell
   if (pathname === "/admin/login") return <>{children}</>;
 
   return (
     <div className="min-h-screen flex" style={{ background: "var(--adm-bg)" }}>
       {/* ── SIDEBAR (desktop) ── */}
       <aside
-        className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-50 z-40"
+        className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-[200px] z-40"
         style={{ background: "var(--brand-teal)" }}
       >
         {/* Logo */}
         <div
-          className="flex items-center px-5  shrink-0"
+          className="flex items-center px-5 shrink-0"
           style={{
             height: "var(--nav-height)",
             borderBottom: "1px solid rgba(255,255,255,0.1)",
@@ -91,7 +131,7 @@ export default function AdminLayout({
           <Image src={logo} alt="BAMBUMM" width={100} height={80} />
         </div>
 
-        {/* Nav */}
+        {/* Nav items */}
         <nav className="flex flex-col pt-3 flex-1 overflow-y-auto">
           {NAV_ITEMS.map(({ icon: Icon, label, href, active }) => {
             const isCurrent = href ? pathname.startsWith(href) : false;
@@ -121,11 +161,11 @@ export default function AdminLayout({
 
         {/* Admin user pill */}
         <div
-          className="flex items-center gap-2.5 px-5 py-4 flex-shrink-0"
+          className="flex items-center gap-2.5 px-5 py-4 shrink-0"
           style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}
         >
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold tracking-wide flex-shrink-0"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold tracking-wide shrink-0"
             style={{ background: "var(--brand-teal-dark)" }}
           >
             AU
@@ -151,7 +191,7 @@ export default function AdminLayout({
           boxShadow: "var(--adm-shadow-card)",
         }}
       >
-        {/* Mobile logo */}
+        {/* Mobile wordmark */}
         <span
           className="md:hidden text-lg font-bold tracking-widest uppercase flex-1"
           style={{ fontFamily: "var(--nav-font)", color: "var(--adm-fg)" }}
@@ -160,6 +200,7 @@ export default function AdminLayout({
         </span>
 
         <div className="flex items-center gap-4 ml-auto">
+          {/* Clock — desktop only */}
           {mounted && (
             <div
               className="hidden sm:flex items-center gap-1.5 text-[0.7rem] tracking-wide"
@@ -169,6 +210,8 @@ export default function AdminLayout({
               {time}
             </div>
           )}
+
+          {/* Sign out */}
           <button
             onClick={handleLogout}
             className="flex items-center gap-1.5 px-3.5 py-2 text-[0.65rem] font-semibold tracking-[0.14em] uppercase cursor-pointer transition-all duration-200"
@@ -219,7 +262,7 @@ export default function AdminLayout({
                 key={label}
                 onClick={() => handleNav(href)}
                 className={[
-                  "flex-1 flex flex-col items-center justify-center gap-[3px] text-[0.5rem] font-semibold tracking-widest uppercase border-none transition-colors duration-150 min-w-[52px]",
+                  "flex-1 flex flex-col items-center justify-center gap-[3px] text-[0.5rem] font-semibold tracking-widest uppercase border-none transition-colors duration-150 min-w-[48px]",
                   isCurrent ? "text-white" : "text-white/55",
                 ].join(" ")}
                 style={{ background: "none", padding: 0 }}

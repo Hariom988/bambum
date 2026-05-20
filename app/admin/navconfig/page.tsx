@@ -1345,7 +1345,7 @@ export default function NavManager() {
   }
 
   return (
-    <div className="max-w-3xl px-2 py-7 md:pb-16 pb-24">
+    <div className="max-w-full px-2 py-7 md:pb-16 pb-24">
       {/* Header with save button */}
       <div
         className="flex items-center justify-between mb-5 px-3 py-4 border"

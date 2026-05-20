@@ -1,17 +1,15 @@
-// ─── Reviews Manager ─────────────────────────────────────────────────────────
-import { useState, useEffect, useCallback } from "react";
-import {
-  Trash2,
-  X,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  Star,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+// app/admin/content/reviewsManager.tsx
+//
+// NOTE: This file is now only kept for the /admin/content route if you still use it.
+// The canonical standalone Reviews page lives at app/admin/reviews/page.tsx.
+// If you've fully migrated, this file can be deleted.
 
-import StarRating from "./page";
+import { useState, useEffect, useCallback } from "react";
+import { Trash2, X, Loader2, Star, Eye, EyeOff, Search } from "lucide-react";
+import AdminToast, { ToastState } from "@/app/admin/adminToast";
+import ConfirmDeleteModal from "@/app/admin/confirmDeleteModal";
+import StarRating from "@/app/admin/starRating";
+
 interface AdminReview {
   _id: string;
   userId: string;
@@ -20,7 +18,6 @@ interface AdminReview {
   productName: string;
   productSlug: string;
   rating: number;
-  ratings: number;
   title?: string;
   body: string;
   images: string[];
@@ -29,12 +26,10 @@ interface AdminReview {
   createdAt: string;
 }
 
-type Toast = { type: "success" | "error"; msg: string } | null;
-
 const ReviewsManager = () => {
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<Toast>(null);
+  const [toast, setToast] = useState<ToastState>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "visible" | "hidden"
@@ -44,17 +39,8 @@ const ReviewsManager = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [confirmDelete, setConfirmDelete] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<AdminReview | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3500);
-    return () => clearTimeout(t);
-  }, [toast]);
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
@@ -72,8 +58,6 @@ const ReviewsManager = () => {
         setReviews(d.reviews || []);
         setTotal(d.total || 0);
         setTotalPages(d.totalPages || 1);
-
-        // Build unique product list from results
         const seen = new Map<string, string>();
         (d.reviews || []).forEach((r: AdminReview) => {
           if (!seen.has(r.productId)) seen.set(r.productId, r.productName);
@@ -113,12 +97,13 @@ const ReviewsManager = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
     try {
       const res = await fetch("/api/admin/content/reviews", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: confirmDelete._id }),
       });
       if (res.ok) {
         setToast({ type: "success", msg: "Review deleted." });
@@ -156,7 +141,6 @@ const ReviewsManager = () => {
               background: "none",
               border: "none",
               color: "#fff",
-              fontSize: 28,
               cursor: "pointer",
             }}
           >
@@ -243,7 +227,6 @@ const ReviewsManager = () => {
           boxShadow: "var(--adm-shadow-card)",
         }}
       >
-        {/* Search */}
         <div
           className="flex items-center gap-2 flex-1 px-3 py-2"
           style={{
@@ -251,18 +234,10 @@ const ReviewsManager = () => {
             background: "var(--adm-bg-input)",
           }}
         >
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+          <Search
+            size={13}
             style={{ color: "var(--adm-fg-faint)", flexShrink: 0 }}
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
-          </svg>
+          />
           <input
             type="text"
             value={search}
@@ -270,13 +245,12 @@ const ReviewsManager = () => {
               setSearch(e.target.value);
               setPage(1);
             }}
-            placeholder="Search by name, product, or content..."
+            placeholder="Search by name, product, or content…"
             className="w-full bg-transparent outline-none font-sans text-[12px]"
-            style={{ color: "var(--adm-fg)" }}
+            style={{ color: "var(--adm-fg)", border: "none" }}
           />
         </div>
 
-        {/* Product filter */}
         {products.length > 0 && (
           <select
             value={productFilter}
@@ -300,9 +274,8 @@ const ReviewsManager = () => {
           </select>
         )}
 
-        {/* Status filter */}
         <div className="flex">
-          {statusBtns.map((btn) => (
+          {statusBtns.map((btn, i) => (
             <button
               key={btn.value}
               onClick={() => {
@@ -318,8 +291,7 @@ const ReviewsManager = () => {
                 color:
                   statusFilter === btn.value ? "#fff" : "var(--adm-fg-muted)",
                 border: "1px solid var(--adm-border)",
-                borderLeft:
-                  btn.value !== "all" ? "none" : "1px solid var(--adm-border)",
+                borderLeft: i !== 0 ? "none" : "1px solid var(--adm-border)",
                 cursor: "pointer",
               }}
             >
@@ -390,7 +362,6 @@ const ReviewsManager = () => {
                   }}
                 />
                 <div className="flex items-start gap-4 p-5">
-                  {/* Avatar */}
                   <div
                     className="w-10 h-10 shrink-0 flex items-center justify-center font-serif text-sm font-bold"
                     style={{
@@ -403,7 +374,6 @@ const ReviewsManager = () => {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    {/* Name + product */}
                     <div className="flex items-center gap-3 flex-wrap mb-1">
                       <span
                         className="font-sans text-sm font-bold"
@@ -431,9 +401,8 @@ const ReviewsManager = () => {
                       </a>
                     </div>
 
-                    {/* Stars + date */}
                     <div className="flex items-center gap-3 mb-1.5">
-                      <StarRating />
+                      <StarRating rating={review.rating} size={13} />
                       <span
                         className="font-sans text-[11px]"
                         style={{ color: "var(--adm-fg-muted)" }}
@@ -449,7 +418,6 @@ const ReviewsManager = () => {
                       </span>
                     </div>
 
-                    {/* Title */}
                     {review.title && (
                       <p
                         className="font-sans text-[12px] font-semibold leading-snug"
@@ -458,8 +426,6 @@ const ReviewsManager = () => {
                         "{review.title}"
                       </p>
                     )}
-
-                    {/* Body */}
                     <p
                       className="font-sans text-[11px] leading-relaxed mt-0.5"
                       style={{ color: "var(--adm-fg-muted)" }}
@@ -469,7 +435,6 @@ const ReviewsManager = () => {
                         : review.body}
                     </p>
 
-                    {/* Images */}
                     {review.images && review.images.length > 0 && (
                       <div className="flex gap-1.5 mt-2 flex-wrap">
                         {review.images.map((url, i) => (
@@ -501,13 +466,12 @@ const ReviewsManager = () => {
                     )}
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => handleToggle(review)}
                       className="flex items-center gap-1 px-2.5 py-1.5 font-sans text-[9px] font-bold tracking-widest uppercase"
                       style={{
-                        border: `1px solid ${review.status === "visible" ? "rgba(42,122,114,0.3)" : "var(--adm-border)"}`,
+                        border: `1px solid ${review.status === "visible" ? "var(--adm-accent-border-md)" : "var(--adm-border)"}`,
                         background:
                           review.status === "visible"
                             ? "var(--adm-bg-active)"
@@ -527,12 +491,7 @@ const ReviewsManager = () => {
                       {review.status === "visible" ? "Visible" : "Hidden"}
                     </button>
                     <button
-                      onClick={() =>
-                        setConfirmDelete({
-                          id: review._id,
-                          name: review.userName,
-                        })
-                      }
+                      onClick={() => setConfirmDelete(review)}
                       className="flex items-center justify-center p-1.5"
                       style={{
                         border: "1px solid var(--adm-border)",
@@ -581,88 +540,24 @@ const ReviewsManager = () => {
         </div>
       )}
 
-      {/* Confirm Delete */}
       {confirmDelete && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.4)" }}
-        >
-          <div
-            className="w-full max-w-sm p-7"
-            style={{
-              background: "#fff",
-              border: "1px solid var(--adm-border)",
-              boxShadow: "var(--adm-shadow-modal)",
-            }}
-          >
-            <h3
-              className="font-serif text-[16px] font-bold mb-2"
-              style={{ color: "var(--adm-fg)" }}
-            >
-              Delete Review?
-            </h3>
-            <p
-              className="font-sans text-[13px] leading-relaxed mb-5"
-              style={{ color: "var(--adm-fg-muted)" }}
-            >
+        <ConfirmDeleteModal
+          title="Delete Review?"
+          description={
+            <>
               Review by{" "}
               <strong style={{ color: "var(--adm-fg)" }}>
-                {confirmDelete.name}
+                {confirmDelete.userName}
               </strong>{" "}
               will be permanently removed.
-            </p>
-            <div className="flex gap-2.5">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="flex-1 py-2.5 font-sans text-[11px] font-bold tracking-widest uppercase"
-                style={{
-                  border: "1px solid var(--adm-border)",
-                  color: "var(--adm-fg-muted)",
-                  background: "transparent",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(confirmDelete.id)}
-                className="flex-[1.5] py-2.5 font-sans text-[11px] font-bold tracking-widest uppercase text-white"
-                style={{
-                  background: "var(--adm-danger)",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                Yes, Delete
-              </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
 
-      {/* Toast */}
-      {toast && (
-        <div
-          className="fixed bottom-6 right-6 z-[999] flex items-center gap-2.5 px-4 py-3"
-          style={{
-            background: "#fff",
-            border: `1px solid ${toast.type === "success" ? "var(--adm-accent)" : "var(--adm-danger)"}`,
-            boxShadow: "var(--adm-shadow-toast)",
-          }}
-        >
-          {toast.type === "success" ? (
-            <CheckCircle2 size={15} style={{ color: "var(--adm-accent)" }} />
-          ) : (
-            <AlertCircle size={15} style={{ color: "var(--adm-danger)" }} />
-          )}
-          <span
-            className="font-sans text-[13px] font-semibold"
-            style={{ color: "var(--adm-fg)" }}
-          >
-            {toast.msg}
-          </span>
-        </div>
-      )}
+      <AdminToast toast={toast} onDismiss={() => setToast(null)} />
     </>
   );
 };
