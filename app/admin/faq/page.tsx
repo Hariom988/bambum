@@ -77,9 +77,6 @@ function FAQFormModal({
           overflowY: "auto",
         }}
       >
-        {/* Accent bar */}
-        <div className="h-0.5" style={{ background: "var(--adm-accent)" }} />
-
         {/* Modal header */}
         <div
           className="flex items-center justify-between px-6 py-4 border-b"
@@ -225,14 +222,8 @@ function FAQRow({
       }}
     >
       {/* Active indicator bar */}
-      <div
-        className="h-0.5"
-        style={{
-          background: item.isActive ? "var(--adm-accent)" : "var(--adm-border)",
-        }}
-      />
 
-      <div className="flex items-start gap-3 p-5">
+      <div className="flex rounded-sm items-start gap-3 p-5">
         {/* Reorder controls */}
         <div className="flex flex-col gap-1 shrink-0 mt-0.5">
           <button
@@ -288,7 +279,7 @@ function FAQRow({
           {/* Visibility toggle */}
           <button
             onClick={() => onToggle(item)}
-            className="flex items-center gap-1 px-2.5 py-1.5 font-sans text-[9px] font-bold tracking-widest uppercase transition-all duration-150"
+            className="flex rounded-sm items-center gap-1 px-2.5 py-1.5 font-sans text-[9px] font-bold tracking-widest uppercase transition-all duration-150"
             style={{
               border: `1px solid ${item.isActive ? "var(--adm-accent-border-md)" : "var(--adm-border)"}`,
               background: item.isActive
@@ -309,7 +300,7 @@ function FAQRow({
           {/* Edit */}
           <button
             onClick={() => onEdit(item)}
-            className="flex items-center gap-1 px-2.5 py-1.5 font-sans text-[9px] font-bold tracking-widest uppercase transition-all duration-150"
+            className="flex rounded-sm items-center gap-1 px-2.5 py-1.5 font-sans text-[9px] font-bold tracking-widest uppercase transition-all duration-150"
             style={{
               border: "1px solid var(--adm-border)",
               color: "var(--adm-fg-muted)",
@@ -332,7 +323,7 @@ function FAQRow({
           {/* Delete */}
           <button
             onClick={() => onDelete(item)}
-            className="flex items-center justify-center p-1.5 transition-all duration-150"
+            className="flex rounded-sm items-center justify-center p-1.5 transition-all duration-150"
             style={{
               border: "1px solid var(--adm-border)",
               color: "var(--adm-fg-muted)",
@@ -541,7 +532,7 @@ export default function AdminFAQPage() {
 
         {/* ── STAT + ACTIONS BAR ── */}
         <div
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-4 mb-6"
+          className="flex rounded-sm flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-4 mb-6"
           style={{
             background: "var(--adm-bg-white)",
             border: "1px solid var(--adm-border)",
@@ -552,7 +543,7 @@ export default function AdminFAQPage() {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2.5">
               <div
-                className="w-8 h-8 flex items-center justify-center"
+                className="w-8 h-8 rounded-sm flex items-center justify-center"
                 style={{
                   background: "var(--adm-bg-accent-lt)",
                   border: "1px solid var(--adm-accent-border)",
@@ -601,7 +592,7 @@ export default function AdminFAQPage() {
           {/* Add button */}
           <button
             onClick={openAdd}
-            className="flex items-center gap-2 px-4 py-2.5 font-sans text-[10px] font-bold tracking-[0.14em] uppercase transition-all duration-150"
+            className="flex rounded-sm items-center gap-2 px-4 py-2.5 font-sans text-[10px] font-bold tracking-[0.14em] uppercase transition-all duration-150"
             style={{
               background: "var(--adm-accent)",
               color: "#fff",
@@ -621,7 +612,7 @@ export default function AdminFAQPage() {
 
         {/* ── SEARCH BAR ── */}
         <div
-          className="flex items-center gap-2.5 px-4 py-3 mb-5"
+          className="flex rounded-sm items-center gap-2.5 px-4 py-3 mb-5"
           style={{
             background: "var(--adm-bg-white)",
             border: "1px solid var(--adm-border)",

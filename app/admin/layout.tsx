@@ -128,7 +128,9 @@ export default function AdminLayout({
             borderBottom: "1px solid rgba(255,255,255,0.1)",
           }}
         >
-          <Image src={logo} alt="BAMBUMM" width={100} height={80} />
+          <p className="text-lg font-bold text-white tracking-widest uppercase">
+            BAMBUMM
+          </p>
         </div>
 
         {/* Nav items */}
