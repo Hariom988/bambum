@@ -268,7 +268,6 @@ export default function AdminLayout({
                 style={{ background: "none", padding: 0 }}
               >
                 <Icon size={16} strokeWidth={isCurrent ? 2.2 : 1.6} />
-                {label}
               </button>
             );
           },

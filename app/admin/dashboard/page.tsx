@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Package, Users, ShoppingCart, Clock3 } from "lucide-react";
+import {
+  Package,
+  Users,
+  ShoppingCart,
+  Clock3,
+  MessageSquare,
+  Star,
+} from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
 interface Stats {
@@ -236,7 +243,7 @@ export default function AdminDashboardPage() {
           <div className="flex flex-col gap-3">
             {[
               {
-                label: "Inventory Management",
+                label: "Product Management",
                 sub: "Add, edit, and manage your product catalogue.",
                 href: "/admin/inventory",
                 icon: Package,
@@ -246,6 +253,18 @@ export default function AdminDashboardPage() {
                 sub: "View, filter, and manage all customer orders.",
                 href: "/admin/orders",
                 icon: ShoppingCart,
+              },
+              {
+                label: "FAQs Management",
+                sub: "View, filter, and manage all FAQs.",
+                href: "/admin/faq",
+                icon: MessageSquare,
+              },
+              {
+                label: "Testimonial Management",
+                sub: "View, filter, and manage all Testimonials.",
+                href: "/admin/testimonials",
+                icon: Star,
               },
             ].map(({ label, sub, href, icon: Icon }) => (
               <div
