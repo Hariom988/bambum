@@ -72,3 +72,35 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Failed to update order." }, { status: 500 });
   }
 }   
+// DELETE — remove order (only delivered or cancelled)
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "ID required." }, { status: 400 });
+
+    const { client, col } = await getDb();
+
+    const order = await col.findOne({ _id: new ObjectId(id) });
+    if (!order) {
+      await client.close();
+      return NextResponse.json({ error: "Order not found." }, { status: 404 });
+    }
+
+    if (order.status !== "delivered" && order.status !== "cancelled") {
+      await client.close();
+      return NextResponse.json(
+        { error: "Only delivered or cancelled orders can be deleted." },
+        { status: 403 }
+      );
+    }
+
+    await col.deleteOne({ _id: new ObjectId(id) });
+    await client.close();
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[admin/orders DELETE]", err);
+    return NextResponse.json({ error: "Failed to delete order." }, { status: 500 });
+  }
+}

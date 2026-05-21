@@ -10,6 +10,7 @@ import {
   Clock,
   ChevronDown,
   Loader2,
+  Trash2,
   RefreshCw,
   X,
   MapPin,
@@ -1103,10 +1104,12 @@ function OrderCard({
   order,
   onStatusChange,
   onViewDetail,
+  onDelete,
 }: {
   order: Order;
   onStatusChange: (id: string, status: Order["status"]) => Promise<void>;
   onViewDetail: (order: Order) => void;
+  onDelete: (id: string, orderId: string) => void;
 }) {
   const [updating, setUpdating] = useState(false);
   const cfg = STATUS_CONFIG[order.status];
@@ -1262,7 +1265,31 @@ function OrderCard({
               )}
             </div>
           </div>
-
+          {/* Delete button — only for delivered or cancelled */}
+          {(order.status === "delivered" || order.status === "cancelled") && (
+            <button
+              onClick={() => onDelete(order._id, order.orderId)}
+              className="flex items-center rounded-sm gap-1.5 px-3 py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-150"
+              style={{
+                background: "var(--adm-bg-danger-lt)",
+                border: "1px solid var(--adm-danger-border)",
+                color: "var(--adm-danger)",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--adm-danger)";
+                e.currentTarget.style.color = "#fff";
+                e.currentTarget.style.borderColor = "var(--adm-danger)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--adm-bg-danger-lt)";
+                e.currentTarget.style.color = "var(--adm-danger)";
+                e.currentTarget.style.borderColor = "var(--adm-danger-border)";
+              }}
+            >
+              <Trash2 size={10} />
+            </button>
+          )}
           {/* Details button */}
           <button
             onClick={() => onViewDetail(order)}
@@ -1357,6 +1384,26 @@ export default function AdminOrdersPage() {
         );
       }
     } catch {}
+  };
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    id: string;
+    orderId: string;
+  } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteOrder = async () => {
+    if (!deleteConfirm) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/orders?id=${deleteConfirm.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setOrders((prev) => prev.filter((o) => o._id !== deleteConfirm.id));
+        setDeleteConfirm(null);
+      }
+    } catch {}
+    setDeleting(false);
   };
 
   const openDetail = (order: Order) => {
@@ -1661,6 +1708,9 @@ export default function AdminOrdersPage() {
                     order={order}
                     onStatusChange={handleStatusChange}
                     onViewDetail={openDetail}
+                    onDelete={(id, orderId) =>
+                      setDeleteConfirm({ id, orderId })
+                    }
                   />
                 </div>
               ))}
@@ -1668,6 +1718,79 @@ export default function AdminOrdersPage() {
           )}
         </div>
       </div>
+      {/* ── Delete Confirm Dialog ── */}
+      {deleteConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-5"
+          style={{ background: "rgba(0,0,0,0.45)" }}
+        >
+          <div
+            className="p-7 w-full max-w-sm"
+            style={{
+              background: "var(--adm-bg-white)",
+              border: "1px solid var(--adm-border)",
+              boxShadow: "var(--adm-shadow-modal)",
+            }}
+          >
+            <h3
+              className="text-[1rem] font-bold mb-2"
+              style={{ fontFamily: "var(--nav-font)", color: "var(--adm-fg)" }}
+            >
+              Delete Order?
+            </h3>
+            <p
+              className="text-[0.8125rem] leading-relaxed mb-5"
+              style={{ color: "var(--adm-fg-muted)" }}
+            >
+              Permanently delete order{" "}
+              <span style={{ color: "var(--adm-fg)", fontWeight: 700 }}>
+                #{deleteConfirm.orderId}
+              </span>
+              ? This cannot be undone.
+            </p>
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+                className="flex-1 py-2.5 text-[0.7rem] font-bold tracking-widest uppercase transition-colors duration-150"
+                style={{
+                  border: "1px solid var(--adm-border)",
+                  background: "transparent",
+                  color: "var(--adm-fg-muted)",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--adm-accent)";
+                  e.currentTarget.style.color = "var(--adm-accent)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--adm-border)";
+                  e.currentTarget.style.color = "var(--adm-fg-muted)";
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteOrder}
+                disabled={deleting}
+                className="flex-[1.5] flex items-center justify-center gap-2 py-2.5 text-[0.7rem] font-bold tracking-widest uppercase text-white transition-opacity duration-150 hover:opacity-90 disabled:opacity-60"
+                style={{
+                  background: "var(--adm-danger)",
+                  border: "none",
+                  cursor: deleting ? "not-allowed" : "pointer",
+                }}
+              >
+                {deleting ? (
+                  <Loader2 size={11} className="animate-spin" />
+                ) : (
+                  <Trash2 size={11} />
+                )}
+                {deleting ? "Deleting…" : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
