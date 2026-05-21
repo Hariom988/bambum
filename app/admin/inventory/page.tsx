@@ -45,6 +45,7 @@ interface Product {
   description: string;
   price: number;
   category: string;
+  gender?: string;
   variants: ProductVariant[];
   stock: number;
   isActive: boolean;
@@ -78,6 +79,7 @@ const EMPTY_FORM: FormProduct = {
   description: "",
   price: 0,
   category: "",
+  gender: "",
   stock: 0,
   variants: [
     {
@@ -393,6 +395,7 @@ function ProductView({
             <div className="grid grid-cols-2 gap-x-6 gap-y-3">
               {[
                 { label: "Category", value: product.category },
+                { label: "Gender", value: product.gender || "—" },
                 {
                   label: "Price",
                   value: `₹${product.price.toLocaleString("en-IN")}`,
@@ -782,35 +785,7 @@ function ProductForm({
               </div>
 
               {/* SKU + Category */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label
-                    className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
-                    style={{ color: "var(--adm-fg-muted)" }}
-                  >
-                    SKU *
-                  </label>
-                  <input
-                    className={inputCls}
-                    style={{
-                      background: "var(--adm-bg-input)",
-                      border: "1px solid var(--adm-border)",
-                      color: "var(--adm-fg)",
-                    }}
-                    onFocus={(e) =>
-                      (e.currentTarget.style.borderColor = "var(--adm-accent)")
-                    }
-                    onBlur={(e) =>
-                      (e.currentTarget.style.borderColor = "var(--adm-border)")
-                    }
-                    type="text"
-                    value={form.slug}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, slug: e.target.value }))
-                    }
-                    placeholder="auto-generated"
-                  />
-                </div>
+              <div className=" grid grid-cols-2 gap-3">
                 <div>
                   <label
                     className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
@@ -846,6 +821,49 @@ function ProductForm({
                           {c}
                         </option>
                       ))}
+                    </select>
+                    <ChevronDown
+                      size={12}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                      style={{ color: "var(--adm-fg-muted)" }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label
+                    className="block text-[0.6rem] font-bold tracking-[0.12em] uppercase mb-1.5"
+                    style={{ color: "var(--adm-fg-muted)" }}
+                  >
+                    Gender
+                  </label>
+                  <div className="relative">
+                    <select
+                      className={`${inputCls} appearance-none pr-8`}
+                      style={{
+                        background: "var(--adm-bg-input)",
+                        border: "1px solid var(--adm-border)",
+                        color: "var(--adm-fg)",
+                        cursor: "pointer",
+                      }}
+                      onFocus={(e) =>
+                        (e.currentTarget.style.borderColor =
+                          "var(--adm-accent)")
+                      }
+                      onBlur={(e) =>
+                        (e.currentTarget.style.borderColor =
+                          "var(--adm-border)")
+                      }
+                      value={form.gender ?? ""}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, gender: e.target.value }))
+                      }
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Men">Men</option>
+                      <option value="Women">Women</option>
+                      <option value="Unisex">Unisex</option>
+                      <option value="Boys">Boys</option>
+                      <option value="Girls">Girls</option>
                     </select>
                     <ChevronDown
                       size={12}
@@ -1637,6 +1655,7 @@ export default function InventoryPage() {
       description: p.description,
       price: p.price,
       category: p.category,
+      gender: p.gender ?? "",
       stock: p.stock ?? 0,
       variants: p.variants.map((v) => ({
         ...v,

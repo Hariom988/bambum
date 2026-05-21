@@ -9,6 +9,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q")?.trim() ?? "";
   const category = searchParams.get("category")?.trim() ?? "";
+   const gender = searchParams.get("gender")?.trim() ?? "";
 
   const useCache = !q && !category;
 
@@ -32,6 +33,8 @@ export async function GET(request: Request) {
     }
     if (category) {
       filter.category = category;
+    }if (gender) {
+      filter.gender = gender;
     }
 
     const products = await col
@@ -44,11 +47,11 @@ export async function GET(request: Request) {
         price: 1,
         category: 1,
         stock: 1,
-        // ✅ include sizes so the card can show the size picker
         "variants.colorName": 1,
         "variants.colorHex": 1,
         "variants.images": { $slice: 1 },
         "variants.sizes": 1,
+          gender: 1,
       })
       .toArray();
 
