@@ -20,6 +20,7 @@ import {
 import { useCart } from "@/context/cartContext";
 import { useAuth } from "@/context/authContext";
 import Image from "next/image";
+import Link from "next/link";
 
 interface Address {
   _id: string;
@@ -441,7 +442,7 @@ export default function CheckoutPage() {
       `}</style>
 
       <main
-        className="min-h-screen"
+        className="min-h-screen mt-20"
         style={{
           background: "var(--nav-bg)",
           fontFamily: "var(--nav-font-ui)",
@@ -1207,11 +1208,13 @@ export default function CheckoutPage() {
                       key={`${item.productId}-${item.colorName}`}
                       className="flex gap-4 px-6 py-4"
                     >
-                      <div
-                        className="w-16 h-20 shrink-0 overflow-hidden"
+                      <Link
+                        href={`/products/${item.slug}`}
+                        className="w-16 h-20 shrink-0 overflow-hidden block"
                         style={{
                           border: "1px solid var(--nav-border)",
                           background: "var(--nav-bg)",
+                          cursor: "pointer",
                         }}
                       >
                         {item.image && (
@@ -1220,10 +1223,10 @@ export default function CheckoutPage() {
                             alt={item.name}
                             width={64}
                             height={80}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-opacity duration-150 hover:opacity-80"
                           />
                         )}
-                      </div>
+                      </Link>
                       <div className="flex-1 min-w-0">
                         <p
                           className="text-sm font-bold uppercase tracking-wide leading-snug"

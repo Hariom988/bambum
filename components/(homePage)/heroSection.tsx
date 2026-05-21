@@ -69,7 +69,7 @@ export default function HeroSection() {
     <section aria-label="Featured banners and product search">
       {/* ── Carousel ── */}
       <div
-        className="relative w-full h-[70vh] min-h-100 overflow-hidden bg-gray-100"
+        className="relative w-full h-[70vh] min-h-100 overflow-hidden bg-gray-100 mt-20"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onTouchStart={handleTouchStart}

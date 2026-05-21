@@ -91,6 +91,7 @@ export default function PrivacyPolicyPage() {
           background: "var(--brand-background-page)",
           color: "var(--nav-fg)",
           fontFamily: "var(--nav-font-ui)",
+          marginTop: "20px",
         }}
       >
         {/* ══════════════ HERO ══════════════ */}

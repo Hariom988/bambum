@@ -234,6 +234,7 @@ export default function AboutUsPage() {
       `}</style>
 
       <main
+        className="mt-20"
         style={{
           background: "var(--brand-background-page)",
           color: "var(--nav-fg)",

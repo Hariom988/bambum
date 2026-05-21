@@ -23,7 +23,7 @@ export default function ProfileLayout({
   if (loading) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
+        className="min-h-screen flex items-center justify-center "
         style={{ background: "var(--brand-background-page)" }}
       >
         <div className="flex flex-col items-center gap-3">
@@ -72,7 +72,7 @@ export default function ProfileLayout({
         color: "var(--nav-fg)",
       }}
     >
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto mt-20">
         <div className="mb-8">
           <h1
             className="text-4xl mb-1"

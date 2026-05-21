@@ -291,7 +291,7 @@ function AuthContent() {
       `}</style>
 
       <main
-        className="min-h-screen flex items-center justify-center px-4 py-12 relative"
+        className="min-h-screen mt-20 flex items-center justify-center px-4 py-12 relative"
         style={{
           background: "var(--nav-bg)",
           fontFamily: "var(--nav-font-ui)",

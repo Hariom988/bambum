@@ -47,7 +47,7 @@ const STEPS = [
 export default function RefundPolicyPage() {
   return (
     <main
-      className="min-h-screen"
+      className="min-h-screen mt-20"
       style={{
         background: "var(--brand-background-page)",
         color: "var(--nav-fg)",
