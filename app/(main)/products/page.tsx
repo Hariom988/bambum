@@ -29,6 +29,7 @@ interface Product {
   name: string;
   price: number;
   category: string;
+  gender?: string;
   variants: ProductVariant[];
 }
 
@@ -218,7 +219,7 @@ function FiltersPanel({
                 key={g}
                 label={g}
                 checked={selectedCategories.includes(g)}
-                count={products.filter((p) => p.category === g).length}
+                count={products.filter((p) => p.gender === g).length}
                 onChange={() => toggleCategory(g)}
               />
             ))}
@@ -529,7 +530,10 @@ export function ProductsPageContent() {
 
   // Derived options
   const genders = useMemo(
-    () => [...new Set(products.map((p) => p.category))].sort(),
+    () =>
+      [
+        ...new Set(products.map((p) => p.gender).filter(Boolean) as string[]),
+      ].sort(),
     [products],
   );
   const productNames = useMemo(
@@ -562,20 +566,35 @@ export function ProductsPageContent() {
   }, [products]);
 
   // Toggles
-  const makeToggle = (setter: React.Dispatch<React.SetStateAction<string[]>>) =>
-    useCallback(
-      (val: string) =>
-        setter((prev) =>
-          prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val],
-        ),
-      [setter],
-    );
-
-  const toggleCategory = makeToggle(setSelectedCategories);
-  const toggleProduct = makeToggle(setSelectedProducts);
-  const toggleSize = makeToggle(setSelectedSizes);
-  const toggleColor = makeToggle(setSelectedColors);
-
+  // Toggles
+  const toggleCategory = useCallback(
+    (val: string) =>
+      setSelectedCategories((prev) =>
+        prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val],
+      ),
+    [],
+  );
+  const toggleProduct = useCallback(
+    (val: string) =>
+      setSelectedProducts((prev) =>
+        prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val],
+      ),
+    [],
+  );
+  const toggleSize = useCallback(
+    (val: string) =>
+      setSelectedSizes((prev) =>
+        prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val],
+      ),
+    [],
+  );
+  const toggleColor = useCallback(
+    (val: string) =>
+      setSelectedColors((prev) =>
+        prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val],
+      ),
+    [],
+  );
   const clearFilters = useCallback(() => {
     setSelectedCategories([]);
     setSelectedProducts([]);
@@ -599,7 +618,10 @@ export function ProductsPageContent() {
     const min = minPrice !== "" ? Number(minPrice) : null;
     const max = maxPrice !== "" ? Number(maxPrice) : null;
     let list = products.filter((p) => {
-      if (selectedCategories.length && !selectedCategories.includes(p.category))
+      if (
+        selectedCategories.length &&
+        !selectedCategories.includes(p.gender ?? "")
+      )
         return false;
       if (selectedProducts.length && !selectedProducts.includes(p.name))
         return false;
@@ -706,6 +728,7 @@ export function ProductsPageContent() {
         className="min-h-screen"
         style={{
           background: "var(--brand-background-page)",
+          paddingTop: "var(--nav-height)",
           fontFamily: "var(--nav-font-ui)",
           color: "var(--nav-fg)",
         }}
@@ -718,7 +741,11 @@ export function ProductsPageContent() {
         {/* Header */}
         <div
           className={`pl-header border-b px-4 md:px-8 py-8 md:py-10 ${mounted ? "" : "opacity-0"}`}
-          style={{ borderColor: "var(--nav-border)" }}
+          style={{
+            borderColor: "var(--nav-border)",
+            position: "relative",
+            zIndex: 40,
+          }}
         >
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
@@ -750,7 +777,7 @@ export function ProductsPageContent() {
               </span>
 
               {/* Sort — fixed z-index */}
-              <div ref={sortRef} className="relative" style={{ zIndex: 50 }}>
+              <div ref={sortRef} className="relative" style={{ zIndex: 9999 }}>
                 <button
                   onClick={() => setSortDropOpen((v) => !v)}
                   className="flex items-center gap-2 px-4 py-2 text-[0.72rem] font-semibold tracking-wide transition-colors duration-150"

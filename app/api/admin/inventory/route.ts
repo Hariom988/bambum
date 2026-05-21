@@ -32,7 +32,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, slug, description, price, category, variants, isActive, stock } = body;
+    const { name, slug, description, price, category,gender, variants, isActive, stock } = body;
 
     if (!name || !category || !price) {
       return NextResponse.json(
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
       description: description || "",
       price: Number(price),
       category,
+       gender: gender || null,
       variants: variants || [],
       isActive: isActive !== false,
       stock: calculateTotalStock(variants),
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { _id, name, slug, description, price, category, variants, isActive, stock } = body;
+    const { _id, name, slug, description, price, category, gender, variants, isActive, stock } = body;
 
     if (!_id) {
       return NextResponse.json({ error: "Product ID required." }, { status: 400 });
@@ -87,6 +88,7 @@ export async function PUT(req: NextRequest) {
           description,
           price: Number(price),
           category,
+           gender: gender || null,
           variants,
           isActive: isActive !== false,
           stock: calculateTotalStock(variants),
@@ -117,7 +119,7 @@ export async function PATCH(req: NextRequest) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const allowed: Record<string, any> = {};
-    if (typeof body.isActive === "boolean") allowed.isActive = body.isActive;
+    if (typeof body.gender === "string" && body.gender) allowed.gender = body.gender;
     // Allow direct stock patch (e.g. from a quick-edit or restock action)
     if (typeof body.stock === "number" && body.stock >= 0) {
       allowed.stock = Math.floor(body.stock);

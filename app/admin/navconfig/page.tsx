@@ -80,7 +80,7 @@ function uid() {
 const sectionLabel =
   "font-sans text-[9px] font-bold tracking-[0.18em] uppercase";
 const inputCls =
-  "w-full px-3.5 py-2.5 border font-sans text-[13px] outline-none transition-all duration-150 bg-[var(--adm-bg-input)] border-[var(--adm-border)] text-[var(--adm-fg)] placeholder-[var(--adm-fg-faint)] focus:border-[var(--adm-accent)] focus:bg-white";
+  "w-full px-3.5 py-2.5 border font-sans text-[13px] outline-none transition-all duration-150 bg-[var(--adm-bg-input)] border-[var(--adm-border)] text-[var(--adm-fg)] placeholder-[var(--adm-fg-faint)] focus:border-[var(--adm-accent)] focus:bg-[var(--adm-bg-white)]";
 
 // ─── SlugPicker — searchable product dropdown ─────────────────────────────────
 
@@ -784,7 +784,6 @@ function NavItemBlock({
   const addCategory = () => {
     const title = newCatTitle.trim();
     if (!title) return;
-    // For "category page" type, auto-set a single link to /products?category=...
     const links: NavLink[] = newCatIsProductPage
       ? [
           {
@@ -1243,7 +1242,6 @@ export default function NavManager() {
     fetchAll();
   }, [fetchAll]);
 
-  // Mark dirty on items change (except initial load)
   const updateItem = useCallback((updated: NavItem) => {
     setItems((prev) =>
       prev.map((it) => (it._id === updated._id ? updated : it)),
@@ -1310,7 +1308,6 @@ export default function NavManager() {
   const saveAll = async () => {
     setSaving(true);
     try {
-      // Save each item with PUT
       const results = await Promise.all(
         items.map((item) =>
           fetch("/api/admin/navconfig", {
@@ -1345,7 +1342,7 @@ export default function NavManager() {
   }
 
   return (
-    <div className="max-w-3xl px-2 py-7 md:pb-16 pb-24">
+    <div className="max-w-full px-2 py-7 md:pb-16 pb-24">
       {/* Header with save button */}
       <div
         className="flex items-center justify-between mb-5 px-3 py-4 border"
@@ -1400,13 +1397,14 @@ export default function NavManager() {
         <div
           className="flex items-center gap-2 px-4 py-2.5 mb-4 font-sans text-[11px] font-semibold border"
           style={{
-            background: "rgba(42,122,114,0.06)",
+            background: "var(--adm-bg-accent-lt)",
             borderColor: "var(--adm-accent-border)",
             color: "var(--adm-accent)",
           }}
         >
           <AlertCircle size={13} />
-          You have unsaved changes click "Save Changes" to publish to the site.
+          You have unsaved changes — click "Save Changes" to publish to the
+          site.
         </div>
       )}
 
@@ -1549,12 +1547,14 @@ export default function NavManager() {
       {/* Toast */}
       {toast && (
         <div
-          className="fixed bottom-6 right-6 z-[999] flex items-center gap-2.5 px-4 py-3 bg-white border shadow-[0_4px_24px_rgba(0,0,0,0.10)]"
+          className="fixed bottom-6 right-6 z-[999] flex items-center gap-2.5 px-4 py-3 border"
           style={{
+            background: "var(--adm-bg-white)",
             borderColor:
               toast.type === "success"
                 ? "var(--adm-accent)"
                 : "var(--adm-danger)",
+            boxShadow: "var(--adm-shadow-modal)",
           }}
         >
           {toast.type === "success" ? (
@@ -1579,7 +1579,10 @@ export default function NavManager() {
 
       {/* Confirm delete dialog */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-[1000] bg-black/40 flex items-center justify-center p-5">
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-5"
+          style={{ background: "var(--adm-overlay)" }}
+        >
           <div
             className="p-7 max-w-sm w-full border"
             style={{
@@ -1625,8 +1628,10 @@ export default function NavManager() {
                 Cancel
               </button>
               <button
-                className="flex-[1.5] py-2.5 border-none cursor-pointer font-sans text-[11px] font-bold tracking-widest uppercase text-white hover:opacity-90 transition-opacity duration-150"
+                className="flex-[1.5] py-2.5 border-none cursor-pointer font-sans text-[11px] font-bold tracking-widest uppercase text-white transition-opacity duration-150"
                 style={{ background: "var(--adm-danger)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                 onClick={() => deleteNavItem(confirmDelete.id)}
               >
                 Yes, Delete

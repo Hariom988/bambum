@@ -213,14 +213,8 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
 
   return (
     <>
+      {/* Keyframe animations — only animations stay here, zero styling */}
       <style>{`
-        :root {
-          --mega-bg: #ffffff;
-          --mega-col-title-fg: #0a0a0a;
-          --mega-link-fg: var(--nav-accent);
-          --mega-link-hover-fg: var(--nav-accent-hover);
-          --mega-divider: #e0e0e0;
-        }
         @keyframes badgePop {
           0%   { transform: translate(30%,-30%) scale(1); }
           40%  { transform: translate(30%,-30%) scale(1.4); }
@@ -228,122 +222,57 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
           100% { transform: translate(30%,-30%) scale(1); }
         }
         .cart-badge-pop { animation: badgePop 0.35s cubic-bezier(0.22,1,0.36,1); }
-        .mega-menu {
-          position: absolute;
-          top: calc(var(--nav-height) + 1px);
-          left: 0; right: 0;
-          background: var(--mega-bg);
-          border-bottom: 1px solid var(--mega-divider);
-          box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-          animation: menuIn 0.18s ease;
-          z-index: 40;
-        }
         @keyframes menuIn {
           from { opacity: 0; transform: translateY(-4px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        .mega-col-title {
-          font-size: 0.9rem; font-weight: 700; letter-spacing: 0.01em;
-          text-transform: capitalize; color: var(--mega-col-title-fg);
-          margin: 0 0 14px; font-family: var(--nav-font-ui);
-        }
-        .mega-link {
-          display: block; font-size: 0.72rem; font-weight: 600;
-          letter-spacing: 0.09em; text-transform: uppercase;
-          color: var(--mega-link-fg); padding: 3px 0;
-          transition: color 0.15s; cursor: pointer; text-decoration: none;
-        }
-        .mega-link:hover {
-          color: var(--mega-link-hover-fg);
-          text-decoration: underline; text-underline-offset: 3px;
-        }
-        .mega-col-divider {
-          width: 1px; background: var(--mega-divider);
-          align-self: stretch; flex-shrink: 0; margin: 0 36px;
-        }
-        .hdr-suggest-panel {
-          position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-          background: #fff; border: 1px solid var(--nav-border);
-          box-shadow: 0 12px 40px rgba(0,0,0,0.12); z-index: 200;
-          overflow: hidden; animation: hdrSuggestIn 0.18s cubic-bezier(0.22,1,0.36,1);
-          min-width: 320px;
-        }
-        @keyframes hdrSuggestIn {
+        .anim-menu-in { animation: menuIn 0.18s ease; }
+        @keyframes suggestIn {
           from { opacity: 0; transform: translateY(-6px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        .hdr-suggest-item {
-          display: flex; align-items: center; gap: 12px;
-          padding: 9px 14px; cursor: pointer;
-          transition: background 0.12s ease;
-          border-bottom: 1px solid var(--nav-border);
-        }
-        .hdr-suggest-item:last-child { border-bottom: none; }
-        .hdr-suggest-item:hover, .hdr-suggest-item.active { background: rgba(200,169,126,0.08); }
-        .hdr-suggest-thumb {
-          width: 40px; height: 52px; flex-shrink: 0;
-          overflow: hidden; border: 1px solid var(--nav-border);
-          position: relative; background: var(--nav-bg);
-        }
-        .hdr-suggest-name {
-          font-family: var(--nav-font); font-size: 0.8125rem; font-weight: 700;
-          color: var(--nav-fg); white-space: nowrap; overflow: hidden;
-          text-overflow: ellipsis; text-transform: uppercase; letter-spacing: 0.04em;
-        }
-        .hdr-suggest-cat {
-          font-size: 0.68rem; color: var(--nav-fg-muted);
-          letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px;
-        }
-        .hdr-suggest-price {
-          font-family: var(--nav-font); font-size: 0.8125rem; font-weight: 700;
-          color: var(--nav-accent); flex-shrink: 0; margin-left: auto;
-        }
-        .hdr-suggest-footer {
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 8px 14px; border-top: 1px solid var(--nav-border);
-          background: rgba(200,169,126,0.04);
-        }
-        .hdr-suggest-hint { font-size: 0.62rem; color: var(--nav-fg-muted); letter-spacing: 0.1em; text-transform: uppercase; }
-        .hdr-suggest-viewall {
-          font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em;
-          text-transform: uppercase; color: var(--nav-accent);
-          display: flex; align-items: center; gap: 4px;
-          background: none; border: none; cursor: pointer;
-          transition: color 0.15s; padding: 0;
-        }
-        .hdr-suggest-viewall:hover { color: var(--nav-accent-hover); }
-        .hdr-suggest-empty { padding: 22px 14px; text-align: center; font-size: 0.8rem; color: var(--nav-fg-muted); }
-        @keyframes hdrSpin { to { transform: rotate(360deg); } }
-        .hdr-suggest-spinner { color: var(--nav-accent); animation: hdrSpin 0.8s linear infinite; flex-shrink: 0; }
+        .anim-suggest-in { animation: suggestIn 0.18s cubic-bezier(0.22,1,0.36,1); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .anim-spin { animation: spin 0.8s linear infinite; }
       `}</style>
 
-      <header className="nav-root">
+      {/* ── HEADER ── */}
+      <header
+        className="fixed top-0 left-0 right-0 z-50 h-[(--nav-height)]"
+        style={{
+          background: "var(--nav-bg)",
+          borderBottom: "1px solid var(--nav-border)",
+        }}
+      >
         <div
-          className="max-w-7xl mx-auto h-full flex items-center px-6"
+          className="max-w-7xl mx-auto h-full flex items-center px-4 md:px-6 relative"
           onMouseLeave={leave}
         >
-          {/* Logo */}
-          <Link
-            href="/"
-            className="bg-white rounded-2xl"
-            style={{ flexShrink: 0 }}
-          >
-            <img className="w-15" src="/logo.png" alt="Bambumm" />
-          </Link>
+          <div className="max-w-20">
+            {/* Logo */}
+            <Link
+              href="/"
+              className="shrink-0 rounded-2xl overflow-hidden bg-white"
+            >
+              <img className="w-full" src="/logo.png" alt="Bambumm" />
+            </Link>
+          </div>
 
-          {/* Desktop nav — centred */}
-          <nav
-            className="desktop-only items-center gap-6"
-            style={{
-              position: "absolute",
-              left: "50%",
-              transform: "translateX(-50%)",
-            }}
-          >
+          {/* ── DESKTOP NAV — centred ── */}
+          <nav className="hidden md:flex items-center gap-5 absolute left-1/2 -translate-x-1/2">
             {navItems.map((item) => (
               <button
                 key={item._id}
-                className={`nav-link${activeNav === item.label ? " active" : ""}`}
+                className={`
+                  text-[0.72rem] font-bold tracking-widest uppercase transition-colors duration-150
+                  border-b-2 pb-0.5
+                  ${
+                    activeNav === item.label
+                      ? "border-[(--nav-accent)] text-[(--nav-accent)]"
+                      : "border-transparent text-[(--nav-fg)] hover:text-[(--nav-accent)]"
+                  }
+                `}
+                style={{ fontFamily: "var(--nav-font-ui)" }}
                 onMouseEnter={() => enter(item.label)}
                 aria-haspopup={item.categories.length > 0}
                 aria-expanded={activeNav === item.label}
@@ -353,36 +282,28 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
             ))}
           </nav>
 
-          {/* Desktop right icons */}
-          <div
-            className="desktop-only items-center gap-1"
-            style={{ marginLeft: "auto" }}
-          >
+          {/* ── DESKTOP RIGHT ICONS ── */}
+          <div className="hidden md:flex items-center gap-1 ml-auto">
             {/* Search */}
-            <div
-              ref={searchWrapRef}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                position: "relative",
-              }}
-            >
+            <div ref={searchWrapRef} className="flex items-center relative">
               <div
+                className="flex items-center overflow-visible transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  overflow: "visible",
                   width: searchOpen ? 220 : 0,
                   opacity: searchOpen ? 1 : 0,
-                  transition:
-                    "width 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease",
                   marginRight: searchOpen ? 4 : 0,
-                  position: "relative",
                 }}
               >
                 {searchOpen && (
-                  <div style={{ width: 220, position: "relative" }}>
-                    <div className="search-bar" style={{ width: "100%" }}>
+                  <div className="w-[220px] relative">
+                    {/* Search input */}
+                    <div
+                      className="flex items-center border px-3 py-2 w-full"
+                      style={{
+                        background: "var(--nav-bg)",
+                        borderColor: "var(--nav-border)",
+                      }}
+                    >
                       <input
                         ref={searchInputRef}
                         type="text"
@@ -394,43 +315,66 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                           if (searchValue.trim() && searchResults.length > 0)
                             setSuggestionsOpen(true);
                         }}
-                        style={{ width: "100%", backgroundColor: "White" }}
+                        className="flex-1 text-[0.75rem] font-semibold tracking-wide bg-transparent outline-none placeholder-[var(--nav-fg-muted)] min-w-0"
+                        style={{ color: "var(--nav-fg)" }}
                         autoComplete="off"
                         spellCheck={false}
                       />
                       {searchLoading && (
-                        <span
-                          style={{
-                            padding: "0 8px",
-                            display: "flex",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Loader2 size={13} className="hdr-suggest-spinner" />
-                        </span>
+                        <Loader2
+                          size={13}
+                          className="anim-spin shrink-0 ml-2"
+                          style={{ color: "var(--nav-accent)" }}
+                        />
                       )}
                     </div>
 
+                    {/* Suggestions dropdown */}
                     {showSuggestions && (
-                      <div className="hdr-suggest-panel">
+                      <div
+                        className="anim-suggest-in absolute top-full left-0 right-0 z-[200] border overflow-hidden min-w-[320px]"
+                        style={{
+                          background: "var(--nav-bg)",
+                          borderColor: "var(--nav-border)",
+                          boxShadow: "var(--nav-shadow)",
+                          marginTop: 4,
+                        }}
+                      >
                         {searchResults.length === 0 && !searchLoading ? (
-                          <div className="hdr-suggest-empty">
+                          <p
+                            className="px-4 py-6 text-center text-[0.8rem]"
+                            style={{ color: "var(--nav-fg-muted)" }}
+                          >
                             No products found for &ldquo;{searchValue}&rdquo;
-                          </div>
+                          </p>
                         ) : (
                           <>
                             {searchResults.map((product, idx) => {
                               const img = product.variants[0]?.images?.[0];
+                              const isActive = cursor === idx;
                               return (
                                 <div
                                   key={product._id}
-                                  className={`hdr-suggest-item${cursor === idx ? " active" : ""}`}
+                                  className="flex items-center gap-3 px-3.5 py-2.5 cursor-pointer border-b last:border-b-0 transition-colors duration-100"
+                                  style={{
+                                    borderColor: "var(--nav-border)",
+                                    background: isActive
+                                      ? "rgba(200,169,126,0.08)"
+                                      : "transparent",
+                                  }}
                                   onClick={() =>
                                     navigateToProduct(product.slug)
                                   }
                                   onMouseEnter={() => setCursor(idx)}
                                 >
-                                  <div className="hdr-suggest-thumb">
+                                  {/* Thumb */}
+                                  <div
+                                    className="w-10 h-[52px] shrink-0 overflow-hidden border relative"
+                                    style={{
+                                      borderColor: "var(--nav-border)",
+                                      background: "var(--nav-bg)",
+                                    }}
+                                  >
                                     {img ? (
                                       <Image
                                         src={img}
@@ -440,55 +384,84 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                                         className="object-cover object-center"
                                       />
                                     ) : (
-                                      <div
-                                        style={{
-                                          width: "100%",
-                                          height: "100%",
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                        }}
-                                      >
+                                      <div className="w-full h-full flex items-center justify-center">
                                         <Package
                                           size={13}
-                                          style={{
-                                            color: "var(--nav-accent)",
-                                            opacity: 0.5,
-                                          }}
+                                          className="opacity-50"
+                                          style={{ color: "var(--nav-accent)" }}
                                         />
                                       </div>
                                     )}
                                   </div>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div className="hdr-suggest-name">
+
+                                  {/* Info */}
+                                  <div className="flex-1 min-w-0">
+                                    <p
+                                      className="text-[0.8125rem] font-bold uppercase tracking-[0.04em] truncate"
+                                      style={{
+                                        fontFamily: "var(--nav-font)",
+                                        color: "var(--nav-fg)",
+                                      }}
+                                    >
                                       {product.name}
-                                    </div>
-                                    <div className="hdr-suggest-cat">
+                                    </p>
+                                    <p
+                                      className="text-[0.68rem] uppercase tracking-[0.06em] mt-0.5"
+                                      style={{ color: "var(--nav-fg-muted)" }}
+                                    >
                                       {product.category}
-                                    </div>
+                                    </p>
                                   </div>
-                                  <div className="hdr-suggest-price">
+
+                                  {/* Price */}
+                                  <span
+                                    className="text-[0.8125rem] font-bold shrink-0 ml-auto"
+                                    style={{
+                                      fontFamily: "var(--nav-font)",
+                                      color: "var(--nav-accent)",
+                                    }}
+                                  >
                                     ₹{product.price.toLocaleString("en-IN")}
-                                  </div>
+                                  </span>
+
                                   <ArrowRight
                                     size={12}
+                                    className="shrink-0 transition-opacity duration-150"
                                     style={{
                                       color: "var(--nav-fg-muted)",
-                                      flexShrink: 0,
-                                      opacity: cursor === idx ? 1 : 0,
-                                      transition: "opacity 0.15s",
+                                      opacity: isActive ? 1 : 0,
                                     }}
                                   />
                                 </div>
                               );
                             })}
-                            <div className="hdr-suggest-footer">
-                              <span className="hdr-suggest-hint">
+
+                            {/* Footer */}
+                            <div
+                              className="flex items-center justify-between px-3.5 py-2 border-t"
+                              style={{
+                                borderColor: "var(--nav-border)",
+                                background: "rgba(200,169,126,0.04)",
+                              }}
+                            >
+                              <span
+                                className="text-[0.62rem] uppercase tracking-widest"
+                                style={{ color: "var(--nav-fg-muted)" }}
+                              >
                                 {searchResults.length} result
                                 {searchResults.length !== 1 ? "s" : ""} · ↑↓ · ↵
                               </span>
                               <button
-                                className="hdr-suggest-viewall"
+                                className="flex items-center gap-1 text-[0.68rem] font-bold uppercase tracking-widest transition-colors duration-150 bg-transparent border-none cursor-pointer p-0"
+                                style={{ color: "var(--nav-accent)" }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.color =
+                                    "var(--nav-accent-hover)")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.color =
+                                    "var(--nav-accent)")
+                                }
                                 onClick={() => {
                                   router.push(
                                     `/products?q=${encodeURIComponent(searchValue.trim())}`,
@@ -509,8 +482,16 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                 )}
               </div>
 
+              {/* Search toggle button */}
               <button
-                className="icon-btn"
+                className="flex items-center justify-center w-9 h-9 rounded transition-colors duration-150"
+                style={{ color: "var(--nav-fg)" }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.color = "var(--nav-accent)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = "var(--nav-fg)")
+                }
                 onClick={() => {
                   setSearchOpen((prev) => {
                     const next = !prev;
@@ -530,16 +511,26 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
               </button>
             </div>
 
-            {/* Cart */}
+            {/* checkout */}
             <button
-              className="icon-btn"
-              style={{ marginLeft: 8 }}
-              onClick={() => router.push("/cart")}
+              className="flex items-center justify-center w-9 h-9 rounded relative ml-2 transition-colors duration-150"
+              style={{ color: "var(--nav-fg)" }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.color = "var(--nav-accent)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.color = "var(--nav-fg)")
+              }
+              onClick={() => router.push("/checkout")}
               aria-label={`Open cart, ${totalItems} items`}
             >
               <ShoppingBag size={20} />
               {totalItems > 0 && (
-                <span key={totalItems} className="cart-badge cart-badge-pop">
+                <span
+                  key={totalItems}
+                  className="cart-badge-pop absolute top-0 right-0 translate-x-[30%] -translate-y-[30%] min-w-[16px] h-4 rounded-full flex items-center justify-center text-[0.6rem] font-bold text-white px-1"
+                  style={{ background: "var(--nav-accent)" }}
+                >
                   {totalItems > 99 ? "99+" : totalItems}
                 </span>
               )}
@@ -548,12 +539,16 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
             <UserMenu />
           </div>
 
-          {/* Mobile right icons */}
-          <div
-            className="mobile-only items-center gap-1"
-            style={{ marginLeft: "auto" }}
-          >
-            <div className="search-bar search-bar-mobile">
+          {/* ── MOBILE RIGHT ICONS ── */}
+          <div className="flex md:hidden items-center gap-1 ml-auto">
+            {/* Mobile inline search */}
+            <div
+              className="flex items-center border px-2 py-1.5"
+              style={{
+                background: "var(--nav-bg)",
+                borderColor: "var(--nav-border)",
+              }}
+            >
               <input
                 type="text"
                 placeholder="Search…"
@@ -567,32 +562,48 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                     setSearchValue("");
                   }
                 }}
-                style={{ width: 120 }}
+                className="w-[110px] text-[0.72rem] font-semibold bg-transparent outline-none"
+                style={{
+                  color: "var(--nav-fg)",
+                  caretColor: "var(--nav-accent)",
+                }}
               />
               {searchValue ? (
-                <button className="icon-btn" onClick={clearSearch}>
+                <button
+                  className="flex items-center justify-center ml-1 transition-colors duration-150"
+                  style={{ color: "var(--nav-fg-muted)" }}
+                  onClick={clearSearch}
+                >
                   <X size={14} />
                 </button>
               ) : (
-                <button className="icon-btn">
-                  <Search size={14} />
-                </button>
+                <Search size={14} style={{ color: "var(--nav-fg-muted)" }} />
               )}
             </div>
+
+            {/* Mobile cart */}
             <button
-              className="icon-btn"
+              className="flex items-center justify-center w-9 h-9 relative"
+              style={{ color: "var(--nav-fg)" }}
               onClick={() => router.push("/cart")}
               aria-label={`Open cart, ${totalItems} items`}
             >
               <ShoppingBag size={20} />
               {totalItems > 0 && (
-                <span key={totalItems} className="cart-badge cart-badge-pop">
+                <span
+                  key={totalItems}
+                  className="cart-badge-pop absolute top-0 right-0 translate-x-[30%] -translate-y-[30%] min-w-[16px] h-4 rounded-full flex items-center justify-center text-[0.6rem] font-bold text-white px-1"
+                  style={{ background: "var(--nav-accent)" }}
+                >
                   {totalItems > 99 ? "99+" : totalItems}
                 </span>
               )}
             </button>
+
+            {/* Hamburger */}
             <button
-              className="icon-btn"
+              className="flex items-center justify-center w-9 h-9"
+              style={{ color: "var(--nav-fg)" }}
               onClick={() => setDrawerOpen(true)}
               aria-label="Open menu"
             >
@@ -601,45 +612,68 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
           </div>
         </div>
 
-        {/* Mega dropdown */}
+        {/* ── MEGA DROPDOWN ── */}
         {activeNav && activeItem && activeItem.categories.length > 0 && (
           <div
-            className="mega-menu"
+            className="anim-menu-in absolute left-0 right-0 z-40 border-b"
+            style={{
+              top: "var(--nav-height)",
+              background: "var(--mega-bg)",
+              borderColor: "var(--mega-divider)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+            }}
             onMouseEnter={() => enter(activeNav)}
             onMouseLeave={leave}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                padding: "28px 24px",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "stretch" }}>
+            <div className="flex justify-center py-7 px-6">
+              <div className="flex items-stretch">
                 {activeItem.categories.map((cat, idx) => (
-                  <div
-                    key={cat.id}
-                    style={{ display: "flex", alignItems: "stretch" }}
-                  >
-                    {idx > 0 && <div className="mega-col-divider" />}
-                    <div style={{ minWidth: 130 }}>
+                  <div key={cat.id} className="flex items-stretch">
+                    {idx > 0 && (
+                      <div
+                        className="w-px self-stretch shrink-0 mx-9"
+                        style={{ background: "var(--mega-divider)" }}
+                      />
+                    )}
+                    <div className="min-w-[130px]">
+                      {/* Column title — first link or plain text */}
                       {cat.links[0] ? (
                         <Link
                           href={cat.links[0].href}
-                          className="mega-col-title"
+                          className="block text-[0.9rem] font-bold capitalize tracking-[0.01em] mb-3.5 no-underline transition-colors duration-150"
                           style={{
-                            display: "block",
-                            textDecoration: "none",
-                            cursor: "pointer",
+                            fontFamily: "var(--nav-font-ui)",
+                            color: "var(--mega-col-title-fg)",
                           }}
                         >
                           {cat.title}
                         </Link>
                       ) : (
-                        <p className="mega-col-title">{cat.title}</p>
+                        <p
+                          className="text-[0.9rem] font-bold capitalize tracking-[0.01em] mb-3.5"
+                          style={{
+                            fontFamily: "var(--nav-font-ui)",
+                            color: "var(--mega-col-title-fg)",
+                          }}
+                        >
+                          {cat.title}
+                        </p>
                       )}
+                      {/* Sub-links */}
                       {cat.links.slice(1).map((link, i) => (
-                        <Link key={i} href={link.href} className="mega-link">
+                        <Link
+                          key={i}
+                          href={link.href}
+                          className="block text-[0.72rem] font-semibold uppercase tracking-[0.09em] py-0.5 no-underline transition-colors duration-150 hover:underline underline-offset-[3px]"
+                          style={{ color: "var(--nav-accent)" }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.color =
+                              "var(--mega-link-hover-fg)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.color = "var(--nav-accent)")
+                          }
+                        >
                           {link.label}
                         </Link>
                       ))}
@@ -652,21 +686,47 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
         )}
       </header>
 
-      {/* Mobile drawer */}
+      {/* ── MOBILE DRAWER ── */}
       {drawerOpen && (
         <>
+          {/* Overlay */}
           <div
-            className="drawer-overlay"
+            className="fixed inset-0 z-[60]"
+            style={{ background: "var(--nav-overlay)" }}
             onClick={closeDrawer}
             aria-hidden="true"
           />
-          <div className="drawer" role="dialog" aria-label="Navigation menu">
-            <div className="drawer-header">
-              <span className="nav-logo" style={{ fontSize: "1.2rem" }}>
+
+          {/* Drawer panel */}
+          <div
+            className="fixed top-0 left-0 bottom-0 z-[70] w-[85vw] max-w-sm flex flex-col"
+            style={{ background: "var(--nav-bg)" }}
+            role="dialog"
+            aria-label="Navigation menu"
+          >
+            {/* Drawer header */}
+            <div
+              className="flex items-center justify-between px-5 py-4 border-b shrink-0"
+              style={{ borderColor: "var(--nav-border)" }}
+            >
+              <span
+                className="text-[1.2rem] font-bold tracking-wide"
+                style={{
+                  fontFamily: "var(--nav-font)",
+                  color: "var(--nav-fg)",
+                }}
+              >
                 Bambumm
               </span>
               <button
-                className="icon-btn"
+                className="flex items-center justify-center w-9 h-9 transition-colors duration-150"
+                style={{ color: "var(--nav-fg-muted)" }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.color = "var(--nav-fg)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = "var(--nav-fg-muted)")
+                }
                 onClick={closeDrawer}
                 aria-label="Close menu"
               >
@@ -674,11 +734,25 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
               </button>
             </div>
 
-            <nav className="drawer-nav">
+            {/* Drawer nav list */}
+            <nav className="flex-1 overflow-y-auto relative">
               {navItems.map((item) => (
                 <button
                   key={item._id}
-                  className="drawer-nav-item"
+                  className="flex items-center justify-between w-full px-5 py-4 text-left border-b text-[0.85rem] font-bold uppercase tracking-[0.08em] transition-colors duration-150"
+                  style={{
+                    fontFamily: "var(--nav-font-ui)",
+                    color: "var(--nav-fg)",
+                    borderColor: "var(--nav-border)",
+                    background: "transparent",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background =
+                      "var(--nav-dropdown-bg)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
                   onClick={() =>
                     item.categories.length > 0
                       ? setActivePanel(item.label)
@@ -695,27 +769,76 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                 </button>
               ))}
 
+              {/* Slide-in sub-panel */}
               {activePanel && activePanelItem && (
-                <div className="drawer-panel">
-                  <div className="drawer-panel-header">
+                <div
+                  className="absolute inset-0 overflow-y-auto"
+                  style={{ background: "var(--nav-bg)" }}
+                >
+                  {/* Sub-panel header */}
+                  <div
+                    className="flex items-center gap-3 px-5 py-4 border-b sticky top-0"
+                    style={{
+                      borderColor: "var(--nav-border)",
+                      background: "var(--nav-bg)",
+                    }}
+                  >
                     <button
-                      className="drawer-panel-back"
+                      className="flex items-center justify-center w-8 h-8 border transition-colors duration-150"
+                      style={{
+                        borderColor: "var(--nav-border)",
+                        color: "var(--nav-fg-muted)",
+                        background: "transparent",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.color = "var(--nav-fg)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.color = "var(--nav-fg-muted)")
+                      }
                       onClick={() => setActivePanel(null)}
                       aria-label="Back"
                     >
-                      <ArrowLeft size={18} />
+                      <ArrowLeft size={16} />
                     </button>
-                    {activePanelItem.label}
+                    <span
+                      className="text-[0.85rem] font-bold uppercase tracking-[0.08em]"
+                      style={{
+                        fontFamily: "var(--nav-font-ui)",
+                        color: "var(--nav-fg)",
+                      }}
+                    >
+                      {activePanelItem.label}
+                    </span>
                   </div>
-                  <div className="drawer-panel-body">
+
+                  {/* Sub-panel body */}
+                  <div className="px-5 py-4 flex flex-col gap-5">
                     {activePanelItem.categories.map((cat) => (
                       <div key={cat.id}>
-                        <p className="drawer-category-title">{cat.title}</p>
+                        <p
+                          className="text-[0.75rem] font-bold uppercase tracking-[0.12em] mb-2"
+                          style={{ color: "var(--nav-fg-muted)" }}
+                        >
+                          {cat.title}
+                        </p>
                         {cat.links.map((link, i) => (
                           <Link
                             key={i}
                             href={link.href}
-                            className="drawer-category-link"
+                            className="block text-[0.8rem] font-semibold uppercase tracking-[0.07em] py-2 border-b no-underline transition-colors duration-150"
+                            style={{
+                              color: "var(--nav-accent)",
+                              borderColor: "var(--nav-border)",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.color =
+                                "var(--nav-accent-hover)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.color =
+                                "var(--nav-accent)")
+                            }
                             onClick={closeDrawer}
                           >
                             {link.label}
@@ -728,37 +851,27 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
               )}
             </nav>
 
+            {/* Drawer footer */}
             <div
-              className="drawer-footer"
-              style={{ flexDirection: "column", gap: 0, padding: 0 }}
+              className="shrink-0 border-t"
+              style={{ borderColor: "var(--nav-border)" }}
             >
               {user ? (
                 <>
+                  {/* User info row */}
                   <div
+                    className="flex items-center gap-3 px-5 py-3.5 border-b"
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: "14px 20px",
-                      borderBottom: "1px solid var(--nav-border)",
+                      borderColor: "var(--nav-border)",
                       background: "var(--nav-bg)",
                     }}
                   >
                     <div
+                      className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-[0.85rem] font-bold text-white overflow-hidden border-2"
                       style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: "50%",
                         background: "var(--nav-accent)",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "0.85rem",
-                        fontWeight: 700,
                         fontFamily: "var(--nav-font)",
-                        flexShrink: 0,
-                        border: "2px solid rgba(200,169,126,0.3)",
+                        borderColor: "rgba(200,169,126,0.3)",
                       }}
                     >
                       {user.picture ? (
@@ -766,136 +879,148 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                           src={user.picture}
                           alt={user.name}
                           referrerPolicy="no-referrer"
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            borderRadius: "50%",
-                          }}
+                          className="w-full h-full object-cover"
                         />
                       ) : (
                         user.name.charAt(0).toUpperCase()
                       )}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-[0.85rem] font-bold truncate"
                         style={{
-                          fontSize: "0.85rem",
-                          fontWeight: 700,
-                          color: "var(--nav-fg)",
                           fontFamily: "var(--nav-font-ui)",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
+                          color: "var(--nav-fg)",
                         }}
                       >
                         {user.name}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "0.68rem",
-                          color: "var(--nav-fg-muted)",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          marginTop: 1,
-                        }}
+                      </p>
+                      <p
+                        className="text-[0.68rem] truncate mt-0.5"
+                        style={{ color: "var(--nav-fg-muted)" }}
                       >
                         {user.email}
-                      </div>
+                      </p>
                     </div>
                   </div>
-                  <div
-                    style={{ display: "flex", gap: 8, padding: "10px 16px" }}
-                  >
+
+                  {/* Action buttons */}
+                  <div className="flex gap-2 px-4 py-2.5">
                     <button
-                      className="drawer-footer-btn"
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
+                      style={{
+                        fontFamily: "var(--nav-font-ui)",
+                        borderColor: "var(--nav-border)",
+                        color: "var(--nav-fg)",
+                        background: "transparent",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background =
+                          "var(--nav-dropdown-bg)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "transparent")
+                      }
                       onClick={() => {
                         closeDrawer();
                         openCart();
                       }}
-                      style={{ flex: 1 }}
                     >
                       <ShoppingBag size={16} /> Cart
                       {totalItems > 0 && (
                         <span
-                          style={{
-                            background: "var(--nav-accent)",
-                            color: "#fff",
-                            borderRadius: "99px",
-                            fontSize: "0.65rem",
-                            fontWeight: 700,
-                            padding: "1px 6px",
-                          }}
+                          className="rounded-full text-[0.65rem] font-bold text-white px-1.5 py-0.5 leading-none"
+                          style={{ background: "var(--nav-accent)" }}
                         >
                           {totalItems}
                         </span>
                       )}
                     </button>
                     <button
-                      className="drawer-footer-btn"
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
+                      style={{
+                        fontFamily: "var(--nav-font-ui)",
+                        borderColor: "var(--nav-border)",
+                        color: "var(--nav-fg)",
+                        background: "transparent",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background =
+                          "var(--nav-dropdown-bg)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "transparent")
+                      }
                       onClick={() => {
                         closeDrawer();
                         router.push("/profile");
                       }}
-                      style={{ flex: 1 }}
                     >
                       <User size={16} /> Profile
                     </button>
                     <button
-                      onClick={logout}
+                      className="flex items-center justify-center gap-1.5 px-4 py-2.5 border text-[0.8rem] font-semibold cursor-pointer transition-colors duration-150 shrink-0"
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 6,
-                        padding: "10px 16px",
-                        background: "rgba(217,79,61,0.06)",
-                        border: "1px solid rgba(217,79,61,0.2)",
-                        borderRadius: 2,
-                        color: "var(--nav-sale)",
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        cursor: "pointer",
                         fontFamily: "var(--nav-font-ui)",
-                        flexShrink: 0,
+                        background: "rgba(217,79,61,0.06)",
+                        borderColor: "rgba(217,79,61,0.2)",
+                        color: "var(--nav-sale)",
                       }}
+                      onClick={logout}
                     >
                       <LogOut size={15} /> Sign Out
                     </button>
                   </div>
                 </>
               ) : (
-                <div style={{ display: "flex", gap: 12, padding: "10px 16px" }}>
+                <div className="flex gap-3 px-4 py-2.5">
                   <button
-                    className="drawer-footer-btn"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
+                    style={{
+                      fontFamily: "var(--nav-font-ui)",
+                      borderColor: "var(--nav-border)",
+                      color: "var(--nav-fg)",
+                      background: "transparent",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background =
+                        "var(--nav-dropdown-bg)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
                     onClick={() => {
                       closeDrawer();
                       router.push("/auth");
                     }}
-                    style={{ flex: 1 }}
                   >
                     <User size={16} /> Sign In
                   </button>
                   <button
-                    className="drawer-footer-btn"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
+                    style={{
+                      fontFamily: "var(--nav-font-ui)",
+                      borderColor: "var(--nav-border)",
+                      color: "var(--nav-fg)",
+                      background: "transparent",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background =
+                        "var(--nav-dropdown-bg)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
                     onClick={() => {
                       closeDrawer();
                       openCart();
                     }}
-                    style={{ flex: 1 }}
                   >
                     <ShoppingBag size={16} /> Cart
                     {totalItems > 0 && (
                       <span
-                        style={{
-                          background: "var(--nav-accent)",
-                          color: "#fff",
-                          borderRadius: "99px",
-                          fontSize: "0.65rem",
-                          fontWeight: 700,
-                          padding: "1px 6px",
-                        }}
+                        className="rounded-full text-[0.65rem] font-bold text-white px-1.5 py-0.5 leading-none"
+                        style={{ background: "var(--nav-accent)" }}
                       >
                         {totalItems}
                       </span>

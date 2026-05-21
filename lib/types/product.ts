@@ -1,15 +1,16 @@
 export interface ProductVariant {
-  colorName: string;       // e.g. "Black", "Grey", "Orange"
-  colorHex: string;        // e.g. "#1a1a1a"
-  images: string[];        // paths like "/product1/black1.JPG"
+  colorName: string;       
+  colorHex: string;        
+  images: string[];      
 }
 
 export interface Product {
   id: string;
-  slug: string;            // used in URL: /products/[slug]
+  slug: string;         
   name: string;
   description: string;
-  price: number;           // in INR
-  category: string;        // e.g. "Men's Brief"
+  price: number;           
+  category: string;       
+  gender?: "Men" | "Women" | "Unisex" | "Boys" | "Girls";
   variants: ProductVariant[];
 }
