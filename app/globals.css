@@ -9,7 +9,7 @@
   --nav-height: 64px;
   --nav-font: "Georgia", serif;
   --nav-font-ui: system-ui, sans-serif;
-  --nav-bg: #ffffff;
+  --nav-bg: #e8f4f3;
   --nav-bg-color: #090909;
   --nav-fg: #020101;
   --nav-fg-muted: var(--brand-teal);
@@ -101,4 +101,3 @@
   --adm-shadow-toast: 0 4px 24px rgba(25, 99, 94, 0.1);
   --adm-shadow-nav: 0 1px 0 #c8dedd;
 }
-/* ─ Logo ─ */

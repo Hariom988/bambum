@@ -18,7 +18,7 @@ const CITIES = [
     backgroundColorFrom: "#000000",
     backgroundColorTo: "#000000",
     image: "/shopByComponentImages/tokyo.png",
-    href: "/products",
+    href: "/products?category=Women",
   },
   {
     name: "NEW YORK",
@@ -28,7 +28,7 @@ const CITIES = [
     backgroundColorFrom: "#19635E",
     backgroundColorTo: "#2DAFA7",
     image: "/shopByComponentImages/newyork.png",
-    href: "/products",
+    href: "/products?category=Women",
   },
   {
     name: "MIAMI",
@@ -38,7 +38,7 @@ const CITIES = [
     backgroundColorFrom: "#AF886D",
     backgroundColorTo: "#524033",
     image: "/shopByComponentImages/miami.png",
-    href: "/products",
+    href: "/products?category=Women",
   },
   {
     name: "SYDNEY",
@@ -48,7 +48,7 @@ const CITIES = [
     backgroundColorFrom: "#000000",
     backgroundColorTo: "#000000",
     image: "/shopByComponentImages/sydney.png",
-    href: "/products",
+    href: "/products?category=Women",
   },
   {
     name: "PARIS",
@@ -58,7 +58,7 @@ const CITIES = [
     backgroundColorFrom: "#AF886D",
     backgroundColorTo: "#524033",
     image: "/shopByComponentImages/paris.png",
-    href: "/products",
+    href: "/products?category=Women",
   },
 ];
 
