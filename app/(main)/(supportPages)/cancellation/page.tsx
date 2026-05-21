@@ -40,7 +40,6 @@ export default function CancellationPolicyPage() {
         fontFamily: "var(--nav-font-ui)",
       }}
     >
-      {/* ── HERO ── */}
       <section
         className="relative overflow-hidden border-b"
         style={{ borderColor: "var(--nav-border)" }}
@@ -50,7 +49,6 @@ export default function CancellationPolicyPage() {
           style={{ background: "var(--nav-accent)" }}
         />
 
-        {/* Large centered number backdrop */}
         <div
           className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
           aria-hidden="true"
@@ -65,7 +63,7 @@ export default function CancellationPolicyPage() {
               letterSpacing: "-0.04em",
             }}
           >
-            ×
+            x
           </span>
         </div>
 
@@ -111,7 +109,6 @@ export default function CancellationPolicyPage() {
             />
           </div>
 
-          {/* Key rule callout */}
           <div
             className="inline-block rounded-2xl px-6 py-4 text-sm md:text-base font-medium leading-relaxed"
             style={{
@@ -131,7 +128,6 @@ export default function CancellationPolicyPage() {
         </div>
       </section>
 
-      {/* ── VERTICAL TIMELINE ── */}
       <section className="max-w-2xl mx-auto px-6 py-16 md:py-24">
         <p
           className="text-xs font-bold tracking-[0.18em] uppercase mb-12 text-center"

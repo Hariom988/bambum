@@ -24,7 +24,6 @@ export async function GET() {
   }
 }
 
-// ── POST — create a new top-level nav item (e.g. "Men")
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -51,7 +50,7 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date(),
     });
     await client.close();
-    revalidateTag("navconfig","default"); // ✅ single arg only
+    revalidateTag("navconfig","default");
     return NextResponse.json({ ok: true, id: result.insertedId }, { status: 201 });
   } catch (err) {
     console.error("[navconfig POST]", err);
@@ -59,7 +58,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ── PUT — full replace of a nav item
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
@@ -89,7 +87,6 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// ── PATCH — bulk reorder all nav items
 export async function PATCH(req: NextRequest) {
   try {
     const { items } = await req.json();
@@ -113,8 +110,6 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Failed to reorder." }, { status: 500 });
   }
 }
-
-// ── DELETE — remove a nav item
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);

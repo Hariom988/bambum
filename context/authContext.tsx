@@ -46,7 +46,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Load session on mount
   useEffect(() => {
     refreshUser().finally(() => setLoading(false));
   }, [refreshUser]);

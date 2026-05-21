@@ -110,7 +110,6 @@ export default function ContactPage() {
           fontFamily: "var(--nav-font-ui)",
         }}
       >
-        {/* ── HERO ── */}
         <section
           className="relative overflow-hidden border-b"
           style={{ borderColor: "var(--nav-border)" }}
@@ -124,7 +123,6 @@ export default function ContactPage() {
             ref={heroRef}
             className="ct-hero relative max-w-5xl mx-auto px-6 py-20 md:py-28 grid md:grid-cols-2 gap-12 md:gap-16 items-center"
           >
-            {/* ── LEFT: title block ── */}
             <div>
               <div
                 className="inline-flex rounded-lg items-center gap-2 px-4 py-1.5 mb-7 text-xs font-semibold tracking-[0.14em] uppercase"
@@ -173,7 +171,6 @@ export default function ContactPage() {
               </p>
             </div>
 
-            {/* ── RIGHT: hours panel ── */}
             <div className="flex justify-center md:justify-end">
               <div
                 className="relative w-full rounded-lg max-w-sm overflow-hidden"
@@ -183,7 +180,6 @@ export default function ContactPage() {
                   boxShadow: "0 8px 40px rgba(200,169,126,0.12)",
                 }}
               >
-                {/* Header row */}
                 <div
                   className="px-7 pt-6 pb-5 border-b flex items-center gap-3"
                   style={{ borderColor: "var(--nav-border)" }}
@@ -220,7 +216,6 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                {/* Days */}
                 <div className="px-7 py-5 flex flex-col gap-3">
                   {[
                     {
@@ -264,7 +259,6 @@ export default function ContactPage() {
                   ))}
                 </div>
 
-                {/* Timezone footer */}
                 <div
                   className="mx-7 mb-6 px-4 py-3 flex items-center justify-between"
                   style={{
@@ -286,7 +280,6 @@ export default function ContactPage() {
                   </span>
                 </div>
 
-                {/* Live indicator */}
                 <div
                   className="absolute top-5 right-5 flex items-center gap-1.5 px-2.5 py-1"
                   style={{
@@ -310,7 +303,6 @@ export default function ContactPage() {
           </div>
         </section>
 
-        {/* ── CONTACT CARDS ── */}
         <section className="max-w-6xl mx-auto px-6 py-16 md:py-24">
           <div
             ref={cardsRef}
@@ -385,7 +377,6 @@ export default function ContactPage() {
           </div>
         </section>
 
-        {/* ── BOTTOM NOTE ── */}
         <section
           className="border-t"
           style={{

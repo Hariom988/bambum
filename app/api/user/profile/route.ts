@@ -23,7 +23,6 @@ async function getDb() {
   return { client, col: db.collection("credentials") };
 }
 
-// GET — fetch profile (name, email, phone, provider)
 export async function GET(req: NextRequest) {
   const userId = await getUserId(req);
   if (!userId)
@@ -50,7 +49,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// PUT — update name and/or phone
 export async function PUT(req: NextRequest) {
   const userId = await getUserId(req);
   if (!userId)
@@ -70,7 +68,6 @@ export async function PUT(req: NextRequest) {
       updatedAt: new Date(),
     };
 
-    // Only set phone if provided (allow empty string to clear it)
     if (phone !== undefined) {
       updateFields.phone = phone.trim();
     }
@@ -90,8 +87,6 @@ export async function PUT(req: NextRequest) {
     );
   }
 }
-
-// PATCH — change password
 export async function PATCH(req: NextRequest) {
   const userId = await getUserId(req);
   if (!userId)

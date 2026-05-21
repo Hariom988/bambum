@@ -41,12 +41,10 @@ export default function TermsConditionsPage() {
         fontFamily: "var(--nav-font-ui)",
       }}
     >
-      {/* ── HERO ── */}
       <section
         className="relative overflow-hidden border-b"
         style={{ borderColor: "var(--nav-border)" }}
       >
-        {/* Decorative background wordmark */}
         <div
           className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
           aria-hidden="true"
@@ -65,14 +63,12 @@ export default function TermsConditionsPage() {
           </span>
         </div>
 
-        {/* Top accent rule */}
         <div
           className="absolute top-0 left-0 right-0 h-1"
           style={{ background: "var(--nav-accent)" }}
         />
 
         <div className="relative max-w-4xl mx-auto px-6 py-20 md:py-28 text-center">
-          {/* Badge */}
           <div
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 text-xs font-semibold tracking-[0.14em] uppercase"
             style={{
@@ -109,7 +105,6 @@ export default function TermsConditionsPage() {
         </div>
       </section>
 
-      {/* ── TERMS SECTIONS ── */}
       <section className="max-w-4xl mx-auto px-6 py-16 md:py-20">
         <div className="flex flex-col gap-6">
           {SECTIONS.map((sec, idx) => {
@@ -124,7 +119,6 @@ export default function TermsConditionsPage() {
                   backdropFilter: "blur(4px)",
                 }}
               >
-                {/* Step number */}
                 <span
                   className="absolute top-5 right-6 text-[2.5rem] font-bold leading-none pointer-events-none select-none"
                   style={{
@@ -137,7 +131,6 @@ export default function TermsConditionsPage() {
                   {String(idx + 1).padStart(2, "0")}
                 </span>
 
-                {/* Icon */}
                 <div
                   className="shrink-0 w-11 h-11 flex items-center justify-center rounded-sm"
                   style={{
@@ -152,7 +145,6 @@ export default function TermsConditionsPage() {
                   />
                 </div>
 
-                {/* Content */}
                 <div className="flex-1 min-w-0">
                   <h2
                     className="text-sm font-bold uppercase tracking-[0.12em] mb-3"
@@ -173,7 +165,6 @@ export default function TermsConditionsPage() {
         </div>
       </section>
 
-      {/* ── CONTACT STRIP ── */}
       <section
         className="border-t"
         style={{

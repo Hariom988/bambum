@@ -5,7 +5,7 @@ import { SignJWT } from "jose";
 
 const MONGODB_URI = process.env.MONGODB_URI!;
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
-const SESSION_DURATION = 4 * 60 * 60; // 4 hours in seconds
+const SESSION_DURATION = 4 * 60 * 60;
 
 async function getDb() {
   const client = await MongoClient.connect(MONGODB_URI);
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: SESSION_DURATION, // 4 hours - persists across tabs
+      maxAge: SESSION_DURATION,
     });
 
     return response;

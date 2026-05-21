@@ -23,7 +23,6 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch {
-    // Token expired or invalid
     const response = NextResponse.json({ user: null });
     response.cookies.set("user_token", "", { maxAge: 0, path: "/" });
     return response;

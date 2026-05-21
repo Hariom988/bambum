@@ -54,7 +54,6 @@ export default function RefundPolicyPage() {
         fontFamily: "var(--nav-font-ui)",
       }}
     >
-      {/* ── HERO ── */}
       <section
         className="relative overflow-hidden"
         style={{ background: "var(--ft-bg)", color: "var(--ft-fg)" }}
@@ -64,7 +63,6 @@ export default function RefundPolicyPage() {
           style={{ background: "var(--nav-accent)" }}
         />
 
-        {/* Big decorative icon */}
         <div
           className="absolute -right-8 top-1/2 -translate-y-1/2 pointer-events-none select-none"
           aria-hidden="true"
@@ -115,7 +113,6 @@ export default function RefundPolicyPage() {
             </p>
           </div>
 
-          {/* Stat card */}
           <div className="flex md:justify-end">
             <div
               className="w-full max-w-xs p-8 flex flex-col gap-6"
@@ -167,7 +164,6 @@ export default function RefundPolicyPage() {
         </div>
       </section>
 
-      {/* ── PROCESS STEPS ── */}
       <section
         className="border-y"
         style={{
@@ -183,7 +179,6 @@ export default function RefundPolicyPage() {
             How the Process Works
           </p>
           <div className="grid md:grid-cols-3 gap-0 relative">
-            {/* Connector line (desktop only) */}
             <div
               className="hidden md:block absolute top-7 left-[16.66%] right-[16.66%] h-px"
               style={{ background: "var(--nav-border)" }}
@@ -235,7 +230,6 @@ export default function RefundPolicyPage() {
         </div>
       </section>
 
-      {/* ── ELIGIBLE / NOT ELIGIBLE ── */}
       <section className="max-w-5xl mx-auto px-6 py-16 md:py-20">
         <p
           className="text-xs font-bold tracking-[0.18em] uppercase mb-10 text-center"
@@ -245,7 +239,6 @@ export default function RefundPolicyPage() {
         </p>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Eligible */}
           <div
             className="p-8"
             style={{
@@ -298,7 +291,6 @@ export default function RefundPolicyPage() {
             </ul>
           </div>
 
-          {/* Not Eligible */}
           <div
             className="p-8"
             style={{
@@ -353,7 +345,6 @@ export default function RefundPolicyPage() {
         </div>
       </section>
 
-      {/* ── AGREEMENT STRIP ── */}
       <section
         className="border-t"
         style={{

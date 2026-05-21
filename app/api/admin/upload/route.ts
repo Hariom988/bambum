@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file provided." }, { status: 400 });
     }
 
-    // Convert File to base64 for Cloudinary upload
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
     const dataUri = `data:${file.type};base64,${base64}`;
@@ -24,8 +23,8 @@ export async function POST(req: NextRequest) {
     const result = await cloudinary.uploader.upload(dataUri, {
       folder: "bambumm/products",
       transformation: [
-        { width: 1200, height: 1600, crop: "limit" }, // max dimensions
-        { quality: "auto", fetch_format: "auto" },     // auto compress + format
+        { width: 1200, height: 1600, crop: "limit" }, 
+        { quality: "auto", fetch_format: "auto" },  
       ],
     });
 

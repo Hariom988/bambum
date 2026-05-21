@@ -62,7 +62,6 @@ export default function ShippingPolicyPage() {
           style={{ background: "var(--nav-accent)" }}
         />
 
-        {/* Diagonal stripe texture */}
         <div
           className="absolute inset-0 pointer-events-none"
           aria-hidden="true"
@@ -79,7 +78,6 @@ export default function ShippingPolicyPage() {
 
         <div className="relative max-w-5xl mx-auto px-6 py-16 md:py-24">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
-            {/* Left: title block */}
             <div>
               <div
                 className="inline-flex items-center rounded-2xl gap-2 px-4 py-1.5 mb-6 text-xs font-semibold tracking-[0.14em] uppercase"
@@ -117,8 +115,6 @@ export default function ShippingPolicyPage() {
                 we aim to deliver your orders quickly, safely, and efficiently.
               </p>
             </div>
-
-            {/* Right: delivery time visual */}
             <div className="flex gap-4 shrink-0">
               {SHIPPING_TIMES.map((z) => (
                 <div
@@ -162,7 +158,6 @@ export default function ShippingPolicyPage() {
         </div>
       </section>
 
-      {/* ── SHIPPING CHARGES BANNER ── */}
       <div
         className="border-b"
         style={{
@@ -194,7 +189,6 @@ export default function ShippingPolicyPage() {
         </div>
       </div>
 
-      {/* ── POLICY CARDS ── */}
       <section className="max-w-5xl mx-auto px-6 py-16 md:py-20">
         <p
           className="text-xs font-bold tracking-[0.18em] uppercase mb-10"
@@ -262,7 +256,6 @@ export default function ShippingPolicyPage() {
         </div>
       </section>
 
-      {/* ── BOTTOM STRIP ── */}
       <section
         className="border-t"
         style={{

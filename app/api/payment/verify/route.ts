@@ -75,7 +75,6 @@ export async function POST(req: NextRequest) {
 
     const orderId = `ORD${Date.now().toString().slice(-8)}`;
 
- // 2. Decrement stock
     const productsCol = client.db("inventory").collection("products");
     for (const item of items) {
       await productsCol.updateOne(
@@ -90,13 +89,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Save Order to the "orders" collection
     const ordersCol = db.collection("orders");
     const result = await ordersCol.insertOne({
       userId: userId ?? null,
       guestId: savedGuestId,
       isGuest: isGuest ?? false,
-      guestInfo: isGuest ? guestInfo : null, // Embedded for easy frontend display
+      guestInfo: isGuest ? guestInfo : null,
       orderId,
       items,
       total,

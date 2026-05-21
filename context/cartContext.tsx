@@ -9,8 +9,6 @@ import {
   ReactNode,
 } from "react";
 
-// ─── Types
-
 export interface CartItem {
   productId: string;
   slug: string;
@@ -44,13 +42,11 @@ interface CartContextValue {
   isInCart: (productId: string, colorName: string, size: string) => boolean;
   getItemQty: (productId: string, colorName: string, size: string) => number;
 }
-// ─── Context ──────────────────────────────────────────────────────────────────
 
 const CartContext = createContext<CartContextValue | null>(null);
 
 const CART_KEY = "bambumm_cart";
 
-// Safe sessionStorage accessor — SSR-safe
 const ssGet = (): CartItem[] => {
   try {
     const raw = window.sessionStorage.getItem(CART_KEY);
@@ -63,9 +59,7 @@ const ssGet = (): CartItem[] => {
 const ssSet = (items: CartItem[]): void => {
   try {
     window.sessionStorage.setItem(CART_KEY, JSON.stringify(items));
-  } catch {
-    // sessionStorage quota exceeded or blocked — fail silently
-  }
+  } catch {}
 };
 
 const ssClear = (): void => {
@@ -77,20 +71,16 @@ function itemKey(productId: string, colorName: string, size: string) {
   return `${productId}__${colorName}__${size}`;
 }
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
-
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
-  // Hydrate from sessionStorage once on mount (client only)
   useEffect(() => {
     setItems(ssGet());
     setHydrated(true);
   }, []);
 
-  // Persist to sessionStorage whenever items change (after hydration)
   useEffect(() => {
     if (!hydrated) return;
     ssSet(items);

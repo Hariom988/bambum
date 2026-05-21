@@ -3,18 +3,6 @@
 import { useEffect, useRef } from "react";
 import { Leaf, Wind, Globe, Sparkles } from "lucide-react";
 
-/*
-  New CSS variables to add to :root in globals.css:
-  --about-hero-bg: #f5f5f0;
-  --about-teal: #19635e;         (can reuse var(--nav-accent) if same value)
-  --about-teal-light: #3d9c93;
-  --about-card-bg: #1c1f1c;
-  --about-card-border: rgba(42,122,114,0.18);
-  --about-body-muted: #7a7a6e;
-  --about-dark-section: #111311;
-  --about-promise-bg: #f0eeea;
-*/
-
 const PILLARS = [
   {
     icon: Sparkles,
@@ -250,9 +238,7 @@ export default function AboutUsPage() {
             ref={heroRef}
             className="max-w-7xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-12 md:gap-16 items-center"
           >
-            {/* Left: text */}
             <div>
-              {/* Badge */}
               <div
                 className="hero-badge inline-flex items-center gap-2 px-4 py-2 mb-6"
                 style={{
@@ -279,7 +265,6 @@ export default function AboutUsPage() {
                 </span>
               </div>
 
-              {/* Headline */}
               <h1
                 style={{
                   fontFamily: "var(--nav-font)",
@@ -356,7 +341,6 @@ export default function AboutUsPage() {
               </p>
             </div>
 
-            {/* Right: image — square with corner accents */}
             <div className="hero-img flex justify-center md:justify-end">
               <div
                 className="vision-img-wrap relative"
@@ -377,7 +361,6 @@ export default function AboutUsPage() {
                     display: "block",
                   }}
                 />
-                {/* Corner accent brackets */}
                 {(
                   [
                     "top-0 left-0",
@@ -451,7 +434,6 @@ export default function AboutUsPage() {
               className="fade-up"
               style={{ textAlign: "center" }}
             >
-              {/* "Our Vision" — serif, large, centered */}
               <h2
                 style={{
                   fontFamily: "var(--nav-font)",
@@ -465,7 +447,6 @@ export default function AboutUsPage() {
                 Our Vision
               </h2>
 
-              {/* Subheading */}
               <p
                 style={{
                   fontFamily: "var(--nav-font)",
@@ -502,7 +483,6 @@ export default function AboutUsPage() {
           </div>
         </section>
 
-        {/* ══════════════ WHAT WE STAND FOR (dark) ══════════════ */}
         <section
           style={{
             background: "var(--about-dark-section, #111311)",
@@ -510,7 +490,6 @@ export default function AboutUsPage() {
           }}
         >
           <div className="max-w-2xl mx-auto px-6">
-            {/* Section heading */}
             <div style={{ textAlign: "center", marginBottom: "48px" }}>
               <h2
                 style={{
@@ -525,7 +504,6 @@ export default function AboutUsPage() {
               </h2>
             </div>
 
-            {/* Pillar cards — single column, rounded */}
             <div
               ref={pillarsRef}
               className="stagger"
@@ -544,7 +522,6 @@ export default function AboutUsPage() {
                       borderRadius: 12,
                     }}
                   >
-                    {/* Icon */}
                     <div
                       className="pillar-icon flex items-center justify-center shrink-0"
                       style={{
@@ -562,7 +539,6 @@ export default function AboutUsPage() {
                       />
                     </div>
 
-                    {/* Text */}
                     <div className="flex-1">
                       <h3
                         style={{
@@ -592,7 +568,6 @@ export default function AboutUsPage() {
           </div>
         </section>
 
-        {/* ══════════════ OUR PROMISE ══════════════ */}
         <section
           ref={closingRef}
           className="fade-up"
@@ -602,7 +577,6 @@ export default function AboutUsPage() {
             textAlign: "center",
           }}
         >
-          {/* Label */}
           <p
             style={{
               fontSize: "0.65rem",
@@ -615,8 +589,6 @@ export default function AboutUsPage() {
           >
             Our Promise
           </p>
-
-          {/* Big uppercase headline */}
           <h2
             style={{
               fontFamily: "var(--nav-font)",
@@ -635,7 +607,6 @@ export default function AboutUsPage() {
             <span style={{ color: "var(--about-teal)" }}>Wear Bambumm.</span>
           </h2>
 
-          {/* Decorative horizontal rule with leaf */}
           <div className="promise-rule">
             <div className="promise-rule-line" />
             <Leaf
@@ -646,7 +617,6 @@ export default function AboutUsPage() {
             <div className="promise-rule-line" />
           </div>
 
-          {/* CTA — rounded rectangle */}
           <a href="/products" className="about-cta-btn">
             Shop the Collection
           </a>

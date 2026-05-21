@@ -5,7 +5,6 @@ import { cookies } from "next/headers";
 import * as jose from "jose";
 import { v2 as cloudinary } from "cloudinary";
 
-// Configure Cloudinary SDK once
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -13,7 +12,6 @@ cloudinary.config({
   secure: true,
 });
 
-// Auth helper
 async function getUserFromCookie(): Promise<{ id: string; name: string } | null> {
   try {
     const cookieStore = await cookies();
@@ -31,7 +29,6 @@ async function getUserFromCookie(): Promise<{ id: string; name: string } | null>
   }
 }
 
-// Helper: upload a File to Cloudinary via SDK
 async function uploadToCloudinary(file: File): Promise<string | null> {
   try {
     const arrayBuffer = await file.arrayBuffer();
@@ -60,7 +57,6 @@ async function uploadToCloudinary(file: File): Promise<string | null> {
   }
 }
 
-// GET
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const productId = searchParams.get("productId") || "";
@@ -121,7 +117,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST
 export async function POST(req: NextRequest) {
   const user = await getUserFromCookie();
   if (!user)
@@ -145,7 +140,6 @@ export async function POST(req: NextRequest) {
       console.log(`[reviews] file[${i}]:`, f instanceof File, f.name, f.size, f.type)
     );
 
-    // Upload all valid images in parallel via Cloudinary SDK
     const imageUrls: string[] = [];
     const validFiles = imageFiles.slice(0, 4).filter(
       (f) => f instanceof File && f.size > 0
@@ -182,8 +176,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-
-// DELETE
 export async function DELETE(req: NextRequest) {
   const user = await getUserFromCookie();
   if (!user)

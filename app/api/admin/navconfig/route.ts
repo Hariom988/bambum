@@ -1,4 +1,3 @@
-// app/api/admin/navconfig/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { MongoClient, ObjectId } from "mongodb";
 import { revalidateTag } from "next/cache";
@@ -20,12 +19,10 @@ export async function GET() {
       items: docs.map((d) => ({ ...d, _id: d._id.toString() })),
     });
   } catch (err) {
-    console.error("[navconfig GET]", err);
     return NextResponse.json({ error: "Failed to fetch." }, { status: 500 });
   }
 }
 
-// ── POST — create a new top-level nav item (e.g. "Men")
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -35,7 +32,6 @@ export async function POST(req: NextRequest) {
     }
     const { client, col } = await getCol();
 
-    // Prevent duplicate labels (case-insensitive)
     const existing = await col.findOne({
       label: { $regex: new RegExp(`^${label.trim()}$`, "i") },
     });
@@ -56,12 +52,10 @@ export async function POST(req: NextRequest) {
     revalidateTag("navconfig", "pages");
     return NextResponse.json({ ok: true, id: result.insertedId }, { status: 201 });
   } catch (err) {
-    console.error("[navconfig POST]", err);
     return NextResponse.json({ error: "Failed to create." }, { status: 500 });
   }
 }
 
-// ── PUT — full replace of a nav item (used after any DnD reorder or edit)
 
 export async function PUT(req: NextRequest) {
   try {
@@ -87,13 +81,10 @@ export async function PUT(req: NextRequest) {
     revalidateTag("navconfig", "pages");
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[navconfig PUT]", err);
     return NextResponse.json({ error: "Failed to update." }, { status: 500 });
   }
 }
 
-// ── PATCH — bulk reorder all nav items
-// Body: { items: Array<{ _id, order }> }
 export async function PATCH(req: NextRequest) {
   try {
     const { items } = await req.json();
@@ -113,12 +104,10 @@ export async function PATCH(req: NextRequest) {
     revalidateTag("navconfig", "pages");
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[navconfig PATCH]", err);
     return NextResponse.json({ error: "Failed to reorder." }, { status: 500 });
   }
 }
 
-// ── DELETE — remove a nav item
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -132,7 +121,6 @@ export async function DELETE(req: NextRequest) {
     revalidateTag("navconfig", "pages");
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[navconfig DELETE]", err);
     return NextResponse.json({ error: "Failed to delete." }, { status: 500 });
   }
 }

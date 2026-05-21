@@ -16,13 +16,11 @@ async function getDb() {
   return { client, col: db.collection("credentials") };
 }
 
-// GET /api/auth/google - redirect to Google OAuth
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const action = searchParams.get("action");
 
   if (action === "callback") {
-    // Handle OAuth callback
     const code = searchParams.get("code");
     const error = searchParams.get("error");
 
@@ -31,7 +29,6 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-      // Exchange code for tokens
       const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -49,7 +46,6 @@ export async function GET(req: NextRequest) {
         throw new Error("Token exchange failed");
       }
 
-      // Get user info from Google
       const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
       });
@@ -61,7 +57,6 @@ export async function GET(req: NextRequest) {
 
       const { client, col } = await getDb();
 
-      // Upsert user
       const result = await col.findOneAndUpdate(
         { email: googleUser.email.toLowerCase() },
         {
@@ -112,7 +107,6 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Initiate OAuth flow
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: `${BASE_URL}/api/auth/google?action=callback`,

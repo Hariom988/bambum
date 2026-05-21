@@ -94,7 +94,6 @@ export default function PrivacyPolicyPage() {
           marginTop: "20px",
         }}
       >
-        {/* ══════════════ HERO ══════════════ */}
         <section
           style={{
             background: "var(--pp-hero-bg)",
@@ -111,9 +110,7 @@ export default function PrivacyPolicyPage() {
               paddingBottom: "48px",
             }}
           >
-            {/* Left — text */}
             <div>
-              {/* Badge */}
               <div
                 style={{
                   display: "inline-flex",
@@ -144,7 +141,6 @@ export default function PrivacyPolicyPage() {
                 </span>
               </div>
 
-              {/* Two-line heading: "Privacy" dark, "Policy" teal */}
               <h1
                 style={{
                   fontFamily: "var(--nav-font)",
@@ -191,8 +187,6 @@ export default function PrivacyPolicyPage() {
                 responsibility.
               </p>
             </div>
-
-            {/* Right — illustration (user will supply image) */}
             <div
               style={{
                 display: "flex",
@@ -214,7 +208,6 @@ export default function PrivacyPolicyPage() {
           </div>
         </section>
 
-        {/* ══════════════ DARK SECTIONS ══════════════ */}
         <section
           style={{
             background: "var(--pp-dark-bg)",
@@ -222,7 +215,6 @@ export default function PrivacyPolicyPage() {
           }}
         >
           <div className="max-w-3xl mx-auto px-6">
-            {/* "Before You Continue" heading */}
             <div style={{ textAlign: "center", marginBottom: "52px" }}>
               <h2
                 style={{
@@ -251,7 +243,6 @@ export default function PrivacyPolicyPage() {
               </p>
             </div>
 
-            {/* Policy cards — single column */}
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {SECTIONS.map((sec) => {
                 const Icon = sec.icon;
@@ -266,7 +257,6 @@ export default function PrivacyPolicyPage() {
                       padding: "24px 28px",
                     }}
                   >
-                    {/* Icon + title row */}
                     <div
                       style={{
                         display: "flex",
@@ -309,7 +299,6 @@ export default function PrivacyPolicyPage() {
                       </h3>
                     </div>
 
-                    {/* Body */}
                     <p
                       style={{
                         fontSize: "0.875rem",
@@ -326,8 +315,6 @@ export default function PrivacyPolicyPage() {
             </div>
           </div>
         </section>
-
-        {/* ══════════════ CONTACT STRIP ══════════════ */}
         <section
           style={{
             background: "var(--brand-background-page)",

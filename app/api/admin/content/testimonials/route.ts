@@ -18,7 +18,6 @@ export async function GET() {
       items: items.map((i) => ({ ...i, _id: i._id.toString() })),
     });
   } catch (err) {
-    console.error("[testimonials GET]", err);
     return NextResponse.json({ error: "Failed to fetch testimonials." }, { status: 500 });
   }
 }
@@ -55,7 +54,6 @@ export async function POST(req: NextRequest) {
     await client.close();
     return NextResponse.json({ ok: true, id: result.insertedId }, { status: 201 });
   } catch (err) {
-    console.error("[testimonials POST]", err);
     return NextResponse.json({ error: "Failed to create testimonial." }, { status: 500 });
   }
 }
@@ -66,7 +64,6 @@ export async function PUT(req: NextRequest) {
     const { _id, name, location, rating, title, text, product, order } = body;
     if (!_id) return NextResponse.json({ error: "ID required." }, { status: 400 });
     const { client, col } = await getDb();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const update: Record<string, any> = { updatedAt: new Date() };
     if (name !== undefined) {
       update.name = name.trim();
@@ -88,7 +85,6 @@ export async function PUT(req: NextRequest) {
     await client.close();
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[testimonials PUT]", err);
     return NextResponse.json({ error: "Failed to update testimonial." }, { status: 500 });
   }
 }
@@ -107,7 +103,6 @@ export async function PATCH(req: NextRequest) {
     await client.close();
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[testimonials PATCH]", err);
     return NextResponse.json({ error: "Failed to toggle testimonial." }, { status: 500 });
   }
 }
@@ -122,7 +117,6 @@ export async function DELETE(req: NextRequest) {
     await client.close();
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[testimonials DELETE]", err);
     return NextResponse.json({ error: "Failed to delete testimonial." }, { status: 500 });
   }
 }

@@ -8,7 +8,6 @@ const PUBLIC_ADMIN_PATHS = ["/admin/login"];
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // ── ADMIN ROUTES ──────────────────────────────────────────────────────────
   if (pathname.startsWith("/admin")) {
     if (PUBLIC_ADMIN_PATHS.some((p) => pathname.startsWith(p))) {
       const token = req.cookies.get("admin_token")?.value;
@@ -17,7 +16,7 @@ export async function middleware(req: NextRequest) {
           await jwtVerify(token, JWT_SECRET);
           return NextResponse.redirect(new URL("/admin/dashboard", req.url));
         } catch {
-          // Token invalid/expired → stay on login
+          
         }
       }
       return NextResponse.next();
@@ -57,20 +56,16 @@ export async function middleware(req: NextRequest) {
       return response;
     }
   }
-
-  // ── AUTH ROUTE ────────────────────────────────────────────────────────────
   if (pathname === "/auth") {
     const token = req.cookies.get("user_token")?.value;
     if (token) {
       try {
-        await jwtVerify(token, JWT_SECRET);
-        // Already logged in — redirect to redirectTo param or home
+        await jwtVerify(token, JWT_SECRET)
         const redirectTo = req.nextUrl.searchParams.get("redirectTo") ?? "/";
-        // Safety: only allow same-origin redirects
+       
         const safeRedirect = redirectTo.startsWith("/") ? redirectTo : "/";
         return NextResponse.redirect(new URL(safeRedirect, req.url));
       } catch {
-        // Invalid token, let them through to /auth
       }
     }
     return NextResponse.next();

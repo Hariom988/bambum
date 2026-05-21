@@ -18,7 +18,6 @@ export async function GET() {
       items: items.map((i) => ({ ...i, _id: i._id.toString() })),
     });
   } catch (err) {
-    console.error("[faq GET]", err);
     return NextResponse.json({ error: "Failed to fetch FAQs." }, { status: 500 });
   }
 }
@@ -43,7 +42,6 @@ export async function POST(req: NextRequest) {
     await client.close();
     return NextResponse.json({ ok: true, id: result.insertedId }, { status: 201 });
   } catch (err) {
-    console.error("[faq POST]", err);
     return NextResponse.json({ error: "Failed to create FAQ." }, { status: 500 });
   }
 }
@@ -54,7 +52,6 @@ export async function PUT(req: NextRequest) {
     const { _id, question, answer, order } = body;
     if (!_id) return NextResponse.json({ error: "ID required." }, { status: 400 });
     const { client, col } = await getDb();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const update: Record<string, any> = { updatedAt: new Date() };
     if (question !== undefined) update.question = question.trim();
     if (answer !== undefined) update.answer = answer.trim();
@@ -63,7 +60,6 @@ export async function PUT(req: NextRequest) {
     await client.close();
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[faq PUT]", err);
     return NextResponse.json({ error: "Failed to update FAQ." }, { status: 500 });
   }
 }
@@ -82,7 +78,6 @@ export async function PATCH(req: NextRequest) {
     await client.close();
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[faq PATCH]", err);
     return NextResponse.json({ error: "Failed to toggle FAQ." }, { status: 500 });
   }
 }
@@ -97,7 +92,6 @@ export async function DELETE(req: NextRequest) {
     await client.close();
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[faq DELETE]", err);
     return NextResponse.json({ error: "Failed to delete FAQ." }, { status: 500 });
   }
 }

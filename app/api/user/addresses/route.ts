@@ -22,7 +22,6 @@ async function getDb() {
   return { client, col: db.collection("addresses") };
 }
 
-// GET — all addresses for user
 export async function GET(req: NextRequest) {
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -43,7 +42,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST — add new address
 export async function POST(req: NextRequest) {
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -58,7 +56,6 @@ export async function POST(req: NextRequest) {
 
     const { client, col } = await getDb();
 
-    // First address is auto-default
     const count = await col.countDocuments({ userId });
     const isDefault = count === 0;
 
@@ -85,7 +82,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT — update address
 export async function PUT(req: NextRequest) {
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -121,7 +117,6 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// PATCH — set default address
 export async function PATCH(req: NextRequest) {
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -133,9 +128,7 @@ export async function PATCH(req: NextRequest) {
     const { client, col } = await getDb();
 
     if (isDefault) {
-      // Unset all defaults first
       await col.updateMany({ userId }, { $set: { isDefault: false } });
-      // Set new default
       await col.updateOne({ _id: new ObjectId(_id), userId }, { $set: { isDefault: true } });
     }
 
@@ -147,7 +140,6 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
-// DELETE — remove address
 export async function DELETE(req: NextRequest) {
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -162,7 +154,6 @@ export async function DELETE(req: NextRequest) {
 
     await col.deleteOne({ _id: new ObjectId(id), userId });
 
-    // If deleted was default, assign new default to most recent
     if (addr?.isDefault) {
       const next = await col.findOne({ userId }, { sort: { createdAt: -1 } });
       if (next) {

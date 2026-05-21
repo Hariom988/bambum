@@ -22,7 +22,6 @@ async function getDb() {
   return { client, col: db.collection("orders") };
 }
 
-// GET — all orders for the user
 export async function GET(req: NextRequest) {
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -43,7 +42,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST — create a new order (called from checkout)
 export async function POST(req: NextRequest) {
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -56,7 +54,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing order data." }, { status: 400 });
     }
 
-    // Generate a short order ID: ORD + timestamp
     const orderId = `ORD${Date.now().toString().slice(-8)}`;
 
     const { client, col } = await getDb();

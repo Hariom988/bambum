@@ -23,8 +23,6 @@ export async function GET(request: Request) {
   try {
     const client = await clientPromise;
     const col = client.db("inventory").collection("products");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filter: Record<string, any> = { isActive: true };
 
     if (q) {

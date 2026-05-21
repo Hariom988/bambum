@@ -15,7 +15,6 @@ async function getDb() {
   return { client, db, col: db.collection("products") };
 }
 
-// GET — all products
 export async function GET() {
   try {
     const { client, col } = await getDb();
@@ -23,12 +22,10 @@ export async function GET() {
     await client.close();
     return NextResponse.json({ products });
   } catch (err) {
-    console.error("[inventory GET]", err);
     return NextResponse.json({ error: "Failed to fetch products." }, { status: 500 });
   }
 }
 
-// POST — create new product
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -62,12 +59,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, id: result.insertedId }, { status: 201 });
   } catch (err) {
-    console.error("[inventory POST]", err);
     return NextResponse.json({ error: "Failed to create product." }, { status: 500 });
   }
 }
 
-// PUT — full product update (all fields including stock)
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
@@ -100,12 +95,10 @@ export async function PUT(req: NextRequest) {
     await client.close();
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[inventory PUT]", err);
     return NextResponse.json({ error: "Failed to update product." }, { status: 500 });
   }
 }
 
-// PATCH — partial update (isActive toggle OR stock adjustment)
 export async function PATCH(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -117,10 +110,8 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const allowed: Record<string, any> = {};
     if (typeof body.gender === "string" && body.gender) allowed.gender = body.gender;
-    // Allow direct stock patch (e.g. from a quick-edit or restock action)
     if (typeof body.stock === "number" && body.stock >= 0) {
       allowed.stock = Math.floor(body.stock);
     }
@@ -137,12 +128,10 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[inventory PATCH]", err);
     return NextResponse.json({ error: "Failed to patch product." }, { status: 500 });
   }
 }
 
-// DELETE — remove product
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -158,7 +147,6 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[inventory DELETE]", err);
     return NextResponse.json({ error: "Failed to delete product." }, { status: 500 });
   }
 }

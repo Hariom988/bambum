@@ -9,7 +9,6 @@ async function getDb() {
   return { client, col: db.collection("orders") };
 }
 
-// GET — all orders with user details
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -17,8 +16,6 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search");
 
     const { client, col } = await getDb();
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filter: Record<string, any> = {};
     if (status && status !== "all") filter.status = status;
     if (search) {
@@ -44,7 +41,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// PATCH — update order status
 export async function PATCH(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -72,7 +68,6 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Failed to update order." }, { status: 500 });
   }
 }   
-// DELETE — remove order (only delivered or cancelled)
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);

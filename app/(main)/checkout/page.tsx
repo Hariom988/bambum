@@ -90,12 +90,9 @@ export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
 
   const isGuest = !authLoading && !user;
-
-  // Guest info state
   const [guestInfo, setGuestInfo] = useState<GuestInfo>(EMPTY_GUEST);
   const [guestErrors, setGuestErrors] = useState<Partial<GuestInfo>>({});
 
-  // Address states (for logged-in users)
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null,
@@ -105,7 +102,6 @@ export default function CheckoutPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [savingAddress, setSavingAddress] = useState(false);
 
-  // Guest address state
   const [guestAddress, setGuestAddress] = useState({
     line1: "",
     line2: "",
@@ -121,14 +117,11 @@ export default function CheckoutPage() {
   } | null>(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
-  // Redirect only if cart is empty (not for auth)
   useEffect(() => {
     if (!authLoading && items.length === 0) {
       router.replace("/products");
     }
   }, [items, authLoading, router]);
-
-  // Load Razorpay script
   useEffect(() => {
     if (
       document.querySelector(
@@ -144,7 +137,6 @@ export default function CheckoutPage() {
     document.body.appendChild(script);
   }, []);
 
-  // Toast auto dismiss
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 4000);
@@ -226,7 +218,6 @@ export default function CheckoutPage() {
   };
 
   const handlePay = async () => {
-    // Validate guest info if not logged in
     if (isGuest) {
       if (!validateGuestInfo()) {
         setToast({
@@ -455,7 +446,6 @@ export default function CheckoutPage() {
         />
 
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
-          {/* Header */}
           <div className="mb-8">
             <p
               className="text-[0.65rem] font-bold tracking-[0.2em] uppercase mb-1"
@@ -471,7 +461,6 @@ export default function CheckoutPage() {
             </h1>
           </div>
 
-          {/* Guest banner */}
           {isGuest && (
             <div className="guest-banner flex items-center justify-between gap-4 px-5 py-3 mb-6">
               <p className="text-sm" style={{ color: "var(--nav-fg-muted)" }}>
@@ -493,9 +482,7 @@ export default function CheckoutPage() {
           )}
 
           <div className="grid md:grid-cols-[1fr_360px] gap-8">
-            {/* LEFT */}
             <div className="flex flex-col gap-6">
-              {/* ── STEP 1: Guest Contact Info (only for guests) ── */}
               {isGuest && (
                 <div
                   className="co-section overflow-hidden"
@@ -539,7 +526,6 @@ export default function CheckoutPage() {
 
                   <div className="p-6 flex flex-col gap-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Name */}
                       <div>
                         <label
                           className="block text-[10px] font-bold tracking-widest uppercase mb-1.5"
@@ -578,7 +564,6 @@ export default function CheckoutPage() {
                         )}
                       </div>
 
-                      {/* Phone */}
                       <div>
                         <label
                           className="block text-[10px] font-bold tracking-widest uppercase mb-1.5"
@@ -618,7 +603,6 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
-                    {/* Email (optional) */}
                     <div>
                       <label
                         className="block text-[10px] font-bold tracking-widest uppercase mb-1.5"
@@ -653,7 +637,6 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* ── STEP 2: Delivery Address ── */}
               <div
                 className="co-section overflow-hidden"
                 style={{
@@ -695,7 +678,6 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="p-6">
-                  {/* Guest: inline address form */}
                   {isGuest ? (
                     <div className="flex flex-col gap-4">
                       <div>
@@ -803,8 +785,7 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                     </div>
-                  ) : /* Logged-in: saved addresses */
-                  loadingAddresses ? (
+                  ) : loadingAddresses ? (
                     <div className="flex justify-center py-8">
                       <Loader2
                         size={20}
@@ -1156,7 +1137,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* ── Order Items ── */}
               <div
                 className="co-section overflow-hidden"
                 style={{
@@ -1275,7 +1255,7 @@ export default function CheckoutPage() {
                           className="text-[10px] mt-0.5"
                           style={{ color: "var(--nav-fg-muted)" }}
                         >
-                          ₹{item.price} × {item.quantity}
+                          ₹{item.price} x {item.quantity}
                         </p>
                       </div>
                     </div>
@@ -1284,7 +1264,6 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* RIGHT: Order Summary */}
             <div className="flex flex-col gap-4">
               <div
                 className="co-section sticky top-20 overflow-hidden"
@@ -1383,7 +1362,6 @@ export default function CheckoutPage() {
                     </span>
                   </div>
 
-                  {/* Delivery preview */}
                   {!isGuest && selectedAddress && (
                     <div
                       className="p-3 mb-5 text-xs leading-relaxed"
@@ -1430,7 +1408,6 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
-                  {/* Pay button */}
                   <button
                     onClick={handlePay}
                     disabled={paying || items.length === 0}
@@ -1503,7 +1480,6 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Toast */}
         {toast && (
           <div
             className="co-toast fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3"

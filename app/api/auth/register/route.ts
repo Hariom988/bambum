@@ -5,7 +5,7 @@ import { SignJWT } from "jose";
 
 const MONGODB_URI = process.env.MONGODB_URI!;
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
-const SESSION_DURATION = 4 * 60 * 60; // 4 hours in seconds
+const SESSION_DURATION = 4 * 60 * 60;
 
 async function getDb() {
   const client = await MongoClient.connect(MONGODB_URI);
@@ -24,7 +24,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
@@ -39,7 +38,6 @@ export async function POST(req: NextRequest) {
 
     const { client, col } = await getDb();
 
-    // Check if email already exists
     const existing = await col.findOne({
       email: { $regex: new RegExp(`^${email.trim()}$`, "i") },
     });
@@ -65,7 +63,6 @@ export async function POST(req: NextRequest) {
 
     await client.close();
 
-    // Issue JWT session token
     const token = await new SignJWT({
       sub: result.insertedId.toString(),
       name: name.trim(),
@@ -91,7 +88,7 @@ export async function POST(req: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: SESSION_DURATION, // 4 hours - persists across tabs
+      maxAge: SESSION_DURATION,
     });
 
     return response;

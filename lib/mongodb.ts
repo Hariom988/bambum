@@ -12,7 +12,6 @@ let clientPromise: Promise<MongoClient>;
 const options = {
   serverApi: {
     version: ServerApiVersion.v1,
-    // strict: true  ← REMOVED: blocks $meta textScore in Atlas
     deprecationErrors: true,
   },
   maxPoolSize: 10,

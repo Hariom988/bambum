@@ -33,9 +33,8 @@ function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, login, register } = useAuth();
-const {loading } = useAuth();
+  const { loading } = useAuth();
 
-  // ── READ redirectTo from query param ─────────────────────────────────────
   const redirectTo = searchParams.get("redirectTo") ?? "/";
 
   const [tab, setTab] = useState<"login" | "register">(
@@ -43,13 +42,11 @@ const {loading } = useAuth();
   );
   const [mounted, setMounted] = useState(false);
 
-  // Login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
-  // Register state
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
@@ -95,7 +92,6 @@ const {loading } = useAuth();
     if (error) {
       setLoginError(error);
     } else {
-      // ── Redirect to the page user came from ──────────────────────────────
       router.push(redirectTo);
     }
   };
@@ -122,13 +118,11 @@ const {loading } = useAuth();
       setRegError(error);
     } else {
       setRegSuccess(true);
-      // ── Redirect to the page user came from ──────────────────────────────
       setTimeout(() => router.push(redirectTo), 1200);
     }
   };
 
   const handleGoogleLogin = () => {
-    // Pass redirectTo to Google OAuth so it can redirect back after auth
     const callbackUrl = encodeURIComponent(redirectTo);
     window.location.href = `/api/auth/google?redirectTo=${callbackUrl}`;
   };
@@ -225,14 +219,12 @@ const {loading } = useAuth();
         <div
           className={`auth-card relative w-full max-w-md ${mounted ? "visible" : ""}`}
         >
-          {/* Logo */}
           <div className="text-center mb-8">
             <a href="/" className="inline-block">
               <Image src="/logo.png" alt="Bambumm" width={96} height={96} />
             </a>
           </div>
 
-          {/* Card */}
           <div
             style={{
               background: "#fff",
@@ -244,8 +236,6 @@ const {loading } = useAuth();
               className="h-0.5 w-full"
               style={{ background: "var(--nav-accent)" }}
             />
-
-            {/* Tabs */}
             <div
               className="flex border-b"
               style={{ borderColor: "var(--nav-border)" }}
@@ -271,7 +261,6 @@ const {loading } = useAuth();
             </div>
 
             <div className="px-8 py-7">
-              {/* Google error */}
               {googleError && (
                 <div
                   className="flex items-center gap-2.5 px-4 py-3 mb-5"
@@ -296,7 +285,6 @@ const {loading } = useAuth();
                 </div>
               )}
 
-              {/* Google button */}
               <button
                 className="auth-btn-google"
                 onClick={handleGoogleLogin}
