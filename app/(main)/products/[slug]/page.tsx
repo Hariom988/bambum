@@ -1097,7 +1097,6 @@ export default function ProductPage({ params }: Props) {
                     "Temperature Regulating",
                     "Eco-Friendly & Sustainable",
                     "Tag-Free Design for Comfort",
-                    "Elastic Waistband with Logo Detail",
                   ].map((feat) => (
                     <div key={feat} className="flex items-start gap-3">
                       <div

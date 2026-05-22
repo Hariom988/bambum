@@ -28,7 +28,7 @@ const CITIES = [
     backgroundColorFrom: "#19635E",
     backgroundColorTo: "#2DAFA7",
     image: "/shopByComponentImages/newyork.png",
-    href: "/products?category=Women",
+    href: "/products?category=Men",
   },
   {
     name: "MIAMI",
@@ -48,7 +48,7 @@ const CITIES = [
     backgroundColorFrom: "#000000",
     backgroundColorTo: "#000000",
     image: "/shopByComponentImages/sydney.png",
-    href: "/products?category=Women",
+    href: "/products?category=Men",
   },
   {
     name: "PARIS",
