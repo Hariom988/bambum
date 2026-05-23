@@ -2,163 +2,487 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, AlertCircle, Loader2, Leaf, Check } from "lucide-react";
-import { useAuth } from "@/context/authContext";
 import Image from "next/image";
+import Link from "next/link";
+import {
+  CheckCircle2,
+  Package,
+  MapPin,
+  CreditCard,
+  ShoppingBag,
+  ArrowRight,
+  Loader2,
+  AlertCircle,
+  Leaf,
+  Copy,
+  Check,
+  User,
+  Phone,
+  Mail,
+  Calendar,
+  Hash,
+  Truck,
+} from "lucide-react";
 
-function GoogleIcon() {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface OrderItem {
+  productId: string;
+  name: string;
+  slug: string;
+  image: string;
+  colorName: string;
+  colorHex: string;
+  size?: string;
+  price: number;
+  quantity: number;
+}
+
+interface OrderAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+}
+
+interface GuestInfo {
+  name: string;
+  phone: string;
+  email?: string;
+}
+
+interface OrderPayment {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  method: string;
+}
+
+interface Order {
+  _id: string;
+  orderId: string;
+  userId: string | null;
+  isGuest: boolean;
+  guestInfo: GuestInfo | null;
+  items: OrderItem[];
+  total: number;
+  address: OrderAddress;
+  status: string;
+  payment: OrderPayment;
+  createdAt: string;
+}
+
+// ─── Helper: Copy to clipboard ────────────────────────────────────────────────
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
   return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 48 48"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+    <button
+      onClick={handleCopy}
+      title="Copy"
+      style={{
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        padding: "2px 4px",
+        color: "var(--nav-fg-muted)",
+        display: "inline-flex",
+        alignItems: "center",
+        transition: "color 0.15s",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.color = "var(--nav-accent)")}
+      onMouseLeave={(e) =>
+        (e.currentTarget.style.color = "var(--nav-fg-muted)")
+      }
     >
-      <path
-        d="M47.5 24.5c0-1.6-.1-3.2-.4-4.7H24v8.9h13.2c-.6 3-2.3 5.5-4.9 7.2v6h7.9c4.6-4.3 7.3-10.6 7.3-17.4z"
-        fill="#4285F4"
-      />
-      <path
-        d="M24 48c6.5 0 12-2.1 16-5.8l-7.9-6c-2.2 1.5-5 2.3-8.1 2.3-6.2 0-11.5-4.2-13.4-9.9H2.5v6.2C6.5 42.6 14.7 48 24 48z"
-        fill="#34A853"
-      />
-      <path
-        d="M10.6 28.6c-.5-1.5-.8-3-.8-4.6s.3-3.1.8-4.6v-6.2H2.5C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.8l8.1-6.2z"
-        fill="#FBBC05"
-      />
-      <path
-        d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.5 0 24 0 14.7 0 6.5 5.4 2.5 13.2l8.1 6.2C12.5 13.7 17.8 9.5 24 9.5z"
-        fill="#EA4335"
-      />
-    </svg>
+      {copied ? (
+        <Check size={12} style={{ color: "#27ae60" }} />
+      ) : (
+        <Copy size={12} />
+      )}
+    </button>
   );
 }
 
-function AuthContent() {
+// ─── Section wrapper ──────────────────────────────────────────────────────────
+
+function Section({
+  icon,
+  title,
+  badge,
+  children,
+  delay = 0,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  badge?: string;
+  children: React.ReactNode;
+  delay?: number;
+}) {
+  return (
+    <div
+      className="os-section overflow-hidden"
+      style={
+        {
+          background: "#fff",
+          border: "1px solid var(--nav-border)",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+          animationDelay: `${delay}ms`,
+          "--delay": `${delay}ms`,
+        } as React.CSSProperties
+      }
+    >
+      {/* Section header */}
+      <div
+        className="flex rounded-t-lg items-center gap-3 px-5 py-4 border-b"
+        style={{
+          borderColor: "var(--nav-border)",
+          background: "rgba(25,99,94,0.03)",
+        }}
+      >
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+          style={{
+            background: "rgba(25,99,94,0.1)",
+            border: "1px solid var(--nav-border)",
+          }}
+        >
+          {icon}
+        </div>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <p
+            className="text-sm font-bold uppercase tracking-wider"
+            style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
+          >
+            {title}
+          </p>
+          {badge && (
+            <span
+              className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 shrink-0"
+              style={{
+                background: "rgba(25,99,94,0.1)",
+                border: "1px solid var(--nav-border)",
+                color: "var(--nav-accent)",
+              }}
+            >
+              {badge}
+            </span>
+          )}
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ─── Info row ─────────────────────────────────────────────────────────────────
+
+function InfoRow({
+  icon,
+  label,
+  value,
+  copyValue,
+  accent,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  copyValue?: string;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className="flex items-start justify-between gap-4 py-3 border-b last:border-0"
+      style={{ borderColor: "var(--nav-border)" }}
+    >
+      <div
+        className="flex items-center gap-2 shrink-0"
+        style={{ color: "var(--nav-fg-muted)" }}
+      >
+        {icon && <span className="opacity-70">{icon}</span>}
+        <span
+          className="text-[10px] font-bold tracking-[0.14em] uppercase"
+          style={{ color: "var(--nav-fg-muted)" }}
+        >
+          {label}
+        </span>
+      </div>
+      <div className="flex items-center gap-1 text-right">
+        <span
+          className="text-sm font-semibold"
+          style={{
+            color: accent ? "var(--nav-accent)" : "var(--nav-fg)",
+            fontFamily: accent ? "var(--nav-font)" : "var(--nav-font-ui)",
+          }}
+        >
+          {value}
+        </span>
+        {copyValue && <CopyButton text={copyValue} />}
+      </div>
+    </div>
+  );
+}
+
+// ─── Status pill ──────────────────────────────────────────────────────────────
+
+function StatusPill({ status }: { status: string }) {
+  const map: Record<string, { label: string; bg: string; color: string }> = {
+    confirmed: {
+      label: "Confirmed",
+      bg: "rgba(39,174,96,0.1)",
+      color: "#1a8c4e",
+    },
+    processing: {
+      label: "Processing",
+      bg: "rgba(200,169,126,0.15)",
+      color: "#8a6a2a",
+    },
+    shipped: {
+      label: "Shipped",
+      bg: "rgba(41,177,168,0.12)",
+      color: "#1a7a74",
+    },
+    delivered: {
+      label: "Delivered",
+      bg: "rgba(39,174,96,0.1)",
+      color: "#1a8c4e",
+    },
+    cancelled: {
+      label: "Cancelled",
+      bg: "rgba(217,79,61,0.1)",
+      color: "#b03a2e",
+    },
+  };
+  const s = map[status] ?? {
+    label: status,
+    bg: "rgba(0,0,0,0.05)",
+    color: "#666",
+  };
+  return (
+    <span
+      className="text-[10px] font-bold tracking-[0.14em] uppercase px-3 py-1"
+      style={{
+        background: s.bg,
+        color: s.color,
+        border: `1px solid ${s.color}22`,
+      }}
+    >
+      {s.label}
+    </span>
+  );
+}
+
+// ─── Main content ─────────────────────────────────────────────────────────────
+
+function OrderSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, login, register } = useAuth();
+  const orderId = searchParams.get("orderId");
 
-  const returnUrl = searchParams.get("returnUrl") || "/";
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [headerVisible, setHeaderVisible] = useState(false);
+  const headerRef = useRef<HTMLDivElement>(null);
 
-  const [tab, setTab] = useState<"login" | "register">(
-    searchParams.get("tab") === "register" ? "register" : "login",
-  );
-  const [mounted, setMounted] = useState(false);
-
-  // Login state
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [showLoginPass, setShowLoginPass] = useState(false);
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState("");
-
-  // Register state
-  const [regName, setRegName] = useState("");
-  const [regEmail, setRegEmail] = useState("");
-  const [regPassword, setRegPassword] = useState("");
-  const [regConfirm, setRegConfirm] = useState("");
-  const [showRegPass, setShowRegPass] = useState(false);
-  const [showRegConfirm, setShowRegConfirm] = useState(false);
-  const [regLoading, setRegLoading] = useState(false);
-  const [regError, setRegError] = useState("");
-  const [regSuccess, setRegSuccess] = useState(false);
-
-  const googleError = searchParams.get("error");
-
+  // Fetch order details
   useEffect(() => {
-    setMounted(true);
+    if (!orderId) {
+      setError("No order ID provided.");
+      setLoading(false);
+      return;
+    }
+    const fetchOrder = async () => {
+      try {
+        const res = await fetch(`/api/orders/${orderId}`);
+        if (!res.ok) {
+          const d = await res.json();
+          setError(d.error || "Failed to load order details.");
+          return;
+        }
+        const { order } = await res.json();
+        setOrder(order);
+      } catch {
+        setError("Network error. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrder();
+  }, [orderId]);
+
+  // Animate header in
+  useEffect(() => {
+    const t = setTimeout(() => setHeaderVisible(true), 100);
+    return () => clearTimeout(t);
   }, []);
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user) router.replace(returnUrl);
-  }, [user, router, returnUrl]);
-
-  const passwordStrength = (pw: string) => {
-    let score = 0;
-    if (pw.length >= 8) score++;
-    if (/[A-Z]/.test(pw)) score++;
-    if (/[0-9]/.test(pw)) score++;
-    if (/[^A-Za-z0-9]/.test(pw)) score++;
-    return score;
+  // ── Format date ──
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleString("en-IN", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
-  const pwStrength = passwordStrength(regPassword);
-  const strengthLabels = ["", "Weak", "Fair", "Good", "Strong"];
-  const strengthColors = ["", "#e74c3c", "#e67e22", "#f39c12", "#27ae60"];
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!loginEmail.trim() || !loginPassword) {
-      setLoginError("Please fill in all fields.");
-      return;
-    }
-    setLoginLoading(true);
-    setLoginError("");
-    const { error } = await login(loginEmail, loginPassword);
-    setLoginLoading(false);
-    if (error) {
-      setLoginError(error);
-    } else {
-      router.push(returnUrl);
-    }
+  // ── Estimated delivery ──
+  const estimatedDelivery = (iso: string) => {
+    const d = new Date(iso);
+    d.setDate(d.getDate() + 7);
+    const max = new Date(iso);
+    max.setDate(max.getDate() + 10);
+    return `${d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })} – ${max.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`;
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!regName.trim() || !regEmail.trim() || !regPassword || !regConfirm) {
-      setRegError("Please fill in all fields.");
-      return;
-    }
-    if (regPassword !== regConfirm) {
-      setRegError("Passwords do not match.");
-      return;
-    }
-    if (regPassword.length < 8) {
-      setRegError("Password must be at least 8 characters.");
-      return;
-    }
-    setRegLoading(true);
-    setRegError("");
-    const { error } = await register(regName, regEmail, regPassword);
-    setRegLoading(false);
-    if (error) {
-      setRegError(error);
-    } else {
-      setRegSuccess(true);
-      setTimeout(() => router.push(returnUrl), 1200);
-    }
-  };
+  // ─── Loading ───────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-4"
+        style={{
+          background: "var(--nav-bg)",
+          fontFamily: "var(--nav-font-ui)",
+        }}
+      >
+        <Loader2
+          size={28}
+          className="animate-spin"
+          style={{ color: "var(--nav-accent)" }}
+        />
+        <p
+          className="text-xs font-bold tracking-[0.2em] uppercase"
+          style={{ color: "var(--nav-fg-muted)" }}
+        >
+          Loading your order…
+        </p>
+      </div>
+    );
+  }
 
-  const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
-  };
+  // ─── Error ────────────────────────────────────────────────────────────────
+  if (error || !order) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-6 px-4"
+        style={{
+          background: "var(--nav-bg)",
+          fontFamily: "var(--nav-font-ui)",
+        }}
+      >
+        <div
+          className="w-16 h-16 flex items-center justify-center"
+          style={{
+            border: "1px solid rgba(217,79,61,0.3)",
+            background: "rgba(217,79,61,0.06)",
+          }}
+        >
+          <AlertCircle size={28} style={{ color: "var(--nav-sale)" }} />
+        </div>
+        <div className="text-center">
+          <p
+            className="text-lg font-bold uppercase tracking-widest mb-2"
+            style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
+          >
+            Order Not Found
+          </p>
+          <p className="text-sm" style={{ color: "var(--nav-fg-muted)" }}>
+            {error || "We couldn't find this order."}
+          </p>
+        </div>
+        <Link
+          href="/products"
+          className="flex items-center gap-2 px-6 py-3 text-xs font-bold tracking-[0.16em] uppercase"
+          style={{
+            background: "var(--nav-accent)",
+            color: "#fff",
+            textDecoration: "none",
+          }}
+        >
+          <ShoppingBag size={13} /> Continue Shopping
+        </Link>
+      </div>
+    );
+  }
+
+  const itemCount = order.items.reduce((s, i) => s + i.quantity, 0);
+  const displayName = order.isGuest ? order.guestInfo?.name : null; // logged-in users: shown from their profile
 
   return (
     <>
       <style>{`
-        .auth-input {
-          width: 100%;
-          padding: 12px 16px;
-          border: 1px solid var(--nav-border);
-          background: var(--nav-bg);
-          color: var(--nav-fg);
-          font-family: var(--nav-font-ui);
-          font-size: 14px;
-          outline: none;
-          transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        /* Page-level fade */
+        @keyframes osFadeUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-        .auth-input:focus {
-          border-color: var(--nav-accent);
-          box-shadow: 0 0 0 3px rgba(200,169,126,0.12);
+        .os-section {
+          opacity: 0;
+          animation: osFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation-delay: var(--delay, 0ms);
         }
-        .auth-input::placeholder { color: var(--nav-fg-muted); opacity: 0.7; }
 
-        .auth-btn-primary {
-          width: 100%;
-          padding: 14px;
+        /* Success ring pulse */
+        @keyframes ringPulse {
+          0%   { transform: scale(1);   opacity: 0.6; }
+          100% { transform: scale(1.6); opacity: 0; }
+        }
+       
+
+        /* Check pop */
+        @keyframes checkPop {
+          0%   { transform: scale(0) rotate(-20deg); }
+          70%  { transform: scale(1.18) rotate(4deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        .check-icon { animation: checkPop 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both; }
+
+        /* Header slide */
+        @keyframes headerSlide {
+          from { opacity: 0; transform: translateY(-10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .os-header {
+          opacity: 0;
+          animation: headerSlide 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+        }
+        .os-header.visible { opacity: 1; }
+
+        /* Confetti dots (decorative) */
+        @keyframes confettiFall {
+          0%   { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(60px) rotate(180deg); opacity: 0; }
+        }
+        .confetti-dot {
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          animation: confettiFall 1.2s ease-out forwards;
+        }
+
+        /* Sticky summary */
+        @media (min-width: 768px) {
+          .os-sticky { position: sticky; top: 80px; }
+        }
+
+        /* Action buttons */
+        .os-btn-primary {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 14px 24px;
           background: var(--nav-accent);
           color: #fff;
           border: none;
@@ -168,673 +492,800 @@ function AuthContent() {
           letter-spacing: 0.16em;
           text-transform: uppercase;
           cursor: pointer;
+          text-decoration: none;
           transition: background 0.18s ease, transform 0.12s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
+          flex: 1;
         }
-        .auth-btn-primary:hover:not(:disabled) {
+        .os-btn-primary:hover {
           background: var(--nav-accent-hover);
           transform: translateY(-1px);
         }
-        .auth-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
 
-        .auth-btn-google {
-          width: 100%;
-          padding: 13px;
-          background: #fff;
+        .os-btn-secondary {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 14px 24px;
+          background: transparent;
           color: var(--nav-fg);
           border: 1px solid var(--nav-border);
           font-family: var(--nav-font-ui);
-          font-size: 13px;
-          font-weight: 600;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
           cursor: pointer;
-          transition: border-color 0.18s, box-shadow 0.18s, transform 0.12s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
+          text-decoration: none;
+          transition: border-color 0.18s ease, color 0.18s ease, transform 0.12s ease;
+          flex: 1;
         }
-        .auth-btn-google:hover {
+        .os-btn-secondary:hover {
           border-color: var(--nav-accent);
-          box-shadow: 0 2px 12px rgba(200,169,126,0.15);
+          color: var(--nav-accent);
           transform: translateY(-1px);
         }
 
-        .tab-btn {
-          flex: 1;
-          padding: 12px;
-          background: transparent;
-          border: none;
-          font-family: var(--nav-font-ui);
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: color 0.18s, border-color 0.18s;
-          border-bottom: 2px solid transparent;
-          color: var(--nav-fg-muted);
+        /* Product row hover */
+        .product-row:hover {
+          background: rgba(25,99,94,0.02);
         }
-        .tab-btn.active {
-          color: var(--nav-accent);
-          border-bottom-color: var(--nav-accent);
-        }
-        .tab-btn:hover:not(.active) {
-          color: var(--nav-fg);
-        }
-
-        .auth-card {
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 0.6s ease, transform 0.6s ease;
-        }
-        .auth-card.visible { opacity: 1; transform: translateY(0); }
-
-        .pw-strength-bar {
-          height: 3px;
-          border-radius: 2px;
-          background: var(--nav-border);
-          overflow: hidden;
-          margin-top: 6px;
-        }
-        .pw-strength-fill {
-          height: 100%;
-          border-radius: 2px;
-          transition: width 0.3s ease, background 0.3s ease;
-        }
-
-        .divider {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin: 20px 0;
-        }
-        .divider::before, .divider::after {
-          content: '';
-          flex: 1;
-          height: 1px;
-          background: var(--nav-border);
-        }
-        .divider span {
-          font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          color: var(--nav-fg-muted);
-          flex-shrink: 0;
-        }
-
-        /* Success animation */
-        @keyframes successPop {
-          0% { transform: scale(0); }
-          70% { transform: scale(1.15); }
-          100% { transform: scale(1); }
-        }
-        .success-icon { animation: successPop 0.4s cubic-bezier(0.22,1,0.36,1); }
-
-        /* Grid bg */
-        .auth-grid-bg {
-          background-image:
-            linear-gradient(var(--nav-border) 1px, transparent 1px),
-            linear-gradient(90deg, var(--nav-border) 1px, transparent 1px);
-          background-size: 48px 48px;
-          opacity: 0.5;
-        }
-
-        @keyframes pulse2 {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(0.8); }
-        }
-        .pulse-dot { animation: pulse2 2s ease-in-out infinite; }
       `}</style>
 
       <main
-        className="min-h-screen flex items-center justify-center px-4 py-12 relative"
         style={{
           background: "var(--nav-bg)",
+          minHeight: "100vh",
           fontFamily: "var(--nav-font-ui)",
+          color: "var(--nav-fg)",
+          paddingTop: "80px",
         }}
       >
-        {/* Grid background */}
-        <div className="auth-grid-bg absolute inset-0 pointer-events-none" />
+        {/* Top accent bar */}
 
-        {/* Radial glow */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse 60% 60% at 50% 40%, rgba(200,169,126,0.08) 0%, transparent 70%)",
-          }}
-        />
+        <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
+          {/* ── HERO: Success header ─────────────────────────────────────── */}
+          <div
+            ref={headerRef}
+            className={`os-header text-center mb-10 md:mb-14 ${headerVisible ? "visible" : ""}`}
+          >
+            {/* Label */}
+            <p
+              className="text-[10px] font-bold tracking-[0.25em] uppercase mb-2"
+              style={{ color: "var(--nav-accent)" }}
+            >
+              Payment Successful
+            </p>
 
-        <div
-          className={`auth-card relative w-full max-w-md ${mounted ? "visible" : ""}`}
-        >
-          {/* Logo / Brand */}
-          <div className="text-center mb-8">
-            <a href="/" className="inline-block">
-              <Image src="/logo.png" alt="Bambumm" width={96} height={96} />
-            </a>
-          </div>
+            {/* Heading */}
+            <h1
+              className="text-2xl md:text-4xl font-bold uppercase tracking-widest mb-3"
+              style={{ fontFamily: "var(--nav-font)", color: "var(--nav-fg)" }}
+            >
+              {displayName
+                ? `Thank you, ${displayName.split(" ")[0]}!`
+                : "Order Confirmed!"}
+            </h1>
 
-          {/* Checkout redirect notice */}
-          {returnUrl === "/checkout" && (
+            <p
+              className="text-sm md:text-base max-w-md mx-auto leading-relaxed"
+              style={{ color: "var(--nav-fg-muted)" }}
+            >
+              Your order has been placed and is being prepared. You&apos;ll
+              receive updates as it ships.
+            </p>
+
+            {/* Order ID chip */}
             <div
-              className="mb-4 px-4 py-3 text-xs text-center font-semibold"
+              className="inline-flex rounded-lg items-center gap-2 mt-5 px-4 py-2"
               style={{
-                background: "rgba(200,169,126,0.12)",
+                background: "rgba(25,99,94,0.07)",
                 border: "1px solid var(--nav-border)",
-                color: "var(--nav-fg-muted)",
               }}
             >
-              Please sign in to complete your purchase
-            </div>
-          )}
-
-          {/* Card */}
-          <div
-            style={{
-              background: "#fff",
-              border: "1px solid var(--nav-border)",
-              boxShadow: "0 8px 40px rgba(200,169,126,0.12)",
-            }}
-          >
-            {/* Top accent */}
-            <div
-              className="h-0.5 w-full"
-              style={{ background: "var(--nav-accent)" }}
-            />
-
-            {/* Tabs */}
-            <div
-              className="flex border-b"
-              style={{ borderColor: "var(--nav-border)" }}
-            >
-              <button
-                className={`tab-btn ${tab === "login" ? "active" : ""}`}
-                onClick={() => {
-                  setTab("login");
-                  setLoginError("");
+              <Hash size={12} style={{ color: "var(--nav-accent)" }} />
+              <span
+                className="text-xs font-bold tracking-[0.14em] uppercase"
+                style={{ color: "var(--nav-fg-muted)" }}
+              >
+                Order ID:
+              </span>
+              <span
+                className="text-sm font-bold"
+                style={{
+                  fontFamily: "var(--nav-font)",
+                  color: "var(--nav-fg)",
                 }}
               >
-                Sign In
-              </button>
-              <button
-                className={`tab-btn ${tab === "register" ? "active" : ""}`}
-                onClick={() => {
-                  setTab("register");
-                  setRegError("");
-                }}
-              >
-                Create Account
-              </button>
+                {order.orderId}
+              </span>
+              <CopyButton text={order.orderId} />
             </div>
+          </div>
 
-            <div className="px-8 py-7">
-              {/* Google error */}
-              {googleError && (
+          {/* ── GRID LAYOUT ──────────────────────────────────────────────── */}
+          <div className="grid md:grid-cols-[1fr_300px] gap-6">
+            {/* ── LEFT: Detail sections ─────────────────────────────────── */}
+            <div className="flex flex-col gap-5">
+              {/* 1. Order Confirmation */}
+              <Section
+                icon={
+                  <Package size={14} style={{ color: "var(--nav-accent)" }} />
+                }
+                title="Order Details"
+                badge={order.status}
+                delay={150}
+              >
+                <div className="px-5 ">
+                  <InfoRow
+                    icon={<Hash size={11} />}
+                    label="Order ID"
+                    value={order.orderId}
+                    copyValue={order.orderId}
+                    accent
+                  />
+                  <InfoRow
+                    icon={<Calendar size={11} />}
+                    label="Placed On"
+                    value={formatDate(order.createdAt)}
+                  />
+                  <InfoRow
+                    icon={<Package size={11} />}
+                    label="Status"
+                    value={<StatusPill status={order.status} />}
+                  />
+                  <InfoRow
+                    icon={<Truck size={11} />}
+                    label="Est. Delivery"
+                    value={estimatedDelivery(order.createdAt)}
+                    accent
+                  />
+                </div>
+              </Section>
+
+              {/* 2. Ordered Products */}
+              <Section
+                icon={
+                  <ShoppingBag
+                    size={14}
+                    style={{ color: "var(--nav-accent)" }}
+                  />
+                }
+                title="Items Ordered"
+                badge={`${itemCount} item${itemCount !== 1 ? "s" : ""}`}
+                delay={250}
+              >
                 <div
-                  className="flex items-center gap-2.5 px-4 py-3 mb-5"
+                  className="divide-y"
+                  style={{ borderColor: "var(--nav-border)" }}
+                >
+                  {order.items.map((item, idx) => (
+                    <div
+                      key={`${item.productId}-${item.colorName}-${idx}`}
+                      className="product-row flex gap-4 px-5 py-4 transition-colors duration-150"
+                    >
+                      {/* Image */}
+                      <div
+                        className="shrink-0 overflow-hidden"
+                        style={{
+                          width: 64,
+                          height: 80,
+                          border: "1px solid var(--nav-border)",
+                          background: "var(--nav-bg)",
+                          position: "relative",
+                        }}
+                      >
+                        {item.image ? (
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            sizes="64px"
+                            className="object-cover object-top"
+                          />
+                        ) : (
+                          <div
+                            className="w-full h-full flex items-center justify-center"
+                            style={{ background: "var(--nav-border)" }}
+                          >
+                            <Package
+                              size={20}
+                              style={{
+                                color: "var(--nav-fg-muted)",
+                                opacity: 0.4,
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <Link
+                          href={`/products/${item.slug}`}
+                          className="block text-sm font-bold uppercase tracking-wide leading-snug hover:underline"
+                          style={{
+                            fontFamily: "var(--nav-font)",
+                            color: "var(--nav-fg)",
+                            textDecoration: "none",
+                          }}
+                        >
+                          {item.name}
+                        </Link>
+
+                        {/* Variant chips */}
+                        <div className="flex items-center flex-wrap gap-2 mt-2">
+                          {/* Color */}
+                          <div
+                            className="flex items-center gap-1.5 px-2 py-0.5"
+                            style={{
+                              border: "1px solid var(--nav-border)",
+                              background: "var(--nav-bg)",
+                            }}
+                          >
+                            <div
+                              className="w-2.5 h-2.5 rounded-full border"
+                              style={{
+                                background: item.colorHex,
+                                borderColor: "rgba(0,0,0,0.15)",
+                              }}
+                            />
+                            <span
+                              className="text-[10px] font-semibold"
+                              style={{ color: "var(--nav-fg-muted)" }}
+                            >
+                              {item.colorName}
+                            </span>
+                          </div>
+
+                          {/* Size */}
+                          {item.size && (
+                            <div
+                              className="px-2 py-0.5"
+                              style={{
+                                border: "1px solid var(--nav-border)",
+                                background: "var(--nav-bg)",
+                              }}
+                            >
+                              <span
+                                className="text-[10px] font-semibold"
+                                style={{ color: "var(--nav-fg-muted)" }}
+                              >
+                                Size: {item.size}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Qty */}
+                          <div
+                            className="px-2 py-0.5"
+                            style={{
+                              border: "1px solid var(--nav-border)",
+                              background: "var(--nav-bg)",
+                            }}
+                          >
+                            <span
+                              className="text-[10px] font-semibold"
+                              style={{ color: "var(--nav-fg-muted)" }}
+                            >
+                              Qty: {item.quantity}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Pricing */}
+                      <div className="shrink-0 text-right flex flex-col justify-between">
+                        <p
+                          className="text-sm font-bold"
+                          style={{
+                            fontFamily: "var(--nav-font)",
+                            color: "var(--nav-fg)",
+                          }}
+                        >
+                          ₹
+                          {(item.price * item.quantity).toLocaleString("en-IN")}
+                        </p>
+                        <p
+                          className="text-[10px]"
+                          style={{ color: "var(--nav-fg-muted)" }}
+                        >
+                          ₹{item.price.toLocaleString("en-IN")} ×{" "}
+                          {item.quantity}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pricing footer */}
+                <div
+                  className="px-5 py-4"
                   style={{
-                    background: "rgba(217,79,61,0.06)",
-                    border: "1px solid rgba(217,79,61,0.2)",
+                    background: "rgba(25,99,94,0.03)",
+                    borderTop: "1px solid var(--nav-border)",
                   }}
                 >
-                  <AlertCircle
-                    size={14}
-                    style={{ color: "var(--nav-sale)" }}
-                    className="shrink-0"
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className="text-xs"
+                      style={{ color: "var(--nav-fg-muted)" }}
+                    >
+                      Subtotal
+                    </span>
+                    <span
+                      className="text-sm font-semibold"
+                      style={{ color: "var(--nav-fg)" }}
+                    >
+                      ₹{order.total.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span
+                      className="text-xs"
+                      style={{ color: "var(--nav-fg-muted)" }}
+                    >
+                      Delivery Charges
+                    </span>
+                    <span
+                      className="text-xs font-bold"
+                      style={{ color: "#1a8c4e" }}
+                    >
+                      Free
+                    </span>
+                  </div>
+                  <div
+                    className="h-px mb-3"
+                    style={{ background: "var(--nav-border)" }}
                   />
-                  <span
-                    className="text-xs"
-                    style={{ color: "var(--nav-sale)" }}
-                  >
-                    {googleError === "google_denied"
-                      ? "Google sign-in was cancelled."
-                      : "Google sign-in failed. Please try again."}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span
+                      className="text-sm font-bold uppercase tracking-wide"
+                      style={{ fontFamily: "var(--nav-font)" }}
+                    >
+                      Total Paid
+                    </span>
+                    <span
+                      className="text-xl font-bold"
+                      style={{
+                        fontFamily: "var(--nav-font)",
+                        color: "var(--nav-accent)",
+                      }}
+                    >
+                      ₹{order.total.toLocaleString("en-IN")}
+                    </span>
+                  </div>
                 </div>
-              )}
+              </Section>
 
-              {/* Google button */}
-              <button
-                className="auth-btn-google"
-                onClick={handleGoogleLogin}
-                type="button"
+              {/* 3. Payment Details */}
+              <Section
+                icon={
+                  <CreditCard
+                    size={14}
+                    style={{ color: "var(--nav-accent)" }}
+                  />
+                }
+                title="Payment Details"
+                delay={350}
               >
-                <GoogleIcon />
-                Continue with Google
-              </button>
-
-              <div className="divider">
-                <span>or</span>
-              </div>
-
-              {/* ── LOGIN FORM ── */}
-              {tab === "login" && (
-                <form onSubmit={handleLogin} autoComplete="off" noValidate>
-                  <div className="flex flex-col gap-4">
-                    <div>
-                      <label
-                        className="block text-[10px] font-bold tracking-[0.14em] uppercase mb-2"
-                        style={{ color: "var(--nav-fg-muted)" }}
-                      >
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        className="auth-input"
-                        placeholder="you@example.com"
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        autoComplete="email"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        className="block text-[10px] font-bold tracking-[0.14em] uppercase mb-2"
-                        style={{ color: "var(--nav-fg-muted)" }}
-                      >
-                        Password
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showLoginPass ? "text" : "password"}
-                          className="auth-input"
-                          placeholder="••••••••"
-                          value={loginPassword}
-                          onChange={(e) => setLoginPassword(e.target.value)}
-                          autoComplete="current-password"
-                          style={{ paddingRight: 44 }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowLoginPass((v) => !v)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2"
-                          style={{
-                            color: "var(--nav-fg-muted)",
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            padding: 4,
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.color = "var(--nav-accent)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.color =
-                              "var(--nav-fg-muted)")
-                          }
-                        >
-                          {showLoginPass ? (
-                            <EyeOff size={15} />
-                          ) : (
-                            <Eye size={15} />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {loginError && (
-                      <div
-                        className="flex items-center gap-2 px-3.5 py-2.5"
+                <div className="px-5">
+                  <InfoRow
+                    icon={<CreditCard size={11} />}
+                    label="Method"
+                    value="Razorpay"
+                  />
+                  <InfoRow
+                    icon={<Check size={11} />}
+                    label="Payment Status"
+                    value={
+                      <span
+                        className="text-[11px] font-bold tracking-wider uppercase px-2 py-0.5"
                         style={{
-                          background: "rgba(217,79,61,0.06)",
-                          border: "1px solid rgba(217,79,61,0.18)",
+                          background: "rgba(39,174,96,0.1)",
+                          color: "#1a8c4e",
+                          border: "1px solid rgba(39,174,96,0.2)",
                         }}
                       >
-                        <AlertCircle
-                          size={13}
-                          style={{ color: "var(--nav-sale)" }}
-                          className="shrink-0"
-                        />
-                        <span
-                          className="text-xs"
-                          style={{ color: "var(--nav-sale)" }}
-                        >
-                          {loginError}
-                        </span>
-                      </div>
-                    )}
+                        ✓ Paid
+                      </span>
+                    }
+                  />
+                  <InfoRow
+                    icon={<Hash size={11} />}
+                    label="Payment ID"
+                    value={
+                      <span className="font-mono text-xs">
+                        {order.payment.razorpay_payment_id}
+                      </span>
+                    }
+                    copyValue={order.payment.razorpay_payment_id}
+                  />
+                  <InfoRow
+                    icon={<Hash size={11} />}
+                    label="Transaction Ref"
+                    value={
+                      <span className="font-mono text-xs">
+                        {order.payment.razorpay_order_id}
+                      </span>
+                    }
+                    copyValue={order.payment.razorpay_order_id}
+                  />
+                  <InfoRow
+                    icon={<CreditCard size={11} />}
+                    label="Amount Paid"
+                    value={`₹${order.total.toLocaleString("en-IN")}`}
+                    accent
+                  />
+                </div>
+              </Section>
 
-                    <button
-                      type="submit"
-                      disabled={loginLoading}
-                      className="auth-btn-primary mt-1"
+              {/* 4. Delivery Details */}
+              <Section
+                icon={
+                  <MapPin size={14} style={{ color: "var(--nav-accent)" }} />
+                }
+                title="Delivery Details"
+                delay={450}
+              >
+                <div className="px-5 py-4 flex flex-col gap-5">
+                  {/* Address block */}
+                  <div>
+                    <p
+                      className="text-[10px] font-bold tracking-[0.14em] uppercase mb-3"
+                      style={{ color: "var(--nav-fg-muted)" }}
                     >
-                      {loginLoading ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" /> Signing
-                          In…
-                        </>
-                      ) : returnUrl === "/checkout" ? (
-                        "Sign In & Continue to Checkout →"
-                      ) : (
-                        "Sign In →"
-                      )}
-                    </button>
+                      Shipping Address
+                    </p>
+                    <div
+                      className="flex gap-3 p-4"
+                      style={{
+                        background: "rgba(25,99,94,0.04)",
+                        border: "1px solid var(--nav-border)",
+                      }}
+                    >
+                      <MapPin
+                        size={16}
+                        className="shrink-0 mt-0.5"
+                        style={{ color: "var(--nav-accent)" }}
+                      />
+                      <div>
+                        <p
+                          className="text-sm font-semibold"
+                          style={{ color: "var(--nav-fg)" }}
+                        >
+                          {order.address.line1}
+                        </p>
+                        {order.address.line2 && (
+                          <p
+                            className="text-sm"
+                            style={{ color: "var(--nav-fg-muted)" }}
+                          >
+                            {order.address.line2}
+                          </p>
+                        )}
+                        <p
+                          className="text-sm"
+                          style={{ color: "var(--nav-fg-muted)" }}
+                        >
+                          {order.address.city}, {order.address.state} –{" "}
+                          {order.address.pincode}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
-                  <p
-                    className="text-center text-xs mt-5"
-                    style={{ color: "var(--nav-fg-muted)" }}
-                  >
-                    Don&apos;t have an account?{" "}
-                    <button
-                      type="button"
-                      className="font-semibold underline underline-offset-2 transition-colors duration-150"
-                      style={{
-                        color: "var(--nav-accent)",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => setTab("register")}
-                    >
-                      Create one
-                    </button>
-                  </p>
-                </form>
-              )}
-
-              {/* ── REGISTER FORM ── */}
-              {tab === "register" && (
-                <>
-                  {regSuccess ? (
-                    <div className="text-center py-6">
-                      <div
-                        className="success-icon w-14 h-14 mx-auto flex items-center justify-center mb-4"
-                        style={{
-                          background: "rgba(200,169,126,0.12)",
-                          border: "2px solid var(--nav-accent)",
-                        }}
-                      >
-                        <Check
-                          size={24}
-                          style={{ color: "var(--nav-accent)" }}
-                          strokeWidth={2.5}
-                        />
-                      </div>
+                  {/* Contact info (for guests: from guestInfo; for users: not available server-side here) */}
+                  {order.isGuest && order.guestInfo && (
+                    <div>
                       <p
-                        className="font-bold text-sm tracking-widest uppercase mb-1"
-                        style={{
-                          fontFamily: "var(--nav-font)",
-                          color: "var(--nav-fg)",
-                        }}
+                        className="text-[10px] font-bold tracking-[0.14em] uppercase mb-3"
+                        style={{ color: "var(--nav-fg-muted)" }}
                       >
-                        Welcome to Bambumm!
+                        Contact Information
                       </p>
-                      <p
+                      <div className="flex flex-col gap-0">
+                        {order.guestInfo.name && (
+                          <InfoRow
+                            icon={<User size={11} />}
+                            label="Name"
+                            value={order.guestInfo.name}
+                          />
+                        )}
+                        {order.guestInfo.phone && (
+                          <InfoRow
+                            icon={<Phone size={11} />}
+                            label="Phone"
+                            value={order.guestInfo.phone}
+                          />
+                        )}
+                        {order.guestInfo.email && (
+                          <InfoRow
+                            icon={<Mail size={11} />}
+                            label="Email"
+                            value={order.guestInfo.email}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Section>
+            </div>
+
+            {/* ── RIGHT: Sticky summary + actions ───────────────────────── */}
+            <div className="flex flex-col gap-5">
+              <div
+                className="os-sticky flex flex-col gap-5"
+                style={{ "--delay": "200ms" } as React.CSSProperties}
+              >
+                {/* Quick Summary card */}
+                <div
+                  className="os-section overflow-hidden"
+                  style={
+                    {
+                      background: "#fff",
+                      border: "1px solid var(--nav-border)",
+                      boxShadow: "0 4px 20px rgba(25,99,94,0.08)",
+                      "--delay": "200ms",
+                    } as React.CSSProperties
+                  }
+                >
+                  <div className="p-5">
+                    <p
+                      className="text-xs font-bold uppercase tracking-widest mb-4"
+                      style={{ color: "var(--nav-fg)" }}
+                    >
+                      Order Summary
+                    </p>
+
+                    {/* Mini item list */}
+                    <div className="flex flex-col gap-3 mb-4">
+                      {order.items.map((item, idx) => (
+                        <div
+                          key={`sum-${item.productId}-${idx}`}
+                          className="flex items-center gap-2"
+                        >
+                          <div
+                            className="shrink-0 overflow-hidden"
+                            style={{
+                              width: 36,
+                              height: 46,
+                              border: "1px solid var(--nav-border)",
+                              position: "relative",
+                              background: "var(--nav-bg)",
+                            }}
+                          >
+                            {item.image && (
+                              <Image
+                                src={item.image}
+                                alt={item.name}
+                                fill
+                                sizes="36px"
+                                className="object-cover object-top"
+                              />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className="text-xs font-semibold uppercase leading-snug line-clamp-1"
+                              style={{ color: "var(--nav-fg)" }}
+                            >
+                              {item.name}
+                            </p>
+                            <p
+                              className="text-[10px] mt-0.5"
+                              style={{ color: "var(--nav-fg-muted)" }}
+                            >
+                              {item.colorName}
+                              {item.size ? ` · ${item.size}` : ""} · ×
+                              {item.quantity}
+                            </p>
+                          </div>
+                          <span
+                            className="text-xs font-bold shrink-0"
+                            style={{ color: "var(--nav-fg)" }}
+                          >
+                            ₹
+                            {(item.price * item.quantity).toLocaleString(
+                              "en-IN",
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div
+                      className="h-px mb-3"
+                      style={{ background: "var(--nav-border)" }}
+                    />
+
+                    <div className="flex items-center justify-between mb-1">
+                      <span
                         className="text-xs"
                         style={{ color: "var(--nav-fg-muted)" }}
                       >
-                        {returnUrl === "/checkout"
-                          ? "Redirecting to checkout…"
-                          : "Redirecting you now…"}
-                      </p>
+                        Delivery
+                      </span>
+                      <span
+                        className="text-xs font-bold"
+                        style={{ color: "#1a8c4e" }}
+                      >
+                        Free
+                      </span>
                     </div>
-                  ) : (
-                    <form
-                      onSubmit={handleRegister}
-                      autoComplete="off"
-                      noValidate
-                    >
-                      <div className="flex flex-col gap-4">
-                        <div>
-                          <label
-                            className="block text-[10px] font-bold tracking-[0.14em] uppercase mb-2"
-                            style={{ color: "var(--nav-fg-muted)" }}
-                          >
-                            Full Name
-                          </label>
-                          <input
-                            type="text"
-                            className="auth-input"
-                            placeholder="Your name"
-                            value={regName}
-                            onChange={(e) => setRegName(e.target.value)}
-                            autoComplete="name"
-                          />
-                        </div>
 
-                        <div>
-                          <label
-                            className="block text-[10px] font-bold tracking-[0.14em] uppercase mb-2"
-                            style={{ color: "var(--nav-fg-muted)" }}
-                          >
-                            Email Address
-                          </label>
-                          <input
-                            type="email"
-                            className="auth-input"
-                            placeholder="you@example.com"
-                            value={regEmail}
-                            onChange={(e) => setRegEmail(e.target.value)}
-                            autoComplete="email"
-                          />
-                        </div>
+                    <div
+                      className="h-px my-3"
+                      style={{ background: "var(--nav-border)" }}
+                    />
 
-                        <div>
-                          <label
-                            className="block text-[10px] font-bold tracking-[0.14em] uppercase mb-2"
-                            style={{ color: "var(--nav-fg-muted)" }}
-                          >
-                            Password
-                          </label>
-                          <div className="relative">
-                            <input
-                              type={showRegPass ? "text" : "password"}
-                              className="auth-input"
-                              placeholder="Min. 8 characters"
-                              value={regPassword}
-                              onChange={(e) => setRegPassword(e.target.value)}
-                              autoComplete="new-password"
-                              style={{ paddingRight: 44 }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowRegPass((v) => !v)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2"
-                              style={{
-                                color: "var(--nav-fg-muted)",
-                                background: "none",
-                                border: "none",
-                                cursor: "pointer",
-                                padding: 4,
-                              }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.color =
-                                  "var(--nav-accent)")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.color =
-                                  "var(--nav-fg-muted)")
-                              }
-                            >
-                              {showRegPass ? (
-                                <EyeOff size={15} />
-                              ) : (
-                                <Eye size={15} />
-                              )}
-                            </button>
-                          </div>
-                          {regPassword && (
-                            <div>
-                              <div className="pw-strength-bar">
-                                <div
-                                  className="pw-strength-fill"
-                                  style={{
-                                    width: `${(pwStrength / 4) * 100}%`,
-                                    background: strengthColors[pwStrength],
-                                  }}
-                                />
-                              </div>
-                              <p
-                                className="text-[10px] mt-1"
-                                style={{ color: strengthColors[pwStrength] }}
-                              >
-                                {strengthLabels[pwStrength]}
-                              </p>
-                            </div>
-                          )}
-                        </div>
+                    <div className="flex items-center justify-between">
+                      <span
+                        className="text-sm font-bold uppercase tracking-wide"
+                        style={{ fontFamily: "var(--nav-font)" }}
+                      >
+                        Total
+                      </span>
+                      <span
+                        className="text-lg font-bold"
+                        style={{
+                          fontFamily: "var(--nav-font)",
+                          color: "var(--nav-accent)",
+                        }}
+                      >
+                        ₹{order.total.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  </div>
 
-                        <div>
-                          <label
-                            className="block text-[10px] font-bold tracking-[0.14em] uppercase mb-2"
-                            style={{ color: "var(--nav-fg-muted)" }}
-                          >
-                            Confirm Password
-                          </label>
-                          <div className="relative">
-                            <input
-                              type={showRegConfirm ? "text" : "password"}
-                              className="auth-input"
-                              placeholder="Repeat password"
-                              value={regConfirm}
-                              onChange={(e) => setRegConfirm(e.target.value)}
-                              autoComplete="new-password"
-                              style={{ paddingRight: 44 }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowRegConfirm((v) => !v)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2"
-                              style={{
-                                color: "var(--nav-fg-muted)",
-                                background: "none",
-                                border: "none",
-                                cursor: "pointer",
-                                padding: 4,
-                              }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.color =
-                                  "var(--nav-accent)")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.color =
-                                  "var(--nav-fg-muted)")
-                              }
-                            >
-                              {showRegConfirm ? (
-                                <EyeOff size={15} />
-                              ) : (
-                                <Eye size={15} />
-                              )}
-                            </button>
-                          </div>
-                          {regConfirm &&
-                            regPassword &&
-                            regConfirm !== regPassword && (
-                              <p
-                                className="text-[10px] mt-1"
-                                style={{ color: "var(--nav-sale)" }}
-                              >
-                                Passwords don&apos;t match
-                              </p>
-                            )}
-                          {regConfirm &&
-                            regPassword &&
-                            regConfirm === regPassword && (
-                              <p
-                                className="text-[10px] mt-1"
-                                style={{ color: "#27ae60" }}
-                              >
-                                ✓ Passwords match
-                              </p>
-                            )}
-                        </div>
-
-                        {regError && (
-                          <div
-                            className="flex items-center gap-2 px-3.5 py-2.5"
-                            style={{
-                              background: "rgba(217,79,61,0.06)",
-                              border: "1px solid rgba(217,79,61,0.18)",
-                            }}
-                          >
-                            <AlertCircle
-                              size={13}
-                              style={{ color: "var(--nav-sale)" }}
-                              className="shrink-0"
-                            />
-                            <span
-                              className="text-xs"
-                              style={{ color: "var(--nav-sale)" }}
-                            >
-                              {regError}
-                            </span>
-                          </div>
-                        )}
-
-                        <button
-                          type="submit"
-                          disabled={regLoading}
-                          className="auth-btn-primary mt-1"
-                        >
-                          {regLoading ? (
-                            <>
-                              <Loader2 size={14} className="animate-spin" />{" "}
-                              Creating Account…
-                            </>
-                          ) : returnUrl === "/checkout" ? (
-                            "Create Account & Checkout →"
-                          ) : (
-                            "Create Account →"
-                          )}
-                        </button>
-
-                        <p
-                          className="text-[10px] text-center"
-                          style={{ color: "var(--nav-fg-muted)" }}
-                        >
-                          By creating an account you agree to our{" "}
-                          <a
-                            href="/terms-conditions"
-                            className="underline"
-                            style={{ color: "var(--nav-accent)" }}
-                          >
-                            Terms & Conditions
-                          </a>{" "}
-                          and{" "}
-                          <a
-                            href="/privacy-policy"
-                            className="underline"
-                            style={{ color: "var(--nav-accent)" }}
-                          >
-                            Privacy Policy
-                          </a>
-                          .
-                        </p>
-                      </div>
-
-                      <p
-                        className="text-center text-xs mt-5"
+                  {/* Trust badges */}
+                  <div
+                    className="px-5 pb-4 flex items-center justify-center gap-4"
+                    style={{ borderTop: "1px solid var(--nav-border)" }}
+                  >
+                    <div className="flex items-center gap-1.5 pt-4">
+                      <Leaf size={11} style={{ color: "var(--nav-accent)" }} />
+                      <span
+                        className="text-[9px] font-semibold uppercase tracking-wide"
                         style={{ color: "var(--nav-fg-muted)" }}
                       >
-                        Already have an account?{" "}
-                        <button
-                          type="button"
-                          className="font-semibold underline underline-offset-2"
-                          style={{
-                            color: "var(--nav-accent)",
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => setTab("login")}
+                        Eco-Friendly
+                      </span>
+                    </div>
+                    <div
+                      className="w-px h-3 pt-4"
+                      style={{ background: "var(--nav-border)" }}
+                    />
+                    <div className="flex items-center gap-1.5 pt-4">
+                      <CheckCircle2
+                        size={11}
+                        style={{ color: "var(--nav-accent)" }}
+                      />
+                      <span
+                        className="text-[9px] font-semibold uppercase tracking-wide"
+                        style={{ color: "var(--nav-fg-muted)" }}
+                      >
+                        Quality Assured
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div
+                  className="os-section flex flex-col gap-3 p-4"
+                  style={
+                    {
+                      background: "#fff",
+                      border: "1px solid var(--nav-border)",
+                      "--delay": "300ms",
+                    } as React.CSSProperties
+                  }
+                >
+                  <p
+                    className="text-[10px] font-bold tracking-[0.16em] uppercase mb-1"
+                    style={{ color: "var(--nav-fg-muted)" }}
+                  >
+                    What&apos;s Next?
+                  </p>
+
+                  {/* View Orders */}
+                  <Link href="/profile/orders" className="os-btn-primary">
+                    <Package size={13} />
+                    View My Orders
+                    <ArrowRight size={12} />
+                  </Link>
+
+                  {/* Continue Shopping */}
+                  <Link href="/products" className="os-btn-secondary">
+                    <ShoppingBag size={13} />
+                    Continue Shopping
+                  </Link>
+                </div>
+
+                {/* Guest account prompt */}
+                {order.isGuest && (
+                  <div
+                    className="os-section p-4"
+                    style={
+                      {
+                        background: "rgba(25,99,94,0.04)",
+                        border: "1px solid var(--nav-border)",
+                        "--delay": "400ms",
+                      } as React.CSSProperties
+                    }
+                  >
+                    <div className="flex items-start gap-3">
+                      <User
+                        size={16}
+                        className="shrink-0 mt-0.5"
+                        style={{ color: "var(--nav-accent)" }}
+                      />
+                      <div>
+                        <p
+                          className="text-xs font-bold uppercase tracking-wide mb-1"
+                          style={{ color: "var(--nav-fg)" }}
                         >
-                          Sign in
-                        </button>
-                      </p>
-                    </form>
-                  )}
-                </>
-              )}
+                          Save your details
+                        </p>
+                        <p
+                          className="text-xs leading-relaxed mb-3"
+                          style={{ color: "var(--nav-fg-muted)" }}
+                        >
+                          Create an account to track this order and save time on
+                          future purchases.
+                        </p>
+                        <Link
+                          href="/auth?tab=register"
+                          className="text-[11px] font-bold tracking-wider uppercase underline underline-offset-2"
+                          style={{ color: "var(--nav-accent)" }}
+                        >
+                          Create Account →
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+          </div>
+
+          {/* ── Bottom CTA band ───────────────────────────────────────────── */}
+          <div
+            className="mt-10 p-6 flex flex-col sm:flex-row items-center justify-between gap-4"
+            style={{
+              background: "rgba(25,99,94,0.06)",
+              border: "1px solid var(--nav-border)",
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <Leaf size={20} style={{ color: "var(--nav-accent)" }} />
+              <div>
+                <p
+                  className="text-sm font-bold uppercase tracking-wider"
+                  style={{
+                    fontFamily: "var(--nav-font)",
+                    color: "var(--nav-fg)",
+                  }}
+                >
+                  Thank you for choosing Bambumm
+                </p>
+                <p
+                  className="text-xs mt-0.5"
+                  style={{ color: "var(--nav-fg-muted)" }}
+                >
+                  Your purchase supports sustainable, eco-friendly fashion.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/"
+              className="os-btn-secondary shrink-0"
+              style={{ flex: "none", paddingLeft: 20, paddingRight: 20 }}
+            >
+              Back to Home
+            </Link>
           </div>
         </div>
       </main>
@@ -842,10 +1293,25 @@ function AuthContent() {
   );
 }
 
-export default function AuthPage() {
+// ─── Page export (wrapped in Suspense for useSearchParams) ────────────────────
+
+export default function OrderSuccessPage() {
   return (
-    <Suspense fallback={null}>
-      <AuthContent />
+    <Suspense
+      fallback={
+        <div
+          className="min-h-screen flex items-center justify-center"
+          style={{ background: "var(--nav-bg)" }}
+        >
+          <Loader2
+            size={28}
+            className="animate-spin"
+            style={{ color: "var(--nav-accent)" }}
+          />
+        </div>
+      }
+    >
+      <OrderSuccessContent />
     </Suspense>
   );
 }
