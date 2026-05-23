@@ -7,21 +7,22 @@ const CONTACTS = [
   {
     icon: Mail,
     label: "Email Us",
-    value: "support@bambum.com",
+    value: "info@bambumm.com",
     sub: "We'll get back to you within 24-48 hours",
-    href: "mailto:support@bambum.com",
+    href: "mailto:info@bambumm.com",
   },
   {
     icon: Phone,
     label: "Call Us",
-    value: "+91 9953532262",
+    value: "+91 8690889932",
     sub: "Mon - Sat, 10 AM to 6 PM IST",
-    href: "tel:+919953532262",
+    href: "tel:+918690889932",
   },
   {
     icon: MapPin,
     label: "Find Us",
-    value: "Plot No. 34B Block D Basement Chhattarpur Enclave, Delhi-110074",
+    value:
+      "Plot No. 34B Block D lower ground floor Chhattarpur Enclave, Delhi-110074",
     sub: "India",
     href: null,
   },

@@ -8,9 +8,9 @@ const FOOTER_LINKS = [
   {
     heading: "Shop",
     links: [
-      { label: "Men's Wear", href: "/" },
-      { label: "Women's Wear", href: "/" },
-      { label: "Accessories", href: "/" },
+      { label: "Men's Wear", href: "/products?category=Men" },
+      { label: "Women's Wear", href: "/products?category=Women" },
+      { label: "Accessories", href: "/products?category=Accessories" },
     ],
   },
   {
@@ -97,18 +97,18 @@ export default function Footer() {
             {[
               {
                 icon: MapPin,
-                text: "Plot No. 34B Block D Basement Chhattarpur Enclave Delhi-110074",
+                text: "Plot No. 34B Block D lower ground floor Chhattarpur Enclave, Delhi-110074",
                 href: null,
               },
               {
                 icon: Mail,
-                text: "support@bambumm.in",
-                href: "mailto:support@bambumm.in",
+                text: "info@bambumm.in",
+                href: "mailto:info@bambumm.in",
               },
               {
                 icon: Phone,
-                text: "+91 9953532262",
-                href: "tel:+919953532262",
+                text: "+91 8690889932",
+                href: "tel:+918690889932",
               },
             ].map(({ icon: Icon, text, href }) => (
               <li
