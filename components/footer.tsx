@@ -70,18 +70,21 @@ export default function Footer() {
               <img
                 src="/logo.png"
                 alt="Bambumm"
-                className="w-15 rounded-2xl bg-white"
+                className="w-20 rounded-2xl bg-white"
               />
             </Link>
             <p className="flex w-full items-center justify-center gap-5">
-              <Link href="https://www.facebook.com/bambumm.in" target="_blank">
-                <img className="w-3" src="/vectors/facebook.svg" alt="" />
-              </Link>
-              <Link href="https://www.instagram.com/bambumm.in" target="_blank">
+              <Link
+                href="https://www.instagram.com/bambumm_official/"
+                target="_blank"
+              >
                 <img className="w-5" src="/vectors/instagram.svg" alt="" />
               </Link>
-              <Link href="https://www.x.com/bambumm.in" target="_blank">
-                <img className="w-5" src="/vectors/twitter.svg" alt="" />
+              <Link
+                href="https://www.facebook.com/profile.php?id=61590123460790"
+                target="_blank"
+              >
+                <img className="w-3" src="/vectors/facebook.svg" alt="" />
               </Link>
             </p>
           </div>
