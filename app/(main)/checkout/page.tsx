@@ -111,6 +111,7 @@ export default function CheckoutPage() {
   });
 
   const [paying, setPaying] = useState(false);
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [toast, setToast] = useState<{
     type: "success" | "error";
     msg: string;
@@ -118,10 +119,11 @@ export default function CheckoutPage() {
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && items.length === 0) {
+    if (!authLoading && items.length === 0 && !paymentCompleted) {
       router.replace("/products");
     }
-  }, [items, authLoading, router]);
+  }, [items, authLoading, router, paymentCompleted]);
+  // Load Razorpay script
   useEffect(() => {
     if (
       document.querySelector(
@@ -339,6 +341,7 @@ export default function CheckoutPage() {
             const verifyData = await verifyRes.json();
 
             if (verifyRes.ok) {
+              setPaymentCompleted(true);
               clearCart();
               router.push(`/order-success?orderId=${verifyData.orderId}`);
             } else {
