@@ -245,10 +245,10 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
         }}
       >
         <div
-          className="max-w-7xl mx-auto h-full flex items-center px-4 md:px-6 relative"
+          className="max-w-7xl mx-auto h-full flex items-center px-4 md:px-10 relative"
           onMouseLeave={leave}
         >
-          <div className="max-w-20">
+          <div className="max-w-22">
             {/* Logo */}
             <Link
               href="/"
@@ -264,7 +264,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
               <button
                 key={item._id}
                 className={`
-                  text-[0.72rem] font-bold tracking-widest uppercase transition-colors duration-150
+                  text-sm font-bold tracking-widest uppercase transition-colors duration-150
                   border-b-2 pb-0.5
                   ${
                     activeNav === item.label
@@ -283,7 +283,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
           </nav>
 
           {/* ── DESKTOP RIGHT ICONS ── */}
-          <div className="hidden md:flex items-center gap-1 ml-auto">
+          <div className="hidden md:flex items-center gap-5 ml-auto">
             {/* Search */}
             <div ref={searchWrapRef} className="flex items-center relative">
               <div
@@ -513,7 +513,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
 
             {/* checkout */}
             <button
-              className="flex items-center justify-center w-9 h-9 rounded relative ml-2 transition-colors duration-150"
+              className="flex items-center justify-center w-9 h-9 rounded relative transition-colors duration-150"
               style={{ color: "var(--nav-fg)" }}
               onMouseEnter={(e) =>
                 (e.currentTarget.style.color = "var(--nav-accent)")

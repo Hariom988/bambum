@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, AlertCircle, Loader2, Check } from "lucide-react";
+import { AlertCircle, Loader2, Check, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/context/authContext";
 import Image from "next/image";
+import Link from "next/link";
 
 function GoogleIcon() {
   return (
@@ -29,11 +30,127 @@ function GoogleIcon() {
   );
 }
 
+function AppleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+    </svg>
+  );
+}
+
+function MailIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
+// Reusable icon-prefixed input
+function IconInput({
+  icon,
+  type = "text",
+  placeholder,
+  value,
+  onChange,
+  autoComplete,
+  rightSlot,
+}: {
+  icon: React.ReactNode;
+  type?: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete?: string;
+  rightSlot?: React.ReactNode;
+}) {
+  return (
+    <div className="relative flex items-center rounded-lg">
+      <span
+        className="absolute left-3 flex items-center pointer-events-none"
+        style={{ color: "var(--brand-teal-light)" }}
+      >
+        {icon}
+      </span>
+      <input
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        autoComplete={autoComplete}
+        className="w-full py-3 pl-10 pr-10 text-sm border outline-none transition-all duration-150 rounded-lg"
+        style={{
+          border: "1px solid var(--nav-border)",
+          background: "#fff",
+          color: "var(--nav-fg)",
+          fontFamily: "var(--nav-font-ui)",
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = "var(--brand-teal)";
+          e.currentTarget.style.boxShadow = "0 0 0 3px rgba(25,99,94,0.1)";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = "var(--nav-border)";
+          e.currentTarget.style.boxShadow = "none";
+        }}
+      />
+      {rightSlot && (
+        <span className="absolute right-3 flex items-center">{rightSlot}</span>
+      )}
+    </div>
+  );
+}
+
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, login, register } = useAuth();
-  const { loading } = useAuth();
+  const { user, login, register, loading } = useAuth();
 
   const redirectTo = searchParams.get("redirectTo") ?? "/";
 
@@ -42,17 +159,22 @@ function AuthContent() {
   );
   const [mounted, setMounted] = useState(false);
 
+  // Login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPass, setShowLoginPass] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
+
+  // Register state
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regConfirm, setRegConfirm] = useState("");
   const [showRegPass, setShowRegPass] = useState(false);
   const [showRegConfirm, setShowRegConfirm] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState("");
   const [regSuccess, setRegSuccess] = useState(false);
@@ -66,19 +188,6 @@ function AuthContent() {
     if (!loading && user) router.replace(redirectTo);
   }, [user, loading, router, redirectTo]);
 
-  const passwordStrength = (pw: string) => {
-    let score = 0;
-    if (pw.length >= 8) score++;
-    if (/[A-Z]/.test(pw)) score++;
-    if (/[0-9]/.test(pw)) score++;
-    if (/[^A-Za-z0-9]/.test(pw)) score++;
-    return score;
-  };
-
-  const pwStrength = passwordStrength(regPassword);
-  const strengthLabels = ["", "Weak", "Fair", "Good", "Strong"];
-  const strengthColors = ["", "#e74c3c", "#e67e22", "#f39c12", "#27ae60"];
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail.trim() || !loginPassword) {
@@ -89,17 +198,18 @@ function AuthContent() {
     setLoginError("");
     const { error } = await login(loginEmail, loginPassword);
     setLoginLoading(false);
-    if (error) {
-      setLoginError(error);
-    } else {
-      router.push(redirectTo);
-    }
+    if (error) setLoginError(error);
+    else router.push(redirectTo);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName.trim() || !regEmail.trim() || !regPassword || !regConfirm) {
       setRegError("Please fill in all fields.");
+      return;
+    }
+    if (!agreeTerms) {
+      setRegError("Please agree to the Terms & Conditions.");
       return;
     }
     if (regPassword !== regConfirm) {
@@ -114,610 +224,461 @@ function AuthContent() {
     setRegError("");
     const { error } = await register(regName, regEmail, regPassword);
     setRegLoading(false);
-    if (error) {
-      setRegError(error);
-    } else {
+    if (error) setRegError(error);
+    else {
       setRegSuccess(true);
       setTimeout(() => router.push(redirectTo), 1200);
     }
   };
 
   const handleGoogleLogin = () => {
-    const callbackUrl = encodeURIComponent(redirectTo);
-    window.location.href = `/api/auth/google?redirectTo=${callbackUrl}`;
+    window.location.href = `/api/auth/google?redirectTo=${encodeURIComponent(redirectTo)}`;
   };
 
+  const EyeToggle = ({
+    show,
+    onToggle,
+  }: {
+    show: boolean;
+    onToggle: () => void;
+  }) => (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="transition-colors duration-150"
+      style={{
+        color: "var(--brand-teal-light)",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        padding: 2,
+        lineHeight: 0,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand-teal)")}
+      onMouseLeave={(e) =>
+        (e.currentTarget.style.color = "var(--brand-teal-light)")
+      }
+    >
+      {show ? <EyeOff size={15} /> : <Eye size={15} />}
+    </button>
+  );
+
   return (
-    <>
-      <style>{`
-        .auth-input {
-          width: 100%;
-          padding: 12px 16px;
-          border: 1px solid var(--nav-border);
-          background: var(--nav-bg);
-          color: var(--nav-fg);
-          font-family: var(--nav-font-ui);
-          font-size: 14px;
-          outline: none;
-          transition: border-color 0.18s ease, box-shadow 0.18s ease;
-        }
-        .auth-input:focus {
-          border-color: var(--nav-accent);
-          box-shadow: 0 0 0 3px rgba(200,169,126,0.12);
-        }
-        .auth-input::placeholder { color: var(--nav-fg-muted); opacity: 0.7; }
-
-        .auth-btn-primary {
-          width: 100%; padding: 14px;
-          background: var(--nav-accent); color: #fff; border: none;
-          font-family: var(--nav-font-ui); font-size: 11px; font-weight: 700;
-          letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer;
-          transition: background 0.18s ease, transform 0.12s ease;
-          display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-        .auth-btn-primary:hover:not(:disabled) { background: var(--nav-accent-hover); transform: translateY(-1px); }
-        .auth-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
-
-        .auth-btn-google {
-          width: 100%; padding: 13px; background: #fff; color: var(--nav-fg);
-          border: 1px solid var(--nav-border); font-family: var(--nav-font-ui);
-          font-size: 13px; font-weight: 600; cursor: pointer;
-          transition: border-color 0.18s, box-shadow 0.18s, transform 0.12s;
-          display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-        .auth-btn-google:hover {
-          border-color: var(--nav-accent);
-          box-shadow: 0 2px 12px rgba(200,169,126,0.15);
-          transform: translateY(-1px);
-        }
-
-        .tab-btn {
-          flex: 1; padding: 12px; background: transparent; border: none;
-          font-family: var(--nav-font-ui); font-size: 11px; font-weight: 700;
-          letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
-          transition: color 0.18s, border-color 0.18s;
-          border-bottom: 2px solid transparent; color: var(--nav-fg-muted);
-        }
-        .tab-btn.active { color: var(--nav-accent); border-bottom-color: var(--nav-accent); }
-        .tab-btn:hover:not(.active) { color: var(--nav-fg); }
-
-        .auth-card { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease, transform 0.6s ease; }
-        .auth-card.visible { opacity: 1; transform: translateY(0); }
-
-        .pw-strength-bar { height: 3px; border-radius: 2px; background: var(--nav-border); overflow: hidden; margin-top: 6px; }
-        .pw-strength-fill { height: 100%; border-radius: 2px; transition: width 0.3s ease, background 0.3s ease; }
-
-        .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
-        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--nav-border); }
-        .divider span { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--nav-fg-muted); flex-shrink: 0; }
-
-        @keyframes successPop { 0% { transform: scale(0); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
-        .success-icon { animation: successPop 0.4s cubic-bezier(0.22,1,0.36,1); }
-
-        .auth-grid-bg {
-          background-image: linear-gradient(var(--nav-border) 1px, transparent 1px), linear-gradient(90deg, var(--nav-border) 1px, transparent 1px);
-          background-size: 48px 48px; opacity: 0.5;
-        }
-      `}</style>
-
-      <main
-        className="min-h-screen flex items-center justify-center px-4 py-12 relative"
+    <main
+      className="min-h-screen flex items-center justify-center px-4 py-12"
+      style={{
+        background: "var(--brand-background-page)",
+        fontFamily: "var(--nav-font-ui)",
+      }}
+    >
+      {/* Subtle noise texture overlay */}
+      <div
+        className="fixed inset-0 pointer-events-none opacity-30"
         style={{
-          background: "var(--nav-bg)",
-          fontFamily: "var(--nav-font-ui)",
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      <div
+        className="relative rounded-2xl overflow-hidden w-full max-w-[440px] transition-all duration-500"
+        style={{
+          background: "#fff",
+          boxShadow:
+            "0 4px 32px rgba(25,99,94,0.10), 0 1px 4px rgba(25,99,94,0.06)",
         }}
       >
-        <div className="auth-grid-bg absolute inset-0 pointer-events-none" />
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse 60% 60% at 50% 40%, rgba(200,169,126,0.08) 0%, transparent 70%)",
-          }}
-        />
-
-        <div
-          className={`auth-card relative w-full max-w-md ${mounted ? "visible" : ""}`}
-        >
-          <div className="text-center mb-8">
-            <a href="/" className="inline-block">
-              <Image src="/logo.png" alt="Bambumm" width={96} height={96} />
-            </a>
-          </div>
-
-          <div
+        {/* Logo + heading outside the card */}
+        <div className="text-center  mb-6">
+          <a href="/" className="inline-block">
+            <Image
+              src="/logo.png"
+              alt="Bambumm"
+              width={100}
+              height={100}
+              priority
+            />
+          </a>
+          <h1
+            className="text-3xl mb-1"
             style={{
-              background: "#fff",
-              border: "1px solid var(--nav-border)",
-              boxShadow: "0 8px 40px rgba(200,169,126,0.12)",
+              fontFamily: "var(--nav-font)",
+              color: "var(--brand-teal)",
             }}
           >
-            <div
-              className="h-0.5 w-full"
-              style={{ background: "var(--nav-accent)" }}
-            />
-            <div
-              className="flex border-b"
-              style={{ borderColor: "var(--nav-border)" }}
-            >
+            {tab === "login" ? "Welcome back" : "Create your account"}
+          </h1>
+          <p className="text-sm" style={{ color: "var(--brand-teal-light)" }}>
+            {tab === "login"
+              ? "Sign in to continue to your account"
+              : "Join us and get started in seconds"}
+          </p>
+        </div>
+
+        {/* Card */}
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: "#fff",
+            boxShadow:
+              "0 4px 32px rgba(25,99,94,0.10), 0 1px 4px rgba(25,99,94,0.06)",
+          }}
+        >
+          {/* Tabs */}
+          <div
+            className="grid grid-cols-2 border-b"
+            style={{ borderColor: "var(--nav-border)" }}
+          >
+            {(["login", "register"] as const).map((t) => (
               <button
-                className={`tab-btn ${tab === "login" ? "active" : ""}`}
+                key={t}
+                type="button"
                 onClick={() => {
-                  setTab("login");
+                  setTab(t);
                   setLoginError("");
-                }}
-              >
-                Sign In
-              </button>
-              <button
-                className={`tab-btn ${tab === "register" ? "active" : ""}`}
-                onClick={() => {
-                  setTab("register");
                   setRegError("");
                 }}
+                className="py-4 text-[11px] font-bold tracking-[0.14em] uppercase transition-all duration-150 relative"
+                style={{
+                  color: tab === t ? "var(--brand-teal)" : "#888",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  borderBottom:
+                    tab === t
+                      ? "2px solid var(--brand-teal)"
+                      : "2px solid transparent",
+                }}
               >
-                Create Account
+                {t === "login" ? "Sign In" : "Create Account"}
+              </button>
+            ))}
+          </div>
+
+          <div className="px-8 py-7">
+            {/* Google error banner */}
+            {googleError && (
+              <div
+                className="flex items-center gap-2.5 px-4 py-3 mb-5 rounded"
+                style={{
+                  background: "rgba(217,79,61,0.06)",
+                  border: "1px solid rgba(217,79,61,0.2)",
+                }}
+              >
+                <AlertCircle
+                  size={14}
+                  style={{ color: "var(--nav-sale)" }}
+                  className="shrink-0"
+                />
+                <span className="text-xs" style={{ color: "var(--nav-sale)" }}>
+                  {googleError === "google_denied"
+                    ? "Google sign-in was cancelled."
+                    : "Google sign-in failed. Please try again."}
+                </span>
+              </div>
+            )}
+
+            {/* Social buttons */}
+            <div className="flex flex-col gap-3 mb-5">
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                className="w-full flex items-center justify-center gap-3 py-3 text-sm font-medium transition-all duration-150 rounded-sm border"
+                style={{
+                  border: "1px solid var(--nav-border)",
+                  background: "#fff",
+                  color: "var(--nav-fg)",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--brand-teal)";
+                  e.currentTarget.style.boxShadow =
+                    "0 2px 8px rgba(25,99,94,0.1)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--nav-border)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                <GoogleIcon /> Continue with Google Account
               </button>
             </div>
 
-            <div className="px-8 py-7">
-              {googleError && (
-                <div
-                  className="flex items-center gap-2.5 px-4 py-3 mb-5"
-                  style={{
-                    background: "rgba(217,79,61,0.06)",
-                    border: "1px solid rgba(217,79,61,0.2)",
-                  }}
-                >
-                  <AlertCircle
-                    size={14}
-                    style={{ color: "var(--nav-sale)" }}
-                    className="shrink-0"
-                  />
-                  <span
-                    className="text-xs"
-                    style={{ color: "var(--nav-sale)" }}
-                  >
-                    {googleError === "google_denied"
-                      ? "Google sign-in was cancelled."
-                      : "Google sign-in failed. Please try again."}
-                  </span>
-                </div>
-              )}
-
-              <button
-                className="auth-btn-google"
-                onClick={handleGoogleLogin}
-                type="button"
+            {/* Divider */}
+            <div className="flex items-center gap-3 mb-5">
+              <div
+                className="flex-1 h-px"
+                style={{ background: "var(--nav-border)" }}
+              />
+              <span
+                className="text-xs font-semibold tracking-widest uppercase"
+                style={{ color: "#aaa" }}
               >
-                <GoogleIcon /> Continue with Google
-              </button>
+                OR
+              </span>
+              <div
+                className="flex-1 h-px"
+                style={{ background: "var(--nav-border)" }}
+              />
+            </div>
 
-              <div className="divider">
-                <span>or</span>
-              </div>
-
-              {/* ── LOGIN FORM ── */}
-              {tab === "login" && (
-                <form onSubmit={handleLogin} autoComplete="off" noValidate>
-                  <div className="flex flex-col gap-4">
-                    <div>
-                      <label
-                        className="block text-[10px] font-bold tracking-[0.14em] uppercase mb-2"
-                        style={{ color: "var(--nav-fg-muted)" }}
+            {/* ── LOGIN ── */}
+            {tab === "login" && (
+              <form onSubmit={handleLogin} noValidate>
+                <div className="flex flex-col gap-3">
+                  <IconInput
+                    icon={<MailIcon />}
+                    type="email"
+                    placeholder="Enter Your Email Address"
+                    value={loginEmail}
+                    onChange={setLoginEmail}
+                    autoComplete="email"
+                  />
+                  <IconInput
+                    icon={<LockIcon />}
+                    type={showLoginPass ? "text" : "password"}
+                    placeholder="Enter Your Password"
+                    value={loginPassword}
+                    onChange={setLoginPassword}
+                    autoComplete="current-password"
+                    rightSlot={
+                      <EyeToggle
+                        show={showLoginPass}
+                        onToggle={() => setShowLoginPass((v) => !v)}
+                      />
+                    }
+                  />
+                  {loginError && (
+                    <div
+                      className="flex items-center gap-2 px-3.5 py-2.5 rounded"
+                      style={{
+                        background: "rgba(217,79,61,0.06)",
+                        border: "1px solid rgba(217,79,61,0.18)",
+                      }}
+                    >
+                      <AlertCircle
+                        size={13}
+                        style={{ color: "var(--nav-sale)" }}
+                        className="shrink-0"
+                      />
+                      <span
+                        className="text-xs"
+                        style={{ color: "var(--nav-sale)" }}
                       >
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        className="auth-input"
-                        placeholder="you@example.com"
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        autoComplete="email"
+                        {loginError}
+                      </span>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loginLoading}
+                    className="w-full rounded-lg py-3.5 mt-1 text-white text-xs font-bold tracking-[0.16em] uppercase flex items-center justify-center gap-2 transition-all duration-150"
+                    style={{
+                      background: loginLoading
+                        ? "var(--brand-teal-light)"
+                        : "var(--brand-teal)",
+                      border: "none",
+                      cursor: loginLoading ? "not-allowed" : "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!loginLoading)
+                        e.currentTarget.style.background =
+                          "var(--brand-teal-dark)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!loginLoading)
+                        e.currentTarget.style.background = "var(--brand-teal)";
+                    }}
+                  >
+                    {loginLoading ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" /> Signing
+                        In…
+                      </>
+                    ) : (
+                      "SIGN IN"
+                    )}
+                  </button>
+                </div>
+
+                <p
+                  className="text-center text-xs mt-5"
+                  style={{ color: "#888" }}
+                >
+                  Don&apos;t have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setTab("register")}
+                    className="font-semibold"
+                    style={{
+                      color: "var(--brand-teal)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Create One
+                  </button>
+                </p>
+              </form>
+            )}
+
+            {/* ── REGISTER ── */}
+            {tab === "register" && (
+              <>
+                {regSuccess ? (
+                  <div className="text-center py-8">
+                    <div
+                      className="w-14 h-14 mx-auto flex items-center justify-center mb-4 rounded-full"
+                      style={{
+                        background: "rgba(25,99,94,0.1)",
+                        border: "2px solid var(--brand-teal)",
+                      }}
+                    >
+                      <Check
+                        size={24}
+                        style={{ color: "var(--brand-teal)" }}
+                        strokeWidth={2.5}
                       />
                     </div>
-
-                    <div>
-                      <label
-                        className="block text-[10px] font-bold tracking-[0.14em] uppercase mb-2"
-                        style={{ color: "var(--nav-fg-muted)" }}
-                      >
-                        Password
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showLoginPass ? "text" : "password"}
-                          className="auth-input"
-                          placeholder="••••••••"
-                          value={loginPassword}
-                          onChange={(e) => setLoginPassword(e.target.value)}
-                          autoComplete="current-password"
-                          style={{ paddingRight: 44 }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowLoginPass((v) => !v)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2"
-                          style={{
-                            color: "var(--nav-fg-muted)",
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            padding: 4,
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.color = "var(--nav-accent)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.color =
-                              "var(--nav-fg-muted)")
-                          }
-                        >
-                          {showLoginPass ? (
-                            <EyeOff size={15} />
-                          ) : (
-                            <Eye size={15} />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {loginError && (
-                      <div
-                        className="flex items-center gap-2 px-3.5 py-2.5"
-                        style={{
-                          background: "rgba(217,79,61,0.06)",
-                          border: "1px solid rgba(217,79,61,0.18)",
-                        }}
-                      >
-                        <AlertCircle
-                          size={13}
-                          style={{ color: "var(--nav-sale)" }}
-                          className="shrink-0"
-                        />
-                        <span
-                          className="text-xs"
-                          style={{ color: "var(--nav-sale)" }}
-                        >
-                          {loginError}
-                        </span>
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={loginLoading}
-                      className="auth-btn-primary mt-1"
+                    <p
+                      className="font-bold text-sm tracking-widest uppercase mb-1"
+                      style={{ color: "var(--brand-teal)" }}
                     >
-                      {loginLoading ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" /> Signing
-                          In…
-                        </>
-                      ) : (
-                        "Sign In →"
-                      )}
-                    </button>
+                      Welcome to Bambumm!
+                    </p>
+                    <p className="text-xs" style={{ color: "#888" }}>
+                      Redirecting you now…
+                    </p>
                   </div>
-
-                  <p
-                    className="text-center text-xs mt-5"
-                    style={{ color: "var(--nav-fg-muted)" }}
-                  >
-                    Don&apos;t have an account?{" "}
-                    <button
-                      type="button"
-                      className="font-semibold underline underline-offset-2 transition-colors duration-150"
-                      style={{
-                        color: "var(--nav-accent)",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => setTab("register")}
-                    >
-                      Create one
-                    </button>
-                  </p>
-                </form>
-              )}
-
-              {/* ── REGISTER FORM ── */}
-              {tab === "register" && (
-                <>
-                  {regSuccess ? (
-                    <div className="text-center py-6">
-                      <div
-                        className="success-icon w-14 h-14 mx-auto flex items-center justify-center mb-4"
-                        style={{
-                          background: "rgba(200,169,126,0.12)",
-                          border: "2px solid var(--nav-accent)",
-                        }}
-                      >
-                        <Check
-                          size={24}
-                          style={{ color: "var(--nav-accent)" }}
-                          strokeWidth={2.5}
-                        />
-                      </div>
-                      <p
-                        className="font-bold text-sm tracking-widest uppercase mb-1"
-                        style={{
-                          fontFamily: "var(--nav-font)",
-                          color: "var(--nav-fg)",
-                        }}
-                      >
-                        Welcome to Bambumm!
-                      </p>
-                      <p
-                        className="text-xs"
-                        style={{ color: "var(--nav-fg-muted)" }}
-                      >
-                        Redirecting you now…
-                      </p>
-                    </div>
-                  ) : (
-                    <form
-                      onSubmit={handleRegister}
-                      autoComplete="off"
-                      noValidate
-                    >
-                      <div className="flex flex-col gap-4">
-                        <div>
-                          <label
-                            className="block text-[10px] font-bold tracking-[0.14em] uppercase mb-2"
-                            style={{ color: "var(--nav-fg-muted)" }}
-                          >
-                            Full Name
-                          </label>
-                          <input
-                            type="text"
-                            className="auth-input"
-                            placeholder="Your name"
-                            value={regName}
-                            onChange={(e) => setRegName(e.target.value)}
-                            autoComplete="name"
+                ) : (
+                  <form onSubmit={handleRegister} noValidate>
+                    <div className="flex flex-col gap-3">
+                      <IconInput
+                        icon={<UserIcon />}
+                        placeholder="Enter Your Full Name"
+                        value={regName}
+                        onChange={setRegName}
+                        autoComplete="name"
+                      />
+                      <IconInput
+                        icon={<MailIcon />}
+                        type="email"
+                        placeholder="Enter Your Email Address"
+                        value={regEmail}
+                        onChange={setRegEmail}
+                        autoComplete="email"
+                      />
+                      <IconInput
+                        icon={<LockIcon />}
+                        type={showRegPass ? "text" : "password"}
+                        placeholder="Enter Your Password"
+                        value={regPassword}
+                        onChange={setRegPassword}
+                        autoComplete="new-password"
+                        rightSlot={
+                          <EyeToggle
+                            show={showRegPass}
+                            onToggle={() => setShowRegPass((v) => !v)}
                           />
-                        </div>
-
-                        <div>
-                          <label
-                            className="block text-[10px] font-bold tracking-[0.14em] uppercase mb-2"
-                            style={{ color: "var(--nav-fg-muted)" }}
-                          >
-                            Email Address
-                          </label>
-                          <input
-                            type="email"
-                            className="auth-input"
-                            placeholder="you@example.com"
-                            value={regEmail}
-                            onChange={(e) => setRegEmail(e.target.value)}
-                            autoComplete="email"
+                        }
+                      />
+                      <IconInput
+                        icon={<LockIcon />}
+                        type={showRegConfirm ? "text" : "password"}
+                        placeholder="Confirm Your Password"
+                        value={regConfirm}
+                        onChange={setRegConfirm}
+                        autoComplete="new-password"
+                        rightSlot={
+                          <EyeToggle
+                            show={showRegConfirm}
+                            onToggle={() => setShowRegConfirm((v) => !v)}
                           />
-                        </div>
-
-                        <div>
-                          <label
-                            className="block text-[10px] font-bold tracking-[0.14em] uppercase mb-2"
-                            style={{ color: "var(--nav-fg-muted)" }}
-                          >
-                            Password
-                          </label>
-                          <div className="relative">
-                            <input
-                              type={showRegPass ? "text" : "password"}
-                              className="auth-input"
-                              placeholder="Min. 8 characters"
-                              value={regPassword}
-                              onChange={(e) => setRegPassword(e.target.value)}
-                              autoComplete="new-password"
-                              style={{ paddingRight: 44 }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowRegPass((v) => !v)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2"
-                              style={{
-                                color: "var(--nav-fg-muted)",
-                                background: "none",
-                                border: "none",
-                                cursor: "pointer",
-                                padding: 4,
-                              }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.color =
-                                  "var(--nav-accent)")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.color =
-                                  "var(--nav-fg-muted)")
-                              }
-                            >
-                              {showRegPass ? (
-                                <EyeOff size={15} />
-                              ) : (
-                                <Eye size={15} />
-                              )}
-                            </button>
-                          </div>
-                          {regPassword && (
-                            <div>
-                              <div className="pw-strength-bar">
-                                <div
-                                  className="pw-strength-fill"
-                                  style={{
-                                    width: `${(pwStrength / 4) * 100}%`,
-                                    background: strengthColors[pwStrength],
-                                  }}
-                                />
-                              </div>
-                              <p
-                                className="text-[10px] mt-1"
-                                style={{ color: strengthColors[pwStrength] }}
-                              >
-                                {strengthLabels[pwStrength]}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        <div>
-                          <label
-                            className="block text-[10px] font-bold tracking-[0.14em] uppercase mb-2"
-                            style={{ color: "var(--nav-fg-muted)" }}
-                          >
-                            Confirm Password
-                          </label>
-                          <div className="relative">
-                            <input
-                              type={showRegConfirm ? "text" : "password"}
-                              className="auth-input"
-                              placeholder="Repeat password"
-                              value={regConfirm}
-                              onChange={(e) => setRegConfirm(e.target.value)}
-                              autoComplete="new-password"
-                              style={{ paddingRight: 44 }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowRegConfirm((v) => !v)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2"
-                              style={{
-                                color: "var(--nav-fg-muted)",
-                                background: "none",
-                                border: "none",
-                                cursor: "pointer",
-                                padding: 4,
-                              }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.color =
-                                  "var(--nav-accent)")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.color =
-                                  "var(--nav-fg-muted)")
-                              }
-                            >
-                              {showRegConfirm ? (
-                                <EyeOff size={15} />
-                              ) : (
-                                <Eye size={15} />
-                              )}
-                            </button>
-                          </div>
-                          {regConfirm &&
-                            regPassword &&
-                            regConfirm !== regPassword && (
-                              <p
-                                className="text-[10px] mt-1"
-                                style={{ color: "var(--nav-sale)" }}
-                              >
-                                Passwords don&apos;t match
-                              </p>
-                            )}
-                          {regConfirm &&
-                            regPassword &&
-                            regConfirm === regPassword && (
-                              <p
-                                className="text-[10px] mt-1"
-                                style={{ color: "#27ae60" }}
-                              >
-                                ✓ Passwords match
-                              </p>
-                            )}
-                        </div>
-
-                        {regError && (
-                          <div
-                            className="flex items-center gap-2 px-3.5 py-2.5"
-                            style={{
-                              background: "rgba(217,79,61,0.06)",
-                              border: "1px solid rgba(217,79,61,0.18)",
-                            }}
-                          >
-                            <AlertCircle
-                              size={13}
-                              style={{ color: "var(--nav-sale)" }}
-                              className="shrink-0"
-                            />
-                            <span
-                              className="text-xs"
-                              style={{ color: "var(--nav-sale)" }}
-                            >
-                              {regError}
-                            </span>
-                          </div>
-                        )}
-
-                        <button
-                          type="submit"
-                          disabled={regLoading}
-                          className="auth-btn-primary mt-1"
-                        >
-                          {regLoading ? (
-                            <>
-                              <Loader2 size={14} className="animate-spin" />{" "}
-                              Creating Account…
-                            </>
-                          ) : (
-                            "Create Account →"
-                          )}
-                        </button>
-
-                        <p
-                          className="text-[10px] text-center"
-                          style={{ color: "var(--nav-fg-muted)" }}
-                        >
-                          By creating an account you agree to our{" "}
-                          <a
-                            href="/terms-conditions"
-                            className="underline"
-                            style={{ color: "var(--nav-accent)" }}
-                          >
-                            Terms & Conditions
-                          </a>{" "}
-                          and{" "}
-                          <a
-                            href="/privacy-policy"
-                            className="underline"
-                            style={{ color: "var(--nav-accent)" }}
-                          >
-                            Privacy Policy
-                          </a>
-                          .
-                        </p>
-                      </div>
-
-                      <p
-                        className="text-center text-xs mt-5"
-                        style={{ color: "var(--nav-fg-muted)" }}
-                      >
-                        Already have an account?{" "}
-                        <button
-                          type="button"
-                          className="font-semibold underline underline-offset-2"
+                        }
+                      />
+                      {regError && (
+                        <div
+                          className="flex items-center gap-2 px-3.5 py-2.5 rounded"
                           style={{
-                            color: "var(--nav-accent)",
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
+                            background: "rgba(217,79,61,0.06)",
+                            border: "1px solid rgba(217,79,61,0.18)",
                           }}
-                          onClick={() => setTab("login")}
                         >
-                          Sign in
-                        </button>
-                      </p>
-                    </form>
-                  )}
-                </>
-              )}
-            </div>
+                          <AlertCircle
+                            size={13}
+                            style={{ color: "var(--nav-sale)" }}
+                            className="shrink-0"
+                          />
+                          <span
+                            className="text-xs"
+                            style={{ color: "var(--nav-sale)" }}
+                          >
+                            {regError}
+                          </span>
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={regLoading}
+                        className="w-full rounded-lg py-3.5 mt-1 text-white text-xs font-bold tracking-[0.16em] uppercase flex items-center justify-center gap-2 transition-all duration-150"
+                        style={{
+                          background: regLoading
+                            ? "var(--brand-teal-light)"
+                            : "var(--brand-teal)",
+                          border: "none",
+                          cursor: regLoading ? "not-allowed" : "pointer",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!regLoading)
+                            e.currentTarget.style.background =
+                              "var(--brand-teal-dark)";
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!regLoading)
+                            e.currentTarget.style.background =
+                              "var(--brand-teal)";
+                        }}
+                      >
+                        {regLoading ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin" />{" "}
+                            Creating Account…
+                          </>
+                        ) : (
+                          "Create Account"
+                        )}
+                      </button>
+                    </div>
+
+                    <p
+                      className="text-center text-xs mt-5"
+                      style={{ color: "#888" }}
+                    >
+                      Already have an account?{" "}
+                      <button
+                        type="button"
+                        onClick={() => setTab("login")}
+                        className="font-semibold"
+                        style={{
+                          color: "var(--brand-teal)",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Sign in
+                      </button>
+                    </p>
+                  </form>
+                )}
+              </>
+            )}
           </div>
         </div>
-      </main>
-    </>
+      </div>
+    </main>
   );
 }
 

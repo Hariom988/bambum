@@ -346,41 +346,6 @@ export default function Testimonials() {
               ))}
             </div>
           )}
-
-          {/* Stats bar */}
-          {!loading && testimonials.length > 0 && (
-            <div
-              className="tm-stats-row mt-14 pt-10 flex items-center justify-center gap-12"
-              style={{ borderTop: "1px solid var(--tm-divider)" }}
-            >
-              {[
-                { value: `${avgRating} / 5.0`, label: "Average Rating" },
-                { value: `${totalCount}`, label: "Happy Customers" },
-              ].map((stat, i) => (
-                <div key={stat.label} className="flex items-center gap-12">
-                  <div className="text-center">
-                    <p
-                      className="font-bold m-0 mb-1 leading-none"
-                      style={{
-                        fontFamily: "var(--nav-font)",
-                        fontSize: "1.75rem",
-                        color: "#ffffff",
-                      }}
-                    >
-                      {stat.value}
-                    </p>
-                    <p
-                      className="text-[0.75rem] m-0 tracking-widest uppercase"
-                      style={{ color: "var(--tm-meta-fg)" }}
-                    >
-                      {stat.label}
-                    </p>
-                  </div>
-                  {i < 1 && <div className="tm-stat-divider" />}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </section>
     </>

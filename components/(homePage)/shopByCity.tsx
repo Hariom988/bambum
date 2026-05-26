@@ -134,13 +134,13 @@ export default function ShopByCity() {
             <Link
               key={city.name}
               href={city.href}
-              className="relative flex-1 overflow-hidden rounded-xl cursor-pointer group no-underline"
-              style={{ aspectRatio: "3/5" }}
+              className="relative flex-1 hover:scale-105 overflow-hidden rounded-xl cursor-pointer group no-underline transition-transform duration-500 ease-out group-hover:scale-110"
+              style={{ aspectRatio: "4/5" }}
             >
               <img
                 src={city.image}
                 alt={`${city.name} - ${city.subtitle}`}
-                className="absolute right-0 z-[2] inset-0 w-full h-full object-contain object-right transition-transform duration-500 ease-out group-hover:scale-105"
+                className="absolute right-0 z-[2] inset-0 w-full h-full object-contain object-right "
               />
               <div
                 className="absolute inset-0"
