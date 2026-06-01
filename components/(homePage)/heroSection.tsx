@@ -1,154 +1,267 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+
+import Leaf from "@/public/homePage/leaf.svg";
+import Cloud from "@/public/homePage/cloud.svg";
+import Secured from "@/public/homePage/secured.svg";
+import Wind from "@/public/homePage/wind.svg";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import banner1 from "@/public/banner_image.png";
-import banner2 from "@/public/banner_image2.png";
-import banner3 from "@/public/banner_image3.png";
-import banner4 from "@/public/banner_image5.jpeg";
-import banner6 from "@/public/banner_image6.png";
+import Link from "next/link";
+interface FeatureCardProps {
+  icon: string;
+  title: string;
+  description: string;
+}
 
-import { useReducedMotion } from "@/hooks/useReducedMotion";
-
-const SLIDES = [
-  { id: 5, image: banner6, cta: { label: "UPCOMING", href: "/" } },
-  { id: 1, image: banner2, cta: { label: "UPCOMING", href: "/" } },
-  { id: 3, image: banner3, cta: { label: "UPCOMING", href: "/" } },
-  { id: 4, image: banner4, cta: { label: "UPCOMING", href: "/" } },
-  { id: 2, image: banner1, cta: { label: "SHOP BOXERS", href: "/" } },
+const features: FeatureCardProps[] = [
+  {
+    icon: Leaf.src,
+    title: "Sustainable",
+    description: "Eco- friendly bamboo\nfor a better planet",
+  },
+  {
+    icon: Cloud.src,
+    title: "Ultra Soft",
+    description: "Silky smooth feel\nagainst your skin",
+  },
+  {
+    icon: Wind.src,
+    title: "Breathable",
+    description: "Keeps you fresh\nall day long",
+  },
+  {
+    icon: Secured.src,
+    title: "Durable",
+    description: "Quality that stays\nwith you",
+  },
 ];
 
-const AUTO_PLAY_MS = 3000;
+function FeatureCard({ icon, title, description }: FeatureCardProps) {
+  return (
+    <div className="flex items-start gap-4">
+      <div
+        className="shrink-0 mt-0.5"
+        style={{ color: "var(--hero-feature-icon)" }}
+        aria-hidden="true"
+      >
+        <Image src={icon} alt="" width={40} height={40} />
+      </div>
+
+      <div>
+        <p
+          className="text-[0.78rem] font-bold tracking-[0.12em] uppercase mb-1"
+          style={{
+            color: "var(--hero-feature-title)",
+            fontFamily: "var(--nav-font-ui)",
+          }}
+        >
+          {title}
+        </p>
+        <p
+          className="text-[0.75rem] leading-[1.45] whitespace-pre-line"
+          style={{
+            color: "var(--hero-feature-body)",
+            fontFamily: "var(--nav-font-ui)",
+          }}
+        >
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function HeroSection() {
-  const [current, setCurrent] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const count = SLIDES.length;
-  const isReducedMotion = useReducedMotion();
-  const touchStartX = useRef<number | null>(null);
-
-  const next = useCallback(() => {
-    setCurrent((prev) => (prev + 1) % count);
-  }, [count]);
-
-  const prev = useCallback(() => {
-    setCurrent((prev) => (prev - 1 + count) % count);
-  }, [count]);
-
-  const goTo = (index: number) => setCurrent(index);
-
-  useEffect(() => {
-    if (count < 2 || isReducedMotion || isHovered) return;
-    const interval = setInterval(next, AUTO_PLAY_MS);
-    return () => clearInterval(interval);
-  }, [count, next, isReducedMotion, isHovered]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") prev();
-      if (e.key === "ArrowRight") next();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [next, prev]);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStartX.current) return;
-    const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) next();
-      else prev();
-    }
-    touchStartX.current = null;
-  };
-
   return (
-    <section aria-label="Featured banners and product search">
-      {/* ── Carousel ── */}
+    <section
+      className="w-full pt-10 relative pb-20 md:pb-0"
+      aria-label="Hero — Next-level comfort"
+    >
       <div
-        className="relative w-full h-[70vh] min-h-100 overflow-hidden bg-gray-100 mt-20"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        aria-roledescription="carousel"
+        className="
+          relative w-full overflow-hidden
+          h-[56vw] max-h-[600px] min-h-[420px]
+          md:h-[52vw] md:max-h-[640px] md:min-h-[480px]
+          bg-contain bg-no-repeat
+
+          /* Mobile image */
+          [background-image:var(--hero-bg-mobile)]
+          [background-position:center_top]
+
+          /* Desktop image */
+          md:[background-image:var(--hero-bg-desktop)]
+          md:[background-position:center_center]
+        "
+        role="img"
+        aria-label="Man and woman wearing BAMBUMM bamboo essentials"
       >
-        {SLIDES.map((slide, index) => {
-          const isActive = index === current;
-          return (
-            <div
-              key={slide.id}
-              aria-hidden={!isActive}
-              className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
-                isActive
-                  ? "opacity-100 translate-x-0 z-10"
-                  : "opacity-0 pointer-events-none z-0"
-              }`}
+        <div
+          className="absolute inset-0 pointer-events-none md:hidden"
+          style={{
+            background:
+              "linear-gradient(to bottom, transparent 50%, rgba(15,10,5,0.68) 100%)",
+          }}
+          aria-hidden="true"
+        />
+
+        <div
+          className="
+            hidden md:flex flex-col
+            absolute
+            top-[18%]
+            left-[3.5%] lg:left-[4%] xl:left-[5%]
+            max-w-[42%] lg:max-w-[40%]
+          "
+        >
+          <p
+            className="
+              text-[0.62rem] lg:text-md 
+              font-bold
+              tracking-[0.2em] uppercase  mb-3 lg:mb-4
+            "
+            style={{
+              color: "var(--hero-eyebrow)",
+              fontFamily: "var(--nav-font-ui)",
+            }}
+          >
+            Next - Level Comfort
+          </p>
+          <h1
+            className="leading-[0.92] mb-4 lg:mb-5"
+            style={{ fontFamily: "var(--nav-font)" }}
+          >
+            <span
+              className="
+                block font-black tracking-[-0.01em]
+                text-[clamp(2.6rem,5.2vw,5rem)]
+              "
+              style={{ color: "var(--hero-headline-dark)" }}
             >
-              <div className="relative w-full h-full">
-                <Image
-                  alt=""
-                  src={slide.image}
-                  fill
-                  priority={index === 0}
-                  sizes="100vw"
-                  className="object-cover object-center select-none"
-                  draggable={false}
-                />
-              </div>
-            </div>
-          );
-        })}
+              Feels Like
+            </span>
 
-        <div className="absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent pointer-events-none z-20" />
+            <span
+              className="
+                block font-black tracking-[-0.01em]
+                text-[clamp(2.6rem,5.2vw,5rem)]
+              "
+              style={{ color: "var(--hero-headline-warm)" }}
+            >
+              Clouds.
+            </span>
 
-        {count > 1 && (
-          <>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                prev();
+            <span
+              className="
+                block font-black tracking-[-0.01em]
+                text-[clamp(2rem,4vw,3.8rem)]
+              "
+              style={{ color: "var(--hero-headline-warm)" }}
+            >
+              Performs Like You
+            </span>
+          </h1>
+
+          <p
+            className="
+              text-[0.78rem] lg:text-[0.82rem]
+              leading-[1.6] mb-6 lg:mb-7
+              max-w-[240px] lg:max-w-[260px]
+            "
+            style={{
+              color: "var(--hero-body)",
+              fontFamily: "var(--nav-font-ui)",
+            }}
+          >
+            Ultra-soft bamboo essentials designed for all-day comfort and modern
+            living.
+          </p>
+
+          {/* CTA row */}
+          <div className="flex flex-row items-center gap-5">
+            <Link
+              href="/shop"
+              className="
+                rounded-lg inline-flex items-center justify-center
+                px-6 py-3 lg:px-7 lg:py-3.5
+                text-[0.65rem] font-bold tracking-[0.18em] uppercase
+                transition-opacity duration-150 hover:opacity-85
+              "
+              style={{
+                background: "var(--hero-cta-primary-bg)",
+                color: "var(--hero-cta-primary-fg)",
+                fontFamily: "var(--nav-font-ui)",
               }}
-              className="absolute cursor-pointer left-4 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center w-12 h-12 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30 transition-all hover:bg-white hover:text-black shadow-lg"
-              aria-label="Previous slide"
             >
-              <ChevronLeft size={24} />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                next();
+              Shop Now
+            </Link>
+            <Link
+              href="/collections"
+              className="
+                inline-flex items-center gap-1
+                text-[0.65rem] font-semibold tracking-[0.14em] uppercase
+                transition-opacity duration-150 hover:opacity-60
+              "
+              style={{
+                color: "var(--hero-cta-secondary-fg)",
+                fontFamily: "var(--nav-font-ui)",
               }}
-              className="absolute cursor-pointer right-4 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center w-12 h-12 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30 transition-all hover:bg-white hover:text-black shadow-lg"
-              aria-label="Next slide"
             >
-              <ChevronRight size={24} />
-            </button>
-          </>
-        )}
+              Explore Collections
+              <span aria-hidden="true"> →</span>
+            </Link>
+          </div>
+        </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3">
-          {SLIDES.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goTo(i)}
-              aria-selected={i === current}
-              className={`group relative h-3 transition-all duration-300 ${
-                i === current ? "w-8" : "w-3"
-              }`}
-              aria-label={`Go to slide ${i + 1}`}
-            >
-              <span
-                className={`absolute inset-0 rounded-full transition-all ${
-                  i === current
-                    ? "bg-(--nav-accent,white)"
-                    : "bg-white/50 group-hover:bg-white/80"
-                }`}
-              />
-            </button>
+        <div className="md:hidden absolute bottom-0 left-0 right-0 p-5 flex flex-col gap-3">
+          <Link
+            href="/products"
+            className="
+              w-full flex items-center justify-center
+              py-4
+              text-[0.72rem] font-bold tracking-[0.2em] uppercase
+              transition-opacity duration-150 hover:opacity-90
+            "
+            style={{
+              background: "var(--hero-cta-primary-bg)",
+              color: "var(--hero-cta-primary-fg)",
+              fontFamily: "var(--nav-font-ui)",
+            }}
+          >
+            Shop Now
+          </Link>
+          <Link
+            href="/products"
+            className="
+              w-full flex items-center justify-center gap-1.5
+              py-3.5
+              text-[0.72rem] font-semibold tracking-[0.16em] uppercase
+              border transition-opacity duration-150 hover:opacity-80
+            "
+            style={{
+              color: "var(--hero-cta-ghost-fg)",
+              borderColor: "var(--hero-cta-ghost-border)",
+              fontFamily: "var(--nav-font-ui)",
+            }}
+          >
+            Explore Collections →
+          </Link>
+        </div>
+      </div>
+
+      <div
+        className="absolute bottom-0 border-1 border-neutral-300 left-1/2 -translate-x-1/2 max-w-5xl z-999 -bottom-17 w-full rounded-2xl"
+        style={{ background: "var(--hero-feature-bg)" }}
+      >
+        <div
+          className="
+            max-w-full mx-auto
+            px-6 sm:px-10 lg:px-8 xl:px-5
+            py-7 sm:py-1 lg:py-5
+            grid grid-cols-2 lg:grid-cols-4
+            gap-x-6 gap-y-7 sm:gap-x-8 lg:gap-x-10
+          "
+        >
+          {features.map((f) => (
+            <FeatureCard key={f.title} {...f} />
           ))}
         </div>
       </div>

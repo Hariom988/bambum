@@ -100,4 +100,29 @@
   --adm-shadow-modal: 0 8px 40px rgba(25, 99, 94, 0.12);
   --adm-shadow-toast: 0 4px 24px rgba(25, 99, 94, 0.1);
   --adm-shadow-nav: 0 1px 0 #c8dedd;
+  --hero-bg-desktop: url("/homePage/heroImage.png");
+  --hero-bg-mobile: url("/homePage/mobileHeroImage.png");
+  --hero-bg-pos-desktop: center center;
+  --hero-bg-pos-mobile: center top;
+
+  --hero-overlay-left: rgba(232, 213, 188, 0.93);
+
+  --hero-overlay-mobile-top: rgba(232, 213, 188, 0.45);
+  --hero-overlay-mobile-bottom: rgba(30, 20, 10, 0.62);
+
+  --hero-eyebrow: rgba(30, 20, 10, 0.5); /* "Next - Level Comfort" label */
+  --hero-headline-dark: #1a110a; /* "Feels Like" — dark line */
+  --hero-headline-warm: #b8906a; /* "Clouds." / "Performs…" — tan lines */
+  --hero-body: rgba(30, 20, 10, 0.6); /* Subtitle paragraph */
+
+  --hero-cta-primary-bg: #0d0d0d; /* "Shop Now" fill */
+  --hero-cta-primary-fg: #ffffff; /* "Shop Now" label */
+  --hero-cta-secondary-fg: #1a110a; /* "Explore Collections" text (desktop) */
+  --hero-cta-ghost-fg: #ffffff; /* "Explore Collections" text (mobile) */
+  --hero-cta-ghost-border: rgba(255, 255, 255, 0.55); /* mobile ghost border */
+
+  --hero-feature-bg: #ffffff;
+  --hero-feature-icon: var(--brand-teal);
+  --hero-feature-title: #0d1a19;
+  --hero-feature-body: rgba(13, 26, 25, 0.52);
 }
