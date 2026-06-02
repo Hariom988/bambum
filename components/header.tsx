@@ -1,5 +1,3 @@
-// components/header.tsx
-
 import { unstable_cache } from "next/cache";
 import { MongoClient } from "mongodb";
 import NavInteractive, { NavItem } from "@/components/navInteractive";
@@ -98,7 +96,25 @@ const FALLBACK_NAV: NavItem[] = [
   },
 ];
 
-// Fetches from MongoDB — kept separate so unstable_cache can wrap it cleanly.
+const HARDCODED_LINKS: NavItem[] = [
+  {
+    _id: "hc-products",
+    label: "Products",
+    order: 998,
+    isActive: true,
+    categories: [],
+    href: "/products",
+  },
+  {
+    _id: "hc-about",
+    label: "About Us",
+    order: 999,
+    isActive: true,
+    categories: [],
+    href: "/aboutus",
+  },
+];
+
 async function fetchNavFromDB(): Promise<NavItem[]> {
   const uri = process.env.MONGODB_URI;
   if (!uri) return FALLBACK_NAV;
@@ -122,21 +138,22 @@ async function fetchNavFromDB(): Promise<NavItem[]> {
   }
 }
 
-// Cached with the same tag the admin API routes revalidate.
-// When the admin saves nav changes, revalidateTag("navconfig") is called
-// there, which busts this cache and the next request re-fetches from DB.
 const getCachedNav = unstable_cache(fetchNavFromDB, ["navconfig"], {
   revalidate: 60,
   tags: ["navconfig"],
 });
 
 export default async function Header() {
-  let navItems: NavItem[];
+  let fetchedNavItems: NavItem[];
   try {
-    navItems = await getCachedNav();
+    fetchedNavItems = await getCachedNav();
   } catch (err) {
     console.error("[Header] Failed to fetch nav, using fallback:", err);
-    navItems = FALLBACK_NAV;
+    fetchedNavItems = FALLBACK_NAV;
   }
-  return <NavInteractive navItems={navItems} />;
+
+  // Merged so hardcoded links are pushed to the right side of the navbar
+  const combinedNav = [...fetchedNavItems, ...HARDCODED_LINKS];
+
+  return <NavInteractive navItems={combinedNav} />;
 }

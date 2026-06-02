@@ -6,6 +6,7 @@ import Secured from "@/public/homePage/secured.svg";
 import Wind from "@/public/homePage/wind.svg";
 import Image from "next/image";
 import Link from "next/link";
+
 interface FeatureCardProps {
   icon: string;
   title: string;
@@ -37,18 +38,24 @@ const features: FeatureCardProps[] = [
 
 function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
-    <div className="flex items-start gap-4">
+    <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-1.5 sm:gap-4">
       <div
-        className="shrink-0 mt-0.5"
+        className="shrink-0 mt-0 sm:mt-0.5 w-7 sm:w-10 flex items-center justify-center"
         style={{ color: "var(--hero-feature-icon)" }}
         aria-hidden="true"
       >
-        <Image src={icon} alt="" width={40} height={40} />
+        <Image
+          src={icon}
+          alt=""
+          width={40}
+          height={40}
+          className="w-full h-auto"
+        />
       </div>
 
       <div>
         <p
-          className="text-[0.78rem] font-bold tracking-[0.12em] uppercase mb-1"
+          className="text-[0.65rem] sm:text-[0.78rem] font-bold tracking-[0.08em] sm:tracking-[0.12em] uppercase mb-0.5 sm:mb-1"
           style={{
             color: "var(--hero-feature-title)",
             fontFamily: "var(--nav-font-ui)",
@@ -57,7 +64,7 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
           {title}
         </p>
         <p
-          className="text-[0.75rem] leading-[1.45] whitespace-pre-line"
+          className="text-[0.55rem] sm:text-[0.75rem] leading-[1.35] sm:leading-[1.45] whitespace-pre-line"
           style={{
             color: "var(--hero-feature-body)",
             fontFamily: "var(--nav-font-ui)",
@@ -73,19 +80,20 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
 export default function HeroSection() {
   return (
     <section
-      className="w-full pt-10 relative pb-20 md:pb-0"
+      className="w-full pt-10 relative pb-28 md:pb-0"
       aria-label="Hero — Next-level comfort"
     >
       <div
         className="
-          relative w-full overflow-hidden
-          h-[56vw] max-h-[600px] min-h-[420px]
+          relative mx-auto overflow-hidden
+          w-full
+          h-[75vw] max-h-[500px] min-h-[400px]
           md:h-[52vw] md:max-h-[640px] md:min-h-[480px]
-          bg-contain bg-no-repeat
+          bg-cover md:bg-contain bg-no-repeat
 
           /* Mobile image */
           [background-image:var(--hero-bg-mobile)]
-          [background-position:center_top]
+          [background-position:center_right_60%]
 
           /* Desktop image */
           md:[background-image:var(--hero-bg-desktop)]
@@ -131,7 +139,7 @@ export default function HeroSection() {
           >
             <span
               className="
-                block font-black tracking-[-0.01em]
+                block text-medium font-bold tracking-[-0.01em]
                 text-[clamp(2.6rem,5.2vw,5rem)]
               "
               style={{ color: "var(--hero-headline-dark)" }}
@@ -141,7 +149,7 @@ export default function HeroSection() {
 
             <span
               className="
-                block font-black tracking-[-0.01em]
+                block font-bold tracking-[-0.01em]
                 text-[clamp(2.6rem,5.2vw,5rem)]
               "
               style={{ color: "var(--hero-headline-warm)" }}
@@ -151,7 +159,7 @@ export default function HeroSection() {
 
             <span
               className="
-                block font-black tracking-[-0.01em]
+                block font-bold tracking-[-0.01em]
                 text-[clamp(2rem,4vw,3.8rem)]
               "
               style={{ color: "var(--hero-headline-warm)" }}
@@ -211,14 +219,14 @@ export default function HeroSection() {
           </div>
         </div>
 
-        <div className="md:hidden absolute bottom-0 left-0 right-0 p-5 flex flex-col gap-3">
+        <div className="md:hidden absolute bottom-[5%] left-0 right-0 p-15 md:p-5 flex flex-col gap-3">
           <Link
             href="/products"
             className="
               w-full flex items-center justify-center
-              py-4
+              py-3.5
               text-[0.72rem] font-bold tracking-[0.2em] uppercase
-              transition-opacity duration-150 hover:opacity-90
+              transition-opacity duration-150 hover:opacity-90 rounded-sm
             "
             style={{
               background: "var(--hero-cta-primary-bg)",
@@ -232,14 +240,15 @@ export default function HeroSection() {
             href="/products"
             className="
               w-full flex items-center justify-center gap-1.5
-              py-3.5
+              py-3
               text-[0.72rem] font-semibold tracking-[0.16em] uppercase
-              border transition-opacity duration-150 hover:opacity-80
+              border transition-opacity duration-150 hover:opacity-80 rounded-sm
             "
             style={{
               color: "var(--hero-cta-ghost-fg)",
               borderColor: "var(--hero-cta-ghost-border)",
               fontFamily: "var(--nav-font-ui)",
+              background: "rgba(0,0,0,0.3)", // subtle backdrop for readability on mobile
             }}
           >
             Explore Collections →
@@ -248,16 +257,16 @@ export default function HeroSection() {
       </div>
 
       <div
-        className="absolute bottom-0 border-1 border-neutral-300 left-1/2 -translate-x-1/2 max-w-5xl z-999 -bottom-17 w-full rounded-2xl"
+        className="absolute -bottom-17 md:-bottom-0 left-1/2 -translate-x-1/2 w-[92%] md:w-full max-w-5xl z-[50] rounded-2xl shadow-sm border border-neutral-200/60"
         style={{ background: "var(--hero-feature-bg)" }}
       >
         <div
           className="
             max-w-full mx-auto
-            px-6 sm:px-10 lg:px-8 xl:px-5
-            py-7 sm:py-1 lg:py-5
+            px-4 sm:px-10 lg:px-8 xl:px-5
+            py-5 sm:py-7 lg:py-5
             grid grid-cols-2 lg:grid-cols-4
-            gap-x-6 gap-y-7 sm:gap-x-8 lg:gap-x-10
+            gap-x-3 gap-y-6 sm:gap-x-8 lg:gap-x-10
           "
         >
           {features.map((f) => (

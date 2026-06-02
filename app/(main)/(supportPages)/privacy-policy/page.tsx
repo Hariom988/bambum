@@ -3,22 +3,6 @@
 import { Shield, Eye, Share2, Lock, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
-/*
-  New CSS variables to add to :root in globals.css:
-  --pp-hero-bg: #f5f4f0;
-  --pp-dark-bg: #141414;
-  --pp-card-bg: #1e2020;
-  --pp-card-border: rgba(41,177,168,0.15);
-  --pp-teal: var(--ft-fg);               (reuses existing teal #29b1a8)
-  --pp-card-title: var(--ft-fg);
-  --pp-card-body: rgba(255,255,255,0.65);
-  --pp-section-heading: #ffffff;
-  --pp-section-sub: rgba(255,255,255,0.55);
-  --pp-contact-bg: #ffffff;
-  --pp-contact-heading: #0a0a0a;
-  --pp-contact-sub: rgba(10,10,10,0.55);
-*/
-
 const SECTIONS = [
   {
     icon: Eye,
@@ -57,7 +41,7 @@ export default function PrivacyPolicyPage() {
           transition: background 0.25s ease;
         }
         .pp-card:hover .pp-icon-wrap {
-          background: rgba(41,177,168,0.18) !important;
+          background: rgba(240, 213, 182, 0.94);
         }
 
         .pp-contact-btn {
@@ -281,7 +265,7 @@ export default function PrivacyPolicyPage() {
                       >
                         <Icon
                           size={17}
-                          style={{ color: "var(--ft-fg)" }}
+                          style={{ color: "var(--ft-fg-faint)" }}
                           strokeWidth={1.75}
                         />
                       </div>
@@ -290,7 +274,7 @@ export default function PrivacyPolicyPage() {
                           fontFamily: "var(--nav-font)",
                           fontSize: "1rem",
                           fontWeight: 700,
-                          color: "var(--ft-fg)",
+                          color: "var(--ft-fg-faint)",
                           margin: 0,
                           letterSpacing: "0.01em",
                         }}

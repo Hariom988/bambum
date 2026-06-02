@@ -1,3 +1,4 @@
+import CategorySection from "@/components/(homePage)/categorySection";
 import HeroSection from "@/components/(homePage)/heroSection";
 import ProductsSection from "@/components/(homePage)/productsSection";
 import PromoBanner from "@/components/(homePage)/promoBanner";
@@ -10,7 +11,8 @@ export default function Home() {
   return (
     <>
       <HeroSection />
-      <ShopByCity />
+      <CategorySection />
+      {/* <ShopByCity /> */}
       <ProductsSection />
       <PromoBanner />
       <ShopOn />

@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, MapPin, Mail, Phone } from "lucide-react";
-
+import Phone from "@/public/vectors/phone.svg";
+import Mail from "@/public/vectors/mail.svg";
+import Location from "@/public/vectors/location.svg";
 const FOOTER_LINKS = [
   {
     heading: "Shop",
@@ -52,54 +53,39 @@ export default function Footer() {
         fontFamily: "var(--nav-font-ui)",
       }}
     >
-      {/* ══ NEWSLETTER BAND ══ */}
-      <div
-        className="relative border-b"
-        style={{
-          background: "var(--ft-bg-band)",
-          borderColor: "var(--ft-border)",
-        }}
-      ></div>
-
+      <div className="flex w-full  items-center">
+        <Link href="/">
+          <img src="/logo.png" alt="Bambumm" className="w-30 rounded-2xl" />
+        </Link>
+        <p className="flex w-full ml-10 items-center gap-5">
+          <Link
+            href="https://www.instagram.com/bambumm_official/"
+            target="_blank"
+          >
+            <img className="w-7" src="/vectors/instagram.svg" alt="" />
+          </Link>
+          <Link
+            href="https://www.facebook.com/profile.php?id=61590123460790"
+            target="_blank"
+          >
+            <img className="w-7" src="/vectors/facebook.svg" alt="" />
+          </Link>
+        </p>
+      </div>
       {/* ══ MAIN GRID ══ */}
-      <div className="max-w-7xl mx-auto px-6 pt-10 pb-5 grid grid-cols-2 md:grid-cols-4 gap-10 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 pb-5 grid grid-cols-2 md:grid-cols-4 gap-10 relative z-10">
         {/* Brand column */}
         <div className="col-span-2 md:col-span-1 flex flex-col gap-5">
-          <div className="flex w-full items-center justify-between">
-            <Link href="/">
-              <img
-                src="/logo.png"
-                alt="Bambumm"
-                className="w-20 rounded-2xl bg-white"
-              />
-            </Link>
-            <p className="flex w-full items-center justify-center gap-5">
-              <Link
-                href="https://www.instagram.com/bambumm_official/"
-                target="_blank"
-              >
-                <img className="w-5" src="/vectors/instagram.svg" alt="" />
-              </Link>
-              <Link
-                href="https://www.facebook.com/profile.php?id=61590123460790"
-                target="_blank"
-              >
-                <img className="w-3" src="/vectors/facebook.svg" alt="" />
-              </Link>
-            </p>
-          </div>
-
           <p
-            className="text-sm leading-relaxed max-w-[28ch]"
+            className="text-lg leading-relaxed max-w-[28ch]"
             style={{ color: "var(--ft-fg-muted)" }}
           >
-            Crafted for the skin you live in. Premium bamboo-blend essentials
-            built to breathe, move and last.
+            Premium bamboo comfort for men & women.
           </p>
           <ul className="flex flex-col gap-2 list-none p-0 m-0">
             {[
               {
-                icon: MapPin,
+                icon: Location,
                 text: "Plot No. 34B Block D lower ground floor Chhattarpur Enclave, Delhi-110074",
                 href: null,
               },
@@ -116,15 +102,12 @@ export default function Footer() {
             ].map(({ icon: Icon, text, href }) => (
               <li
                 key={text}
-                className="flex items-center gap-2 text-[0.8rem]"
+                className="flex items-center gap-2 text-sm"
                 style={{ color: "var(--ft-fg-muted)" }}
               >
-                <Icon
-                  size={13}
-                  style={{ color: "var(--ft-accent)", flexShrink: 0 }}
-                />
+                <img src={Icon.src} alt="" className="w-5" />
                 {href ? (
-                  <a
+                  <Link
                     href={href}
                     className="no-underline transition-colors duration-150"
                     style={{ color: "var(--ft-fg-muted)" }}
@@ -136,7 +119,7 @@ export default function Footer() {
                     }
                   >
                     {text}
-                  </a>
+                  </Link>
                 ) : (
                   <span>{text}</span>
                 )}
@@ -147,9 +130,9 @@ export default function Footer() {
 
         {/* Link columns */}
         {FOOTER_LINKS.map((col) => (
-          <div key={col.heading} className="flex flex-col gap-4">
+          <div key={col.heading} className="flex flex-col gap-2">
             <h3
-              className="text-[0.68rem] font-bold tracking-[0.18em] uppercase pb-3"
+              className="text-lg font-bold  uppercase pb-3"
               style={{
                 color: "var(--ft-fg)",
               }}
@@ -161,7 +144,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-[0.84rem] tracking-wide no-underline inline-block transition-all duration-150"
+                    className="text-md tracking-wide no-underline inline-block transition-all duration-150"
                     style={{ color: "var(--ft-fg-muted)" }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = "var(--ft-accent)";
@@ -196,7 +179,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 pb-8 flex flex-wrap items-center justify-between gap-4 relative z-10">
         <p
           className="text-[0.77rem] tracking-wide"
-          style={{ color: "var(--adm-bg-white)" }}
+          style={{ color: "var(--ft-fg-muted)" }}
         >
           © {new Date().getFullYear()} Bambumm. All rights reserved.
         </p>
@@ -204,7 +187,7 @@ export default function Footer() {
         <div className="flex items-center gap-2">
           <span
             className="text-[0.77rem] tracking-wide"
-            style={{ color: "var(--adm-bg-white)" }}
+            style={{ color: "var(--ft-fg-muted)" }}
           >
             Design & Powered by{" "}
             <Link
@@ -217,22 +200,6 @@ export default function Footer() {
             </Link>
           </span>
         </div>
-      </div>
-
-      <div
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-none select-none z-0 leading-none"
-        style={{
-          fontFamily: "var(--nav-font)",
-          fontSize: "clamp(5rem, 14vw, 11rem)",
-          fontWeight: 700,
-          letterSpacing: "0.12em",
-          color: "transparent",
-          WebkitTextStroke: "1px rgb(7, 33, 32)",
-          whiteSpace: "nowrap",
-        }}
-        aria-hidden="true"
-      >
-        BAMBUMM
       </div>
     </footer>
   );

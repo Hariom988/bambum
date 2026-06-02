@@ -199,7 +199,7 @@ export default function ProductsSection() {
       `}</style>
 
       <section
-        className="w-full py-5 md:py-5"
+        className="w-full  py-5 md:py-5"
         style={{
           background: "var(--brand-background-page)",
           fontFamily: "var(--nav-font-ui)",
@@ -209,14 +209,14 @@ export default function ProductsSection() {
           {/* Header */}
           <div className="flex items-end justify-between mb-6 md:mb-8">
             <h2
-              className="text-3xl md:text-5xl font-bold uppercase tracking-tight"
+              className="text-2xl md:text-4xl font-bold uppercase tracking-tight"
               style={{
                 fontFamily: "var(--nav-font)",
                 color: "black",
                 letterSpacing: "-0.01em",
               }}
             >
-              Bestsellers
+              SHOP BY BAMBUMM
             </h2>
             <Link
               href="/products"

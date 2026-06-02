@@ -20,7 +20,7 @@ function StarRating({ rating }: { rating: number }) {
         <Star
           key={i}
           size={14}
-          fill={i < rating ? "var(--ft-fg)" : "rgba(41,177,168,0.25)"}
+          fill={i < rating ? "var(--tm-fg)" : "#DBC3AE80"}
           strokeWidth={0}
         />
       ))}
@@ -31,7 +31,7 @@ function StarRating({ rating }: { rating: number }) {
 function TestimonialCard({ name, rating, text, title, initials }: Testimonial) {
   return (
     <div
-      className="flex flex-col gap-3.5 rounded-xl p-6 h-full"
+      className="flex flex-col shadow-xl/20  gap-3.5 rounded-xl p-6 h-full"
       style={{
         background: "var(--tm-card-bg)",
         border: "1px solid var(--tm-card-border)",
@@ -42,7 +42,7 @@ function TestimonialCard({ name, rating, text, title, initials }: Testimonial) {
       {title && (
         <p
           className="text-[11px] font-bold tracking-widest uppercase m-0"
-          style={{ color: "var(--ft-fg)", fontFamily: "var(--nav-font-ui)" }}
+          style={{ color: "var(--tm-fg)", fontFamily: "var(--nav-font-ui)" }}
         >
           {title}
         </p>
@@ -50,34 +50,23 @@ function TestimonialCard({ name, rating, text, title, initials }: Testimonial) {
 
       <p
         className="flex-1 text-[0.9rem] leading-relaxed m-0"
-        style={{ color: "var(--tm-body-fg)", fontFamily: "var(--nav-font-ui)" }}
+        style={{ color: "var(--tm-fg)", fontFamily: "var(--nav-font-ui)" }}
       >
         &ldquo;{text}&rdquo;
       </p>
 
       <div className="flex items-center gap-2.5">
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-[0.65rem] font-bold shrink-0"
-          style={{
-            background: "rgba(41,177,168,0.15)",
-            border: "1px solid rgba(41,177,168,0.3)",
-            color: "var(--ft-fg)",
-            fontFamily: "var(--nav-font)",
-          }}
-        >
-          {initials}
-        </div>
         <div>
           <p
             className="text-[0.8rem] font-semibold m-0"
-            style={{ color: "var(--ft-fg)", fontFamily: "var(--nav-font-ui)" }}
+            style={{ color: "var(--tm-fg)", fontFamily: "var(--nav-font-ui)" }}
           >
             {name}
           </p>
           <p
             className="text-[0.7rem] m-0"
             style={{
-              color: "var(--tm-meta-fg)",
+              color: "var(--tm-fg)",
               fontFamily: "var(--nav-font-ui)",
             }}
           >
@@ -160,14 +149,6 @@ export default function Testimonials() {
   return (
     <>
       <style>{`
-        :root {
-          --tm-card-bg: #1a1a1a;
-          --tm-card-border: rgba(255,255,255,0.06);
-          --tm-body-fg: rgba(255,255,255,0.75);
-          --tm-meta-fg: rgba(255,255,255,0.45);
-          --tm-subtitle-fg: rgba(255,255,255,0.55);
-          --tm-divider: rgba(255,255,255,0.08);
-        }
 
         .tm-stat-divider {
           width: 1px;
@@ -183,7 +164,7 @@ export default function Testimonials() {
 
       <section
         style={{
-          background: "var(--ft-bg)",
+          background: "var(--tm-bg)",
           borderTop: "1px solid var(--ft-border)",
           borderBottom: "1px solid var(--ft-border)",
           padding: "80px 0",
@@ -204,46 +185,15 @@ export default function Testimonials() {
           {/* Header */}
           <div className="text-center mb-14">
             <h2
-              className="font-bold m-0 mb-3"
+              className="font-bold text-4xl m-0 mb-3"
               style={{
                 fontFamily: "var(--nav-font)",
-                fontSize: "clamp(1.75rem, 4vw, 2.5rem)",
-                color: "#ffffff",
+                color: "black",
                 letterSpacing: "0.01em",
               }}
             >
-              What Our Customers Say
+              LOVED BY THOUSANDS
             </h2>
-            <p
-              className="text-[0.9rem] m-0 mb-5 leading-relaxed"
-              style={{ color: "var(--tm-subtitle-fg)" }}
-            >
-              Join thousands of satisfied customers who&apos;ve made the switch
-              to
-              <br />
-              sustainable comfort
-            </p>
-
-            {!loading && testimonials.length > 0 && (
-              <div className="flex items-center justify-center gap-2.5">
-                <div className="flex items-center gap-1.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={20}
-                      fill="var(--ft-fg)"
-                      strokeWidth={0}
-                    />
-                  ))}
-                </div>
-                <span
-                  className="font-semibold text-[1.1rem]"
-                  style={{ color: "#ffffff" }}
-                >
-                  {avgRating}/5
-                </span>
-              </div>
-            )}
           </div>
 
           {/* Carousel */}
@@ -265,18 +215,17 @@ export default function Testimonials() {
               No reviews yet.
             </p>
           ) : (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 sm:gap-4">
               {/* Prev button */}
               <button
                 onClick={prev}
                 disabled={!canPrev}
                 className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all"
                 style={{
-                  background: canPrev
-                    ? "rgba(41,177,168,0.15)"
-                    : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${canPrev ? "rgba(41,177,168,0.4)" : "rgba(255,255,255,0.08)"}`,
-                  color: canPrev ? "var(--ft-fg)" : "rgba(255,255,255,0.2)",
+                  display: canPrev ? "flex" : "hidden",
+                  background: canPrev ? "transparent" : "none",
+                  border: `1px solid ${canPrev ? "#DBC3AE80" : "transparent"}`,
+                  color: canPrev ? "var(--tm-fg)" : "rgba(255,255,255,0.2)",
                   cursor: canPrev ? "pointer" : "not-allowed",
                 }}
               >
@@ -312,11 +261,10 @@ export default function Testimonials() {
                 disabled={!canNext}
                 className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all"
                 style={{
-                  background: canNext
-                    ? "rgba(41,177,168,0.15)"
-                    : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${canNext ? "rgba(41,177,168,0.4)" : "rgba(255,255,255,0.08)"}`,
-                  color: canNext ? "var(--ft-fg)" : "rgba(255,255,255,0.2)",
+                  display: canNext ? "flex" : "hidden",
+                  background: canNext ? "transparent" : "none",
+                  border: `1px solid ${canNext ? "#DBC3AE80" : "transparent"}`,
+                  color: canNext ? "var(--tm-fg)" : "rgba(107, 92, 92, 0.2)",
                   cursor: canNext ? "pointer" : "not-allowed",
                 }}
               >
@@ -336,8 +284,7 @@ export default function Testimonials() {
                   style={{
                     width: i === index ? 20 : 6,
                     height: 6,
-                    background:
-                      i === index ? "var(--ft-fg)" : "rgba(41,177,168,0.25)",
+                    background: i === index ? "var(--tm-fg)" : "#DBC3AE80)",
                     border: "none",
                     cursor: "pointer",
                     padding: 0,

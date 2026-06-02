@@ -5,7 +5,6 @@ import {
   ShoppingBag,
   Search,
   X,
-  Menu,
   ChevronRight,
   ArrowLeft,
   ArrowRight,
@@ -40,6 +39,7 @@ export interface NavItem {
   order: number;
   isActive: boolean;
   categories: NavCategory[];
+  href?: string;
 }
 
 interface SearchProduct {
@@ -49,6 +49,41 @@ interface SearchProduct {
   price: number;
   category: string;
   variants: { colorName: string; colorHex: string; images: string[] }[];
+}
+
+// ─── Animated Hamburger Component ─────────────────────────────────────────────
+
+function AnimatedHamburger({
+  isOpen,
+  onClick,
+}: {
+  isOpen: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className="flex flex-col items-center justify-center w-9 h-9 gap-[5px] relative transition-colors duration-150 z-50 cursor-pointer"
+      style={{ color: "var(--nav-fg)" }}
+      onClick={onClick}
+      aria-label={isOpen ? "Close menu" : "Open menu"}
+    >
+      <span
+        className={`block h-[1.5px] w-[22px] bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] origin-center ${
+          isOpen ? "rotate-45 translate-y-[6.5px]" : ""
+        }`}
+      />
+      <span
+        className={`block h-[1.5px] w-[22px] bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          isOpen ? "opacity-0 scale-x-0" : "opacity-100 scale-x-100"
+        }`}
+      />
+      <span
+        className={`block h-[1.5px] w-[22px] bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] origin-center ${
+          isOpen ? "-rotate-45 -translate-y-[6.5px]" : ""
+        }`}
+      />
+    </button>
+  );
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -88,18 +123,32 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
   const leave = () => {
     timeoutRef.current = setTimeout(() => setActiveNav(null), 120);
   };
-  useEffect(
-    () => () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    },
-    [],
-  );
-
-  // ── Body scroll lock ───────────────────────────────────────────────────────
   useEffect(() => {
-    document.body.style.overflow = drawerOpen ? "hidden" : "";
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  // ── Global Event Listeners (Scroll Lock & Esc Key) ─────────────────────────
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && drawerOpen) {
+        setDrawerOpen(false);
+        setActivePanel(null);
+      }
+    };
+
+    if (drawerOpen) {
+      document.body.style.overflow = "hidden";
+      document.addEventListener("keydown", handleKeyDown);
+    } else {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", handleKeyDown);
+    }
+
     return () => {
       document.body.style.overflow = "";
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [drawerOpen]);
 
@@ -196,24 +245,18 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
     router.push(`/products/${slug}`);
   };
 
-  const clearSearch = () => {
-    setSearchValue("");
-    setSearchResults([]);
-    setSuggestionsOpen(false);
-    searchInputRef.current?.focus();
-  };
-
   const activeItem = navItems.find((n) => n.label === activeNav);
   const activePanelItem = navItems.find((n) => n.label === activePanel);
+
   const closeDrawer = () => {
     setDrawerOpen(false);
-    setActivePanel(null);
+    setTimeout(() => setActivePanel(null), 300);
   };
+
   const showSuggestions = suggestionsOpen && searchValue.trim().length > 0;
 
   return (
     <>
-      {/* Keyframe animations — only animations stay here, zero styling */}
       <style>{`
         @keyframes badgePop {
           0%   { transform: translate(30%,-30%) scale(1); }
@@ -236,9 +279,9 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
         .anim-spin { animation: spin 0.8s linear infinite; }
       `}</style>
 
-      {/* ── HEADER ── */}
+      {/* ── HEADER (Bumped z-index) ── */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 h-[(--nav-height)]"
+        className="fixed top-0 left-0 right-0 z-[99990] h-[(--nav-height)]"
         style={{
           background: "var(--nav-bg)",
           borderBottom: "1px solid var(--nav-border)",
@@ -252,37 +295,56 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
             {/* Logo */}
             <Link
               href="/"
-              className="shrink-0 rounded-2xl overflow-hidden bg-white"
+              className="shrink-0 rounded-2xl overflow-hidden block w-20"
             >
               <img className="w-full" src="/logo.png" alt="Bambumm" />
             </Link>
           </div>
 
-          {/* ── DESKTOP NAV — centred ── */}
+          {/* ── DESKTOP NAV ── */}
           <nav className="hidden md:flex items-center gap-5 absolute left-1/2 -translate-x-1/2">
-            {navItems.map((item) => (
-              <button
-                key={item._id}
-                className={`
-                  text-sm font-bold tracking-widest uppercase transition-colors duration-150
-                  border-b-2 pb-0.5
-                  ${
-                    activeNav === item.label
-                      ? "border-[(--nav-accent)] text-[(--nav-accent)]"
-                      : "border-transparent text-[(--nav-fg)] hover:text-[(--nav-accent)]"
-                  }
-                `}
-                style={{ fontFamily: "var(--nav-font-ui)" }}
-                onMouseEnter={() => enter(item.label)}
-                aria-haspopup={item.categories.length > 0}
-                aria-expanded={activeNav === item.label}
-              >
-                {item.label}
-              </button>
-            ))}
+            {navItems.map((item) =>
+              item.href ? (
+                <Link
+                  key={item._id}
+                  href={item.href}
+                  className={`
+                    cursor-pointer text-sm font-bold tracking-widest uppercase transition-colors duration-150
+                    border-b-2 pb-0.5 no-underline
+                    ${
+                      activeNav === item.label
+                        ? "border-[(--nav-accent)] text-[(--nav-accent)]"
+                        : "border-transparent text-[(--nav-fg)] hover:text-[(--nav-accent)]"
+                    }
+                  `}
+                  style={{ fontFamily: "var(--nav-font-ui)" }}
+                  onMouseEnter={leave}
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <button
+                  key={item._id}
+                  className={`
+                   cursor-pointer text-sm font-bold tracking-widest uppercase transition-colors duration-150
+                    border-b-2 pb-0.5
+                    ${
+                      activeNav === item.label
+                        ? "border-[(--nav-accent)] text-[(--nav-accent)]"
+                        : "border-transparent text-[(--nav-fg)] hover:text-[(--nav-accent)]"
+                    }
+                  `}
+                  style={{ fontFamily: "var(--nav-font-ui)" }}
+                  onMouseEnter={() => enter(item.label)}
+                  aria-haspopup={item.categories.length > 0}
+                  aria-expanded={activeNav === item.label}
+                >
+                  {item.label}
+                </button>
+              ),
+            )}
           </nav>
 
-          {/* ── DESKTOP RIGHT ICONS ── */}
           <div className="hidden md:flex items-center gap-5 ml-auto">
             {/* Search */}
             <div ref={searchWrapRef} className="flex items-center relative">
@@ -296,7 +358,6 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
               >
                 {searchOpen && (
                   <div className="w-[220px] relative">
-                    {/* Search input */}
                     <div
                       className="flex items-center border px-3 py-2 w-full"
                       style={{
@@ -329,7 +390,6 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                       )}
                     </div>
 
-                    {/* Suggestions dropdown */}
                     {showSuggestions && (
                       <div
                         className="anim-suggest-in absolute top-full left-0 right-0 z-[200] border overflow-hidden min-w-[320px]"
@@ -367,7 +427,6 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                                   }
                                   onMouseEnter={() => setCursor(idx)}
                                 >
-                                  {/* Thumb */}
                                   <div
                                     className="w-10 h-[52px] shrink-0 overflow-hidden border relative"
                                     style={{
@@ -394,7 +453,6 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                                     )}
                                   </div>
 
-                                  {/* Info */}
                                   <div className="flex-1 min-w-0">
                                     <p
                                       className="text-[0.8125rem] font-bold uppercase tracking-[0.04em] truncate"
@@ -413,7 +471,6 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                                     </p>
                                   </div>
 
-                                  {/* Price */}
                                   <span
                                     className="text-[0.8125rem] font-bold shrink-0 ml-auto"
                                     style={{
@@ -436,7 +493,6 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                               );
                             })}
 
-                            {/* Footer */}
                             <div
                               className="flex items-center justify-between px-3.5 py-2 border-t"
                               style={{
@@ -464,7 +520,9 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                                 }
                                 onClick={() => {
                                   router.push(
-                                    `/products?q=${encodeURIComponent(searchValue.trim())}`,
+                                    `/products?q=${encodeURIComponent(
+                                      searchValue.trim(),
+                                    )}`,
                                   );
                                   setSuggestionsOpen(false);
                                   setSearchOpen(false);
@@ -482,9 +540,8 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                 )}
               </div>
 
-              {/* Search toggle button */}
               <button
-                className="flex items-center justify-center w-9 h-9 rounded transition-colors duration-150"
+                className="flex items-center justify-center w-9 h-9 rounded transition-colors duration-150 cursor-pointer"
                 style={{ color: "var(--nav-fg)" }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.color = "var(--nav-accent)")
@@ -511,9 +568,9 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
               </button>
             </div>
 
-            {/* checkout */}
+            {/* Checkout */}
             <button
-              className="flex items-center justify-center w-9 h-9 rounded relative transition-colors duration-150"
+              className="flex items-center justify-center w-9 h-9 rounded relative transition-colors duration-150 cursor-pointer"
               style={{ color: "var(--nav-fg)" }}
               onMouseEnter={(e) =>
                 (e.currentTarget.style.color = "var(--nav-accent)")
@@ -539,76 +596,13 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
             <UserMenu />
           </div>
 
-          {/* ── MOBILE RIGHT ICONS ── */}
-          <div className="flex md:hidden items-center gap-1 ml-auto">
-            {/* Mobile inline search */}
-            <div
-              className="flex items-center border px-2 py-1.5"
-              style={{
-                background: "var(--nav-bg)",
-                borderColor: "var(--nav-border)",
-              }}
-            >
-              <input
-                type="text"
-                placeholder="Search…"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && searchValue.trim()) {
-                    router.push(
-                      `/products?q=${encodeURIComponent(searchValue.trim())}`,
-                    );
-                    setSearchValue("");
-                  }
-                }}
-                className="w-[110px] text-[0.72rem] font-semibold bg-transparent outline-none"
-                style={{
-                  color: "var(--nav-fg)",
-                  caretColor: "var(--nav-accent)",
-                }}
-              />
-              {searchValue ? (
-                <button
-                  className="flex items-center justify-center ml-1 transition-colors duration-150"
-                  style={{ color: "var(--nav-fg-muted)" }}
-                  onClick={clearSearch}
-                >
-                  <X size={14} />
-                </button>
-              ) : (
-                <Search size={14} style={{ color: "var(--nav-fg-muted)" }} />
-              )}
-            </div>
-
-            {/* Mobile cart */}
-            <button
-              className="flex items-center justify-center w-9 h-9 relative"
-              style={{ color: "var(--nav-fg)" }}
-              onClick={() => router.push("/cart")}
-              aria-label={`Open cart, ${totalItems} items`}
-            >
-              <ShoppingBag size={20} />
-              {totalItems > 0 && (
-                <span
-                  key={totalItems}
-                  className="cart-badge-pop absolute top-0 right-0 translate-x-[30%] -translate-y-[30%] min-w-[16px] h-4 rounded-full flex items-center justify-center text-[0.6rem] font-bold text-white px-1"
-                  style={{ background: "var(--nav-accent)" }}
-                >
-                  {totalItems > 99 ? "99+" : totalItems}
-                </span>
-              )}
-            </button>
-
-            {/* Hamburger */}
-            <button
-              className="flex items-center justify-center w-9 h-9"
-              style={{ color: "var(--nav-fg)" }}
-              onClick={() => setDrawerOpen(true)}
-              aria-label="Open menu"
-            >
-              <Menu size={22} />
-            </button>
+          {/* ── MOBILE RIGHT ICONS (Removed Search & Cart, Just Hamburger) ── */}
+          <div className="flex md:hidden items-center ml-auto mr-12">
+            {/* Added right margin to stop the external portal 'N' from overlapping the menu */}
+            <AnimatedHamburger
+              isOpen={drawerOpen}
+              onClick={() => setDrawerOpen(!drawerOpen)}
+            />
           </div>
         </div>
 
@@ -636,7 +630,6 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                       />
                     )}
                     <div className="min-w-[130px]">
-                      {/* Column title — first link or plain text */}
                       {cat.links[0] ? (
                         <Link
                           href={cat.links[0].href}
@@ -659,7 +652,6 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                           {cat.title}
                         </p>
                       )}
-                      {/* Sub-links */}
                       {cat.links.slice(1).map((link, i) => (
                         <Link
                           key={i}
@@ -686,60 +678,59 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
         )}
       </header>
 
-      {/* ── MOBILE DRAWER ── */}
-      {drawerOpen && (
-        <>
-          {/* Overlay */}
-          <div
-            className="fixed inset-0 z-[60]"
-            style={{ background: "var(--nav-overlay)" }}
-            onClick={closeDrawer}
-            aria-hidden="true"
-          />
+      {/* ── MOBILE DRAWER (Bumped z-index) ── */}
+      <div
+        className={`fixed inset-0 z-[99999] md:hidden ${
+          drawerOpen ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+        aria-hidden={!drawerOpen}
+      >
+        {/* Overlay Backdrop */}
+        <div
+          className={`absolute inset-0 transition-opacity duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            drawerOpen ? "opacity-100" : "opacity-0"
+          }`}
+          style={{ background: "var(--nav-overlay, rgba(0,0,0,0.5))" }}
+          onClick={closeDrawer}
+        />
 
-          {/* Drawer panel */}
+        {/* Drawer panel sliding in from right */}
+        <div
+          className={`absolute top-0 right-0 bottom-0 w-[85vw] max-w-sm flex flex-col shadow-2xl transition-transform duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            drawerOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+          style={{ background: "var(--nav-bg)" }}
+          role="dialog"
+          aria-label="Navigation menu"
+        >
+          {/* Drawer header mimicking nav layout for seamless crossover */}
           <div
-            className="fixed top-0 left-0 bottom-0 z-[70] w-[85vw] max-w-sm flex flex-col"
-            style={{ background: "var(--nav-bg)" }}
-            role="dialog"
-            aria-label="Navigation menu"
+            className="flex items-center justify-between px-5 py-4 border-b shrink-0 h-[var(--nav-height)]"
+            style={{ borderColor: "var(--nav-border)" }}
           >
-            {/* Drawer header */}
-            <div
-              className="flex items-center justify-between px-5 py-4 border-b shrink-0"
-              style={{ borderColor: "var(--nav-border)" }}
+            <Link
+              href="/"
+              onClick={closeDrawer}
+              className="shrink-0 rounded-2xl overflow-hidden block w-20"
             >
-              <span
-                className="text-[1.2rem] font-bold tracking-wide"
-                style={{
-                  fontFamily: "var(--nav-font)",
-                  color: "var(--nav-fg)",
-                }}
-              >
-                Bambumm
-              </span>
-              <button
-                className="flex items-center justify-center w-9 h-9 transition-colors duration-150"
-                style={{ color: "var(--nav-fg-muted)" }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.color = "var(--nav-fg)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.color = "var(--nav-fg-muted)")
-                }
-                onClick={closeDrawer}
-                aria-label="Close menu"
-              >
-                <X size={20} />
-              </button>
-            </div>
+              <img className="w-full" src="/logo.png" alt="Bambumm" />
+            </Link>
 
-            {/* Drawer nav list */}
-            <nav className="flex-1 overflow-y-auto relative">
-              {navItems.map((item) => (
-                <button
+            {/* Added margin to keep 'X' clear from the 'N' floating element */}
+            <div className="mr-7">
+              <AnimatedHamburger isOpen={drawerOpen} onClick={closeDrawer} />
+            </div>
+          </div>
+
+          {/* Drawer nav list */}
+          <nav className="flex-1 overflow-y-auto relative">
+            {navItems.map((item) =>
+              item.href ? (
+                <Link
                   key={item._id}
-                  className="flex items-center justify-between w-full px-5 py-4 text-left border-b text-[0.85rem] font-bold uppercase tracking-[0.08em] transition-colors duration-150"
+                  href={item.href}
+                  onClick={closeDrawer}
+                  className="flex items-center justify-between w-full px-5 py-4 text-left border-b text-[0.85rem] font-bold uppercase tracking-[0.08em] transition-colors duration-150 no-underline"
                   style={{
                     fontFamily: "var(--nav-font-ui)",
                     color: "var(--nav-fg)",
@@ -748,7 +739,27 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                   }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.background =
-                      "var(--nav-dropdown-bg)")
+                      "var(--nav-dropdown-bg, rgba(200,169,126,0.08))")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
+                >
+                  <span>{item.label}</span>
+                </Link>
+              ) : (
+                <button
+                  key={item._id}
+                  className="flex items-center justify-between w-full px-5 py-4 text-left border-b text-[0.85rem] font-bold uppercase tracking-[0.08em] transition-colors duration-150 cursor-pointer"
+                  style={{
+                    fontFamily: "var(--nav-font-ui)",
+                    color: "var(--nav-fg)",
+                    borderColor: "var(--nav-border)",
+                    background: "transparent",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background =
+                      "var(--nav-dropdown-bg, rgba(200,169,126,0.08))")
                   }
                   onMouseLeave={(e) =>
                     (e.currentTarget.style.background = "transparent")
@@ -767,235 +778,141 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                     />
                   )}
                 </button>
-              ))}
+              ),
+            )}
 
-              {/* Slide-in sub-panel */}
-              {activePanel && activePanelItem && (
+            {/* Slide-in sub-panel */}
+            {activePanel && activePanelItem && (
+              <div
+                className="anim-menu-in absolute inset-0 overflow-y-auto"
+                style={{ background: "var(--nav-bg)" }}
+              >
                 <div
-                  className="absolute inset-0 overflow-y-auto"
-                  style={{ background: "var(--nav-bg)" }}
+                  className="flex items-center gap-3 px-5 py-4 border-b sticky top-0 z-10"
+                  style={{
+                    borderColor: "var(--nav-border)",
+                    background: "var(--nav-bg)",
+                  }}
                 >
-                  {/* Sub-panel header */}
-                  <div
-                    className="flex items-center gap-3 px-5 py-4 border-b sticky top-0"
-                    style={{
-                      borderColor: "var(--nav-border)",
-                      background: "var(--nav-bg)",
-                    }}
-                  >
-                    <button
-                      className="flex items-center justify-center w-8 h-8 border transition-colors duration-150"
-                      style={{
-                        borderColor: "var(--nav-border)",
-                        color: "var(--nav-fg-muted)",
-                        background: "transparent",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.color = "var(--nav-fg)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.color = "var(--nav-fg-muted)")
-                      }
-                      onClick={() => setActivePanel(null)}
-                      aria-label="Back"
-                    >
-                      <ArrowLeft size={16} />
-                    </button>
-                    <span
-                      className="text-[0.85rem] font-bold uppercase tracking-[0.08em]"
-                      style={{
-                        fontFamily: "var(--nav-font-ui)",
-                        color: "var(--nav-fg)",
-                      }}
-                    >
-                      {activePanelItem.label}
-                    </span>
-                  </div>
-
-                  {/* Sub-panel body */}
-                  <div className="px-5 py-4 flex flex-col gap-5">
-                    {activePanelItem.categories.map((cat) => (
-                      <div key={cat.id}>
-                        <p
-                          className="text-[0.75rem] font-bold uppercase tracking-[0.12em] mb-2"
-                          style={{ color: "var(--nav-fg-muted)" }}
-                        >
-                          {cat.title}
-                        </p>
-                        {cat.links.map((link, i) => (
-                          <Link
-                            key={i}
-                            href={link.href}
-                            className="block text-[0.8rem] font-semibold uppercase tracking-[0.07em] py-2 border-b no-underline transition-colors duration-150"
-                            style={{
-                              color: "var(--nav-accent)",
-                              borderColor: "var(--nav-border)",
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.color =
-                                "var(--nav-accent-hover)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.color =
-                                "var(--nav-accent)")
-                            }
-                            onClick={closeDrawer}
-                          >
-                            {link.label}
-                          </Link>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </nav>
-
-            {/* Drawer footer */}
-            <div
-              className="shrink-0 border-t"
-              style={{ borderColor: "var(--nav-border)" }}
-            >
-              {user ? (
-                <>
-                  {/* User info row */}
-                  <div
-                    className="flex items-center gap-3 px-5 py-3.5 border-b"
-                    style={{
-                      borderColor: "var(--nav-border)",
-                      background: "var(--nav-bg)",
-                    }}
-                  >
-                    <div
-                      className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-[0.85rem] font-bold text-white overflow-hidden border-2"
-                      style={{
-                        background: "var(--nav-accent)",
-                        fontFamily: "var(--nav-font)",
-                        borderColor: "rgba(200,169,126,0.3)",
-                      }}
-                    >
-                      {user.picture ? (
-                        <img
-                          src={user.picture}
-                          alt={user.name}
-                          referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        user.name.charAt(0).toUpperCase()
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className="text-[0.85rem] font-bold truncate"
-                        style={{
-                          fontFamily: "var(--nav-font-ui)",
-                          color: "var(--nav-fg)",
-                        }}
-                      >
-                        {user.name}
-                      </p>
-                      <p
-                        className="text-[0.68rem] truncate mt-0.5"
-                        style={{ color: "var(--nav-fg-muted)" }}
-                      >
-                        {user.email}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex gap-2 px-4 py-2.5">
-                    <button
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
-                      style={{
-                        fontFamily: "var(--nav-font-ui)",
-                        borderColor: "var(--nav-border)",
-                        color: "var(--nav-fg)",
-                        background: "transparent",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background =
-                          "var(--nav-dropdown-bg)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = "transparent")
-                      }
-                      onClick={() => {
-                        closeDrawer();
-                        openCart();
-                      }}
-                    >
-                      <ShoppingBag size={16} /> Cart
-                      {totalItems > 0 && (
-                        <span
-                          className="rounded-full text-[0.65rem] font-bold text-white px-1.5 py-0.5 leading-none"
-                          style={{ background: "var(--nav-accent)" }}
-                        >
-                          {totalItems}
-                        </span>
-                      )}
-                    </button>
-                    <button
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
-                      style={{
-                        fontFamily: "var(--nav-font-ui)",
-                        borderColor: "var(--nav-border)",
-                        color: "var(--nav-fg)",
-                        background: "transparent",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background =
-                          "var(--nav-dropdown-bg)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = "transparent")
-                      }
-                      onClick={() => {
-                        closeDrawer();
-                        router.push("/profile");
-                      }}
-                    >
-                      <User size={16} /> Profile
-                    </button>
-                    <button
-                      className="flex items-center justify-center gap-1.5 px-4 py-2.5 border text-[0.8rem] font-semibold cursor-pointer transition-colors duration-150 shrink-0"
-                      style={{
-                        fontFamily: "var(--nav-font-ui)",
-                        background: "rgba(217,79,61,0.06)",
-                        borderColor: "rgba(217,79,61,0.2)",
-                        color: "var(--nav-sale)",
-                      }}
-                      onClick={logout}
-                    >
-                      <LogOut size={15} /> Sign Out
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="flex gap-3 px-4 py-2.5">
                   <button
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
+                    className="flex items-center justify-center w-8 h-8 border transition-colors duration-150 cursor-pointer"
                     style={{
-                      fontFamily: "var(--nav-font-ui)",
                       borderColor: "var(--nav-border)",
-                      color: "var(--nav-fg)",
+                      color: "var(--nav-fg-muted)",
                       background: "transparent",
                     }}
                     onMouseEnter={(e) =>
-                      (e.currentTarget.style.background =
-                        "var(--nav-dropdown-bg)")
+                      (e.currentTarget.style.color = "var(--nav-fg)")
                     }
                     onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "transparent")
+                      (e.currentTarget.style.color = "var(--nav-fg-muted)")
                     }
-                    onClick={() => {
-                      closeDrawer();
-                      router.push("/auth");
+                    onClick={() => setActivePanel(null)}
+                    aria-label="Back"
+                  >
+                    <ArrowLeft size={16} />
+                  </button>
+                  <span
+                    className="text-[0.85rem] font-bold uppercase tracking-[0.08em]"
+                    style={{
+                      fontFamily: "var(--nav-font-ui)",
+                      color: "var(--nav-fg)",
                     }}
                   >
-                    <User size={16} /> Sign In
-                  </button>
+                    {activePanelItem.label}
+                  </span>
+                </div>
+
+                <div className="px-5 py-4 flex flex-col gap-5">
+                  {activePanelItem.categories.map((cat) => (
+                    <div key={cat.id}>
+                      <p
+                        className="text-[0.75rem] font-bold uppercase tracking-[0.12em] mb-2"
+                        style={{ color: "var(--nav-fg-muted)" }}
+                      >
+                        {cat.title}
+                      </p>
+                      {cat.links.map((link, i) => (
+                        <Link
+                          key={i}
+                          href={link.href}
+                          className="block text-[0.8rem] font-semibold uppercase tracking-[0.07em] py-2 border-b no-underline transition-colors duration-150"
+                          style={{
+                            color: "var(--nav-accent)",
+                            borderColor: "var(--nav-border)",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.color =
+                              "var(--nav-accent-hover)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.color = "var(--nav-accent)")
+                          }
+                          onClick={closeDrawer}
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </nav>
+
+          {/* Drawer footer */}
+          <div
+            className="shrink-0 border-t"
+            style={{ borderColor: "var(--nav-border)" }}
+          >
+            {user ? (
+              <>
+                <div
+                  className="flex items-center gap-3 px-5 py-3.5 border-b"
+                  style={{
+                    borderColor: "var(--nav-border)",
+                    background: "var(--nav-bg)",
+                  }}
+                >
+                  <div
+                    className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-[0.85rem] font-bold text-white overflow-hidden border-2"
+                    style={{
+                      background: "var(--nav-accent)",
+                      fontFamily: "var(--nav-font)",
+                      borderColor: "rgba(200,169,126,0.3)",
+                    }}
+                  >
+                    {user.picture ? (
+                      <img
+                        src={user.picture}
+                        alt={user.name}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      user.name.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="text-[0.85rem] font-bold truncate"
+                      style={{
+                        fontFamily: "var(--nav-font-ui)",
+                        color: "var(--nav-fg)",
+                      }}
+                    >
+                      {user.name}
+                    </p>
+                    <p
+                      className="text-[0.68rem] truncate mt-0.5"
+                      style={{ color: "var(--nav-fg-muted)" }}
+                    >
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 px-4 py-2.5">
                   <button
                     className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
                     style={{
@@ -1006,7 +923,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                     }}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.background =
-                        "var(--nav-dropdown-bg)")
+                        "var(--nav-dropdown-bg, rgba(200,169,126,0.08))")
                     }
                     onMouseLeave={(e) =>
                       (e.currentTarget.style.background = "transparent")
@@ -1026,12 +943,101 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                       </span>
                     )}
                   </button>
+                  <button
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
+                    style={{
+                      fontFamily: "var(--nav-font-ui)",
+                      borderColor: "var(--nav-border)",
+                      color: "var(--nav-fg)",
+                      background: "transparent",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background =
+                        "var(--nav-dropdown-bg, rgba(200,169,126,0.08))")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
+                    onClick={() => {
+                      closeDrawer();
+                      router.push("/profile");
+                    }}
+                  >
+                    <User size={16} /> Profile
+                  </button>
+                  <button
+                    className="flex items-center justify-center gap-1.5 px-4 py-2.5 border text-[0.8rem] font-semibold cursor-pointer transition-colors duration-150 shrink-0"
+                    style={{
+                      fontFamily: "var(--nav-font-ui)",
+                      background: "rgba(217,79,61,0.06)",
+                      borderColor: "rgba(217,79,61,0.2)",
+                      color: "var(--nav-sale)",
+                    }}
+                    onClick={logout}
+                  >
+                    <LogOut size={15} /> Sign Out
+                  </button>
                 </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <div className="flex gap-3 px-4 py-2.5">
+                <button
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
+                  style={{
+                    fontFamily: "var(--nav-font-ui)",
+                    borderColor: "var(--nav-border)",
+                    color: "var(--nav-fg)",
+                    background: "transparent",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background =
+                      "var(--nav-dropdown-bg, rgba(200,169,126,0.08))")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
+                  onClick={() => {
+                    closeDrawer();
+                    router.push("/auth");
+                  }}
+                >
+                  <User size={16} /> Sign In
+                </button>
+                <button
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
+                  style={{
+                    fontFamily: "var(--nav-font-ui)",
+                    borderColor: "var(--nav-border)",
+                    color: "var(--nav-fg)",
+                    background: "transparent",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background =
+                      "var(--nav-dropdown-bg, rgba(200,169,126,0.08))")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
+                  onClick={() => {
+                    closeDrawer();
+                    openCart();
+                  }}
+                >
+                  <ShoppingBag size={16} /> Cart
+                  {totalItems > 0 && (
+                    <span
+                      className="rounded-full text-[0.65rem] font-bold text-white px-1.5 py-0.5 leading-none"
+                      style={{ background: "var(--nav-accent)" }}
+                    >
+                      {totalItems}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </>
   );
 }

@@ -278,7 +278,7 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
         {/* ── Info ── */}
         <div
           className="flex flex-col gap-2 p-3 flex-1"
-          style={{ background: "#dce8e5" }}
+          style={{ background: "#f5ece3" }}
         >
           <h3
             className="text-sm font-bold leading-snug line-clamp-1 uppercase tracking-wide"

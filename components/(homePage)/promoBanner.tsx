@@ -45,7 +45,9 @@ export function PromoBanner({
   }, []);
 
   const bgColor =
-    theme === "dark" ? "var(--promo-dark-bg)" : "var(--promo-warm-bg)";
+    theme === "dark"
+      ? "linear-gradient(90deg, #000000 0%, #585252 100%)"
+      : "linear-gradient(90deg, #160D08 0%, #472411 100%)";
   const fgColor =
     theme === "dark" ? "var(--promo-dark-fg)" : "var(--promo-warm-fg)";
   const mutedColor =
@@ -55,7 +57,7 @@ export function PromoBanner({
     <div
       ref={ref}
       className="rounded-md relative overflow-hidden flex flex-col"
-      style={{ background: bgColor, minHeight: 200 }}
+      style={{ background: bgColor, minHeight: 0, aspectRatio: "16/7" }}
     >
       {/* Text block — width capped so image always has room */}
       <div
@@ -123,7 +125,7 @@ export function PromoBanner({
         <img
           src={imageSrc}
           alt={imageAlt}
-          className="w-full h-full"
+          className="w-full h-full object-cover object-top md:object-cover md:object-top"
           style={{ objectFit: "cover", objectPosition: "top center" }}
         />
       </div>
