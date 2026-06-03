@@ -1,8 +1,8 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import Image1 from "@/public/shopByComponentImages/newyork.png";
-import Image2 from "@/public/shopByComponentImages/miami.png";
+import Image2 from "@/public/homePage/categorySection/image1.png";
+import Image1 from "@/public/homePage/categorySection/image2.png";
 import Image3 from "@/public/homePage/categorySection/accessories-Photoroom.png";
 interface CategoryCard {
   id: string;
@@ -31,12 +31,12 @@ const categories: CategoryCard[] = [
     imageAlt: "Woman wearing BAMBUMM women's underwear",
   },
   {
-    id: "lounge",
-    label: "LOUNGE &\nCOMFORT",
+    id: "accessories",
+    label: "Accessories",
     href: "/products?category=accessories",
     shopHref: "/products?category=accessories",
     imageSrc: Image3.src,
-    imageAlt: "Woman wearing BAMBUMM lounge wear",
+    imageAlt: "BAMBUMM accessories",
   },
 ];
 
@@ -50,7 +50,7 @@ function CategoryCardItem({
   return (
     <Link
       href={href}
-      className="group relative flex flex-col rounded-xl overflow-hidden w-[78vw] sm:w-[55vw] lg:w-auto shrink-0 lg:shrink aspect-[5/4]"
+      className="group relative flex flex-col rounded-xl overflow-hidden w-[78vw] sm:w-[55vw] lg:w-auto shrink-0 lg:shrink aspect-[4/4]"
       style={{
         background:
           "linear-gradient(90deg, #E5D3C3 0%,#E1CCBA 50%, #D9C0AA 100%)",
@@ -117,25 +117,25 @@ export default function CategorySection() {
           >
             Shop by Category
           </h2>
-       <Link
-              href="/products"
-              className="text-xs font-bold tracking-[0.14em] uppercase pb-0.5 transition-colors duration-200"
-              style={{
-                color: "var(--nav-fg-muted)",
-                borderBottom: "1px solid var(--nav-border)",
-                textDecoration: "none",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--nav-accent)";
-                e.currentTarget.style.borderBottomColor = "var(--nav-accent)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--nav-fg-muted)";
-                e.currentTarget.style.borderBottomColor = "var(--nav-border)";
-              }}
-            >
-              View All
-            </Link>
+          <Link
+            href="/products"
+            className="text-xs font-bold tracking-[0.14em] uppercase pb-0.5 transition-colors duration-200"
+            style={{
+              color: "var(--nav-fg-muted)",
+              borderBottom: "1px solid var(--nav-border)",
+              textDecoration: "none",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--nav-accent)";
+              e.currentTarget.style.borderBottomColor = "var(--nav-accent)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--nav-fg-muted)";
+              e.currentTarget.style.borderBottomColor = "var(--nav-border)";
+            }}
+          >
+            View All
+          </Link>
         </div>
         <div
           className="

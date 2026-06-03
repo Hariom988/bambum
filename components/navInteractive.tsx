@@ -309,7 +309,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                   key={item._id}
                   href={item.href}
                   className={`
-                    cursor-pointer text-sm font-bold tracking-widest uppercase transition-colors duration-150
+                    cursor-pointer text-[0.65rem] sm:text-[0.78rem]  font-bold tracking-widest uppercase transition-colors duration-150
                     border-b-2 pb-0.5 no-underline
                     ${
                       activeNav === item.label
@@ -326,7 +326,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                 <button
                   key={item._id}
                   className={`
-                   cursor-pointer text-sm font-bold tracking-widest uppercase transition-colors duration-150
+                   cursor-pointer text-[0.65rem] sm:text-[0.78rem] text-sm font-bold tracking-widest uppercase transition-colors duration-150
                     border-b-2 pb-0.5
                     ${
                       activeNav === item.label

@@ -154,7 +154,7 @@ export default function PromoBanners() {
           fontFamily: "var(--nav-font-ui)",
         }}
       >
-        <div className="max-w-7xl mx-auto px-4 md:px-6 pb-10 md:pb-14">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 pt-10 pb-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 min-[375px]:gap-4 md:gap-5">
             <PromoBanner
               theme="dark"

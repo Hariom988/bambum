@@ -186,7 +186,7 @@ export default function HeroSection() {
           {/* CTA row */}
           <div className="flex flex-row items-center gap-5">
             <Link
-              href="/shop"
+              href="/products"
               className="
                 rounded-lg inline-flex items-center justify-center
                 px-6 py-3 lg:px-7 lg:py-3.5
@@ -202,7 +202,7 @@ export default function HeroSection() {
               Shop Now
             </Link>
             <Link
-              href="/collections"
+              href="/products"
               className="
                 inline-flex items-center gap-1
                 text-[0.65rem] font-semibold tracking-[0.14em] uppercase
