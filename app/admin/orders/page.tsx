@@ -26,6 +26,11 @@ import {
   AlertCircle,
   Circle,
   ChevronRight,
+  Send,
+  ScanLine,
+  Ban,
+  ChevronUp,
+  ExternalLink,
 } from "lucide-react";
 
 interface OrderItem {
@@ -38,6 +43,28 @@ interface OrderItem {
   price: number;
   size: string;
   quantity: number;
+}
+
+interface TrackingScan {
+  status: string;
+  statusType: string;
+  location: string;
+  time: string;
+  activity: string;
+  instructions: string;
+}
+
+interface DelhiveryInfo {
+  waybill?: string;
+  status?: string;
+  statusType?: string;
+  location?: string;
+  expectedDelivery?: string | null;
+  shipmentCreatedAt?: string;
+  pickupRequestedAt?: string;
+  cancelledAt?: string;
+  lastTrackedAt?: string;
+  trackingHistory?: TrackingScan[];
 }
 
 interface Order {
@@ -67,6 +94,7 @@ interface Order {
     razorpay_payment_id: string;
     method: string;
   };
+  delhivery?: DelhiveryInfo;
   createdAt: string;
   updatedAt: string;
 }
@@ -83,7 +111,7 @@ const STATUS_CONFIG: Record<
     bg: string;
     border: string;
     icon: React.ElementType;
-    step: number; // 0-indexed position in timeline
+    step: number;
   }
 > = {
   pending: {
@@ -128,7 +156,6 @@ const STATUS_CONFIG: Record<
   },
 };
 
-// Timeline steps (ordered progression — not used for cancelled)
 const TIMELINE_STEPS: {
   key: Order["status"];
   label: string;
@@ -147,12 +174,7 @@ const TIMELINE_STEPS: {
     desc: "Order accepted",
     icon: CheckCircle,
   },
-  {
-    key: "shipped",
-    label: "Shipped",
-    desc: "Out for delivery",
-    icon: Truck,
-  },
+  { key: "shipped", label: "Shipped", desc: "Out for delivery", icon: Truck },
   {
     key: "delivered",
     label: "Delivered",
@@ -206,8 +228,6 @@ function StatusBadge({ status }: { status: Order["status"] }) {
 }
 
 // ─── Delivery Timeline ────────────────────────────────────────────────────────
-// Designed to be future-ready: each step can carry arbitrary metadata,
-// and the component accepts an optional `events` prop for live tracking data.
 
 interface TimelineEvent {
   status: Order["status"];
@@ -225,7 +245,7 @@ function DeliveryTimeline({
   currentStatus: Order["status"];
   createdAt: string;
   updatedAt: string;
-  events?: TimelineEvent[]; // future: live tracking events injected here
+  events?: TimelineEvent[];
 }) {
   const isCancelled = currentStatus === "cancelled";
   const currentStep = STATUS_CONFIG[currentStatus].step;
@@ -263,38 +283,30 @@ function DeliveryTimeline({
 
   return (
     <div className="relative">
-      {/* Connecting track */}
       <div
         className="absolute top-5 left-5 right-5 h-px"
         style={{ background: "var(--adm-border)" }}
       />
-      {/* Progress fill */}
       <div
         className="absolute top-5 left-5 h-px transition-all duration-500"
         style={{
           background: "var(--adm-accent)",
           width: `${(currentStep / (TIMELINE_STEPS.length - 1)) * 100}%`,
-          // Subtract the right padding equivalent
           maxWidth: "calc(100% - 40px)",
         }}
       />
-
       <div className="relative flex justify-between px-0">
         {TIMELINE_STEPS.map((step, idx) => {
           const isDone = idx <= currentStep;
           const isCurrent = idx === currentStep;
           const StepIcon = step.icon;
-
-          // If live events are provided, find matching event for this step
           const matchedEvent = events?.find((e) => e.status === step.key);
-
           return (
             <div
               key={step.key}
               className="flex flex-col items-center gap-2"
               style={{ flex: 1 }}
             >
-              {/* Node */}
               <div
                 className="w-10 h-10 flex items-center justify-center transition-all duration-300 relative z-10"
                 style={{
@@ -313,8 +325,6 @@ function DeliveryTimeline({
                   style={{ color: isDone ? "#fff" : "var(--adm-fg-faint)" }}
                 />
               </div>
-
-              {/* Label */}
               <div className="text-center px-1">
                 <p
                   className="text-[10px] font-bold tracking-wide"
@@ -324,7 +334,6 @@ function DeliveryTimeline({
                 >
                   {step.label}
                 </p>
-                {/* Show timestamp if available — from events or fallback for first/last */}
                 {matchedEvent?.timestamp ? (
                   <p
                     className="text-[9px] mt-0.5"
@@ -347,7 +356,6 @@ function DeliveryTimeline({
                     {formatDate(updatedAt)}
                   </p>
                 ) : null}
-                {/* Location from live events (future) */}
                 {matchedEvent?.location && (
                   <p
                     className="text-[9px] mt-0.5 flex items-center justify-center gap-0.5"
@@ -360,6 +368,742 @@ function DeliveryTimeline({
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Delhivery Shipping Card ──────────────────────────────────────────────────
+
+function DelhiveryCard({
+  order,
+  onShipmentCreated,
+  onCancelled,
+}: {
+  order: Order;
+  onShipmentCreated: (waybill: string) => void;
+  onCancelled: () => void;
+}) {
+  const dlv = order.delhivery;
+
+  // ── Local state ────────────────────────────────────────────────────────────
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
+
+  const [showPickupForm, setShowPickupForm] = useState(false);
+  const [pickupDate, setPickupDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1); // default tomorrow
+    return d.toISOString().split("T")[0];
+  });
+  const [pickupTime, setPickupTime] = useState("11:00:00");
+  const [packageCount, setPackageCount] = useState(
+    order.items.reduce((s, i) => s + i.quantity, 0),
+  );
+  const [requestingPickup, setRequestingPickup] = useState(false);
+  const [pickupSuccess, setPickupSuccess] = useState("");
+  const [pickupError, setPickupError] = useState("");
+
+  const [tracking, setTracking] = useState<DelhiveryInfo["trackingHistory"]>(
+    dlv?.trackingHistory || [],
+  );
+  const [trackingStatus, setTrackingStatus] = useState(dlv?.status || "");
+  const [trackingLocation, setTrackingLocation] = useState(dlv?.location || "");
+  const [lastTracked, setLastTracked] = useState(dlv?.lastTrackedAt || "");
+  const [refreshingTrack, setRefreshingTrack] = useState(false);
+  const [trackError, setTrackError] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelConfirm, setCancelConfirm] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+
+  async function handleCreateShipment() {
+    setCreating(true);
+    setCreateError("");
+
+    try {
+      const res = await fetch("/api/admin/delhivery/shipment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order._id }),
+      });
+      const data = await res.json();
+      console.log(order);
+      if (!res.ok || !data.ok) {
+        setCreateError(data.error || "Failed to create shipment.");
+      } else {
+        onShipmentCreated(data.waybill);
+      }
+    } catch {
+      setCreateError("Network error. Please try again.");
+    }
+    setCreating(false);
+  }
+
+  // ── Create Pickup Request ──────────────────────────────────────────────────
+  async function handlePickupRequest() {
+    setRequestingPickup(true);
+    setPickupError("");
+    setPickupSuccess("");
+    try {
+      const res = await fetch("/api/admin/delhivery/pickup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pickup_date: pickupDate,
+          pickup_time:
+            pickupTime.length === 5 ? `${pickupTime}:00` : pickupTime,
+          expected_package_count: Number(packageCount),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setPickupError(data.error || "Failed to create pickup request.");
+      } else {
+        setPickupSuccess(
+          data.message || "Pickup request created successfully.",
+        );
+        setShowPickupForm(false);
+      }
+    } catch {
+      setPickupError("Network error. Please try again.");
+    }
+    setRequestingPickup(false);
+  }
+
+  // ── Refresh Tracking ───────────────────────────────────────────────────────
+  async function handleRefreshTracking() {
+    if (!dlv?.waybill) return;
+    setRefreshingTrack(true);
+    setTrackError("");
+    try {
+      const res = await fetch(
+        `/api/admin/delhivery/track?waybill=${dlv.waybill}&orderId=${order._id}`,
+      );
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setTrackError(data.error || "Tracking unavailable.");
+      } else {
+        const t = data.tracking;
+        setTrackingStatus(t.status || "");
+        setTrackingLocation(t.location || "");
+        setTracking(t.scans || []);
+        setLastTracked(new Date().toISOString());
+      }
+    } catch {
+      setTrackError("Network error. Please try again.");
+    }
+    setRefreshingTrack(false);
+  }
+
+  // ── Cancel Shipment ────────────────────────────────────────────────────────
+  async function handleCancel() {
+    if (!dlv?.waybill) return;
+    setCancelling(true);
+    setCancelError("");
+    try {
+      const res = await fetch("/api/admin/delhivery/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ waybill: dlv.waybill, orderId: order._id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setCancelError(data.error || "Cancellation failed.");
+        setCancelConfirm(false);
+      } else {
+        onCancelled();
+      }
+    } catch {
+      setCancelError("Network error. Please try again.");
+    }
+    setCancelling(false);
+    setCancelConfirm(false);
+  }
+
+  // ── Shared style helpers ───────────────────────────────────────────────────
+  const btnBase =
+    "flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-150 cursor-pointer border-none outline-none disabled:opacity-50 disabled:cursor-not-allowed";
+
+  // ── STATE A: No shipment yet ───────────────────────────────────────────────
+  if (!dlv?.waybill) {
+    const canCreate = order.status === "confirmed";
+    return (
+      <div
+        style={{
+          background: "var(--adm-bg-white)",
+          border: "1px solid var(--adm-border-soft)",
+          boxShadow: "var(--adm-shadow-card)",
+        }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center gap-2.5 px-5 py-3.5 border-b"
+          style={{ borderColor: "var(--adm-border-soft)" }}
+        >
+          <Truck size={13} style={{ color: "var(--adm-accent)" }} />
+          <p
+            className="text-[10px] font-bold tracking-[0.16em] uppercase"
+            style={{ color: "var(--adm-accent)" }}
+          >
+            Delhivery Shipping
+          </p>
+        </div>
+
+        <div className="px-5 py-4 flex flex-col gap-3">
+          {/* Info note */}
+          <div
+            className="flex items-start gap-2.5 p-3"
+            style={{
+              background: "var(--adm-bg-soft)",
+              border: "1px solid var(--adm-border-soft)",
+            }}
+          >
+            <AlertCircle
+              size={12}
+              style={{
+                color: "var(--adm-fg-faint)",
+                flexShrink: 0,
+                marginTop: 1,
+              }}
+            />
+            <p
+              className="text-[11px] leading-relaxed"
+              style={{ color: "var(--adm-fg-muted)" }}
+            >
+              {canCreate
+                ? "Order is confirmed and ready for shipment creation."
+                : `Shipment can only be created for confirmed orders. Current status: ${STATUS_CONFIG[order.status].label}.`}
+            </p>
+          </div>
+
+          {/* Error */}
+          {createError && (
+            <p
+              className="text-[11px] px-3 py-2"
+              style={{
+                background: "var(--adm-bg-danger-lt)",
+                border: "1px solid var(--adm-danger-border)",
+                color: "var(--adm-danger)",
+              }}
+            >
+              {createError}
+            </p>
+          )}
+
+          {/* Create button */}
+          <button
+            onClick={handleCreateShipment}
+            disabled={!canCreate || creating}
+            className={btnBase}
+            style={{
+              background: canCreate
+                ? "var(--adm-accent)"
+                : "var(--adm-bg-soft)",
+              color: canCreate ? "#fff" : "var(--adm-fg-faint)",
+              border: `1px solid ${canCreate ? "var(--adm-accent)" : "var(--adm-border)"}`,
+              justifyContent: "center",
+            }}
+          >
+            {creating ? (
+              <Loader2 size={11} className="animate-spin" />
+            ) : (
+              <Send size={11} />
+            )}
+            {creating ? "Creating Shipment…" : "Create Delhivery Shipment"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── STATE B/C: Shipment exists ─────────────────────────────────────────────
+  const isCancelledDlv =
+    dlv.status === "Cancelled" || order.status === "cancelled";
+
+  return (
+    <div
+      style={{
+        background: "var(--adm-bg-white)",
+        border: "1px solid var(--adm-border-soft)",
+        boxShadow: "var(--adm-shadow-card)",
+      }}
+    >
+      {/* Header */}
+      <div
+        className="flex items-center gap-2.5 px-5 py-3.5 border-b"
+        style={{ borderColor: "var(--adm-border-soft)" }}
+      >
+        <Truck size={13} style={{ color: "var(--adm-accent)" }} />
+        <p
+          className="text-[10px] font-bold tracking-[0.16em] uppercase"
+          style={{ color: "var(--adm-accent)" }}
+        >
+          Delhivery Shipping
+        </p>
+        {isCancelledDlv && (
+          <span
+            className="ml-auto text-[9px] font-bold tracking-widest uppercase px-2 py-0.5"
+            style={{
+              background: "var(--adm-bg-danger-lt)",
+              border: "1px solid var(--adm-danger-border)",
+              color: "var(--adm-danger)",
+            }}
+          >
+            Cancelled
+          </span>
+        )}
+      </div>
+
+      <div className="px-5 py-4 flex flex-col gap-3">
+        {/* AWB number */}
+        <div
+          className="flex items-center justify-between p-3"
+          style={{
+            background: "var(--adm-bg-soft)",
+            border: "1px solid var(--adm-border-soft)",
+          }}
+        >
+          <div>
+            <p
+              className="text-[9px] font-bold tracking-widest uppercase"
+              style={{ color: "var(--adm-fg-faint)" }}
+            >
+              AWB / Waybill
+            </p>
+            <p
+              className="text-[13px] font-bold font-mono mt-0.5"
+              style={{ color: "var(--adm-fg)" }}
+            >
+              {dlv.waybill}
+            </p>
+          </div>
+          {dlv.shipmentCreatedAt && (
+            <p className="text-[10px]" style={{ color: "var(--adm-fg-faint)" }}>
+              {formatDate(dlv.shipmentCreatedAt)}
+            </p>
+          )}
+        </div>
+
+        {/* Latest tracking status (if available) */}
+        {(trackingStatus || dlv.status) && (
+          <div
+            className="flex items-start gap-2.5 p-3"
+            style={{
+              background: "rgba(41,128,185,0.05)",
+              border: "1px solid rgba(41,128,185,0.18)",
+            }}
+          >
+            <ScanLine
+              size={12}
+              style={{ color: "#2980b9", flexShrink: 0, marginTop: 1 }}
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-bold" style={{ color: "#2980b9" }}>
+                {trackingStatus || dlv.status}
+                {(trackingLocation || dlv.location) && (
+                  <span
+                    className="font-normal ml-1"
+                    style={{ color: "var(--adm-fg-muted)" }}
+                  >
+                    · {trackingLocation || dlv.location}
+                  </span>
+                )}
+              </p>
+              {lastTracked && (
+                <p
+                  className="text-[10px] mt-0.5"
+                  style={{ color: "var(--adm-fg-faint)" }}
+                >
+                  Updated {formatDate(lastTracked)} · {formatTime(lastTracked)}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Track error */}
+        {trackError && (
+          <p
+            className="text-[11px] px-3 py-2"
+            style={{
+              background: "var(--adm-bg-danger-lt)",
+              border: "1px solid var(--adm-danger-border)",
+              color: "var(--adm-danger)",
+            }}
+          >
+            {trackError}
+          </p>
+        )}
+
+        {/* Scan history (collapsible) */}
+        {(tracking || dlv.trackingHistory || []).length > 0 && (
+          <div
+            style={{
+              border: "1px solid var(--adm-border-soft)",
+              overflow: "hidden",
+            }}
+          >
+            <button
+              onClick={() => setHistoryOpen((v) => !v)}
+              className="w-full flex items-center justify-between px-3 py-2.5 text-left"
+              style={{
+                background: "var(--adm-bg-soft)",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--adm-fg-muted)",
+              }}
+            >
+              <span className="text-[10px] font-bold tracking-widest uppercase">
+                Scan History ({(tracking || dlv.trackingHistory || []).length})
+              </span>
+              {historyOpen ? (
+                <ChevronUp size={11} />
+              ) : (
+                <ChevronDown size={11} />
+              )}
+            </button>
+            {historyOpen && (
+              <div
+                className="flex flex-col divide-y"
+                style={{ borderColor: "var(--adm-border-soft)" }}
+              >
+                {(tracking || dlv.trackingHistory || []).map((scan, idx) => (
+                  <div key={idx} className="px-3 py-2.5 flex flex-col gap-0.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <p
+                        className="text-[11px] font-bold"
+                        style={{ color: "var(--adm-fg)" }}
+                      >
+                        {scan.status}
+                        {scan.statusType && (
+                          <span
+                            className="ml-1.5 text-[9px] font-bold tracking-wide px-1 py-0.5"
+                            style={{
+                              background: "var(--adm-bg-soft)",
+                              border: "1px solid var(--adm-border)",
+                              color: "var(--adm-fg-faint)",
+                            }}
+                          >
+                            {scan.statusType}
+                          </span>
+                        )}
+                      </p>
+                      {scan.time && (
+                        <span
+                          className="text-[10px] shrink-0"
+                          style={{ color: "var(--adm-fg-faint)" }}
+                        >
+                          {formatDate(scan.time)}
+                        </span>
+                      )}
+                    </div>
+                    {scan.location && (
+                      <p
+                        className="text-[10px] flex items-center gap-1"
+                        style={{ color: "var(--adm-fg-muted)" }}
+                      >
+                        <MapPin size={9} />
+                        {scan.location}
+                      </p>
+                    )}
+                    {scan.activity && (
+                      <p
+                        className="text-[10px]"
+                        style={{ color: "var(--adm-fg-faint)" }}
+                      >
+                        {scan.activity}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pickup success message */}
+        {pickupSuccess && (
+          <p
+            className="text-[11px] px-3 py-2"
+            style={{
+              background: "rgba(39,174,96,0.06)",
+              border: "1px solid rgba(39,174,96,0.2)",
+              color: "#27ae60",
+            }}
+          >
+            ✓ {pickupSuccess}
+          </p>
+        )}
+
+        {/* Pickup request form */}
+        {showPickupForm && !isCancelledDlv && (
+          <div
+            className="flex flex-col gap-3 p-3"
+            style={{
+              background: "var(--adm-bg-soft)",
+              border: "1px solid var(--adm-border)",
+            }}
+          >
+            <p
+              className="text-[10px] font-bold tracking-widest uppercase"
+              style={{ color: "var(--adm-fg-muted)" }}
+            >
+              Schedule Pickup
+            </p>
+
+            {/* Date */}
+            <div className="flex flex-col gap-1">
+              <label
+                className="text-[9px] font-bold tracking-widest uppercase"
+                style={{ color: "var(--adm-fg-faint)" }}
+              >
+                Pickup Date
+              </label>
+              <input
+                type="date"
+                value={pickupDate}
+                min={new Date().toISOString().split("T")[0]}
+                onChange={(e) => setPickupDate(e.target.value)}
+                className="px-2.5 py-2 text-[12px] outline-none"
+                style={{
+                  background: "var(--adm-bg-white)",
+                  border: "1px solid var(--adm-border)",
+                  color: "var(--adm-fg)",
+                  fontFamily: "var(--nav-font-ui)",
+                }}
+              />
+            </div>
+
+            {/* Time */}
+            <div className="flex flex-col gap-1">
+              <label
+                className="text-[9px] font-bold tracking-widest uppercase"
+                style={{ color: "var(--adm-fg-faint)" }}
+              >
+                Pickup Time
+              </label>
+              <input
+                type="time"
+                value={pickupTime.slice(0, 5)}
+                onChange={(e) => setPickupTime(`${e.target.value}:00`)}
+                className="px-2.5 py-2 text-[12px] outline-none"
+                style={{
+                  background: "var(--adm-bg-white)",
+                  border: "1px solid var(--adm-border)",
+                  color: "var(--adm-fg)",
+                  fontFamily: "var(--nav-font-ui)",
+                }}
+              />
+            </div>
+
+            {/* Package count */}
+            <div className="flex flex-col gap-1">
+              <label
+                className="text-[9px] font-bold tracking-widest uppercase"
+                style={{ color: "var(--adm-fg-faint)" }}
+              >
+                Expected Package Count
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={packageCount}
+                onChange={(e) => setPackageCount(Number(e.target.value))}
+                className="px-2.5 py-2 text-[12px] outline-none"
+                style={{
+                  background: "var(--adm-bg-white)",
+                  border: "1px solid var(--adm-border)",
+                  color: "var(--adm-fg)",
+                  fontFamily: "var(--nav-font-ui)",
+                }}
+              />
+            </div>
+
+            {/* Pickup error */}
+            {pickupError && (
+              <p
+                className="text-[11px] px-2 py-1.5"
+                style={{
+                  background: "var(--adm-bg-danger-lt)",
+                  border: "1px solid var(--adm-danger-border)",
+                  color: "var(--adm-danger)",
+                }}
+              >
+                {pickupError}
+              </p>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setShowPickupForm(false);
+                  setPickupError("");
+                }}
+                disabled={requestingPickup}
+                className={`${btnBase} flex-1 justify-center`}
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--adm-border)",
+                  color: "var(--adm-fg-muted)",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePickupRequest}
+                disabled={requestingPickup || !pickupDate || !pickupTime}
+                className={`${btnBase} flex-[1.5] justify-center`}
+                style={{
+                  background: "var(--adm-accent)",
+                  border: "1px solid var(--adm-accent)",
+                  color: "#fff",
+                }}
+              >
+                {requestingPickup ? (
+                  <Loader2 size={11} className="animate-spin" />
+                ) : (
+                  <Send size={11} />
+                )}
+                {requestingPickup ? "Requesting…" : "Confirm Pickup"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Cancel error */}
+        {cancelError && (
+          <p
+            className="text-[11px] px-3 py-2"
+            style={{
+              background: "var(--adm-bg-danger-lt)",
+              border: "1px solid var(--adm-danger-border)",
+              color: "var(--adm-danger)",
+            }}
+          >
+            {cancelError}
+          </p>
+        )}
+
+        {/* Cancel confirmation */}
+        {cancelConfirm && !isCancelledDlv && (
+          <div
+            className="flex flex-col gap-2.5 p-3"
+            style={{
+              background: "var(--adm-bg-danger-lt)",
+              border: "1px solid var(--adm-danger-border)",
+            }}
+          >
+            <p
+              className="text-[11px] font-bold"
+              style={{ color: "var(--adm-danger)" }}
+            >
+              Cancel shipment {dlv.waybill}? This cannot be undone.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCancelConfirm(false)}
+                disabled={cancelling}
+                className={`${btnBase} flex-1 justify-center`}
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--adm-danger-border)",
+                  color: "var(--adm-danger)",
+                }}
+              >
+                Keep It
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className={`${btnBase} flex-[1.5] justify-center`}
+                style={{
+                  background: "var(--adm-danger)",
+                  border: "1px solid var(--adm-danger)",
+                  color: "#fff",
+                }}
+              >
+                {cancelling ? (
+                  <Loader2 size={11} className="animate-spin" />
+                ) : (
+                  <Ban size={11} />
+                )}
+                {cancelling ? "Cancelling…" : "Yes, Cancel"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons row */}
+        {!isCancelledDlv && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {/* Refresh tracking */}
+            <button
+              onClick={handleRefreshTracking}
+              disabled={refreshingTrack}
+              className={btnBase}
+              style={{
+                background: "var(--adm-bg-active)",
+                border: "1px solid var(--adm-accent-border)",
+                color: "var(--adm-accent)",
+                flex: 1,
+                justifyContent: "center",
+              }}
+            >
+              {refreshingTrack ? (
+                <Loader2 size={10} className="animate-spin" />
+              ) : (
+                <RefreshCw size={10} />
+              )}
+              {refreshingTrack ? "Refreshing…" : "Refresh Track"}
+            </button>
+
+            {/* Request pickup */}
+            {!showPickupForm && (
+              <button
+                onClick={() => {
+                  setShowPickupForm(true);
+                  setPickupSuccess("");
+                  setPickupError("");
+                }}
+                className={btnBase}
+                style={{
+                  background: "var(--adm-bg-soft)",
+                  border: "1px solid var(--adm-border)",
+                  color: "var(--adm-fg-muted)",
+                  flex: 1,
+                  justifyContent: "center",
+                }}
+              >
+                <Truck size={10} />
+                Request Pickup
+              </button>
+            )}
+
+            {/* Cancel shipment */}
+            {!cancelConfirm && (
+              <button
+                onClick={() => {
+                  setCancelConfirm(true);
+                  setCancelError("");
+                }}
+                className={btnBase}
+                style={{
+                  background: "var(--adm-bg-danger-lt)",
+                  border: "1px solid var(--adm-danger-border)",
+                  color: "var(--adm-danger)",
+                  flex: 1,
+                  justifyContent: "center",
+                }}
+              >
+                <Ban size={10} />
+                Cancel Shipment
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -380,10 +1124,46 @@ function OrderDetail({
 }) {
   const [updating, setUpdating] = useState(false);
   const cfg = STATUS_CONFIG[order.status];
+
   const handleStatusChange = async (newStatus: Order["status"]) => {
     setUpdating(true);
     await onStatusChange(order._id, newStatus);
     setUpdating(false);
+  };
+
+  // When Delhivery card creates a shipment — update local order state
+  const handleShipmentCreated = (waybill: string) => {
+    onOrderUpdate((prev) =>
+      prev
+        ? {
+            ...prev,
+            status: "shipped",
+            delhivery: {
+              ...prev.delhivery,
+              waybill,
+              status: "Manifested",
+              shipmentCreatedAt: new Date().toISOString(),
+              trackingHistory: [],
+            },
+          }
+        : prev,
+    );
+  };
+
+  const handleCancelled = () => {
+    onOrderUpdate((prev) =>
+      prev
+        ? {
+            ...prev,
+            status: "cancelled",
+            delhivery: {
+              ...prev.delhivery,
+              status: "Cancelled",
+              cancelledAt: new Date().toISOString(),
+            },
+          }
+        : prev,
+    );
   };
 
   const totalItems = order.items.reduce((s, i) => s + i.quantity, 0);
@@ -434,7 +1214,6 @@ function OrderDetail({
           <StatusBadge status={order.status} />
         </div>
 
-        {/* Status update */}
         <div className="flex items-center gap-3">
           <span
             className="text-[0.65rem] font-bold tracking-widest uppercase hidden sm:block"
@@ -484,7 +1263,7 @@ function OrderDetail({
 
       {/* ── Body ── */}
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-6">
-        {/* ── Top summary strip ── */}
+        {/* Top summary strip */}
         <div
           className="flex flex-wrap items-center gap-4 px-5 py-4 mb-6"
           style={{
@@ -497,10 +1276,7 @@ function OrderDetail({
           <div className="flex-1 min-w-0">
             <h1
               className="text-[1.1rem] font-bold leading-tight"
-              style={{
-                fontFamily: "var(--nav-font)",
-                color: "var(--adm-fg)",
-              }}
+              style={{ fontFamily: "var(--nav-font)", color: "var(--adm-fg)" }}
             >
               {order.items[0]?.name}
               {order.items.length > 1
@@ -532,10 +1308,7 @@ function OrderDetail({
           <div className="text-right shrink-0">
             <p
               className="text-[1.4rem] font-bold leading-none"
-              style={{
-                fontFamily: "var(--nav-font)",
-                color: "var(--adm-fg)",
-              }}
+              style={{ fontFamily: "var(--nav-font)", color: "var(--adm-fg)" }}
             >
               ₹{order.total.toLocaleString("en-IN")}
             </p>
@@ -548,7 +1321,7 @@ function OrderDetail({
           </div>
         </div>
 
-        {/* ── Main grid: left (wide) + right (narrow) ── */}
+        {/* Main grid */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
           {/* ── LEFT COLUMN ── */}
           <div className="flex flex-col gap-5">
@@ -579,12 +1352,10 @@ function OrderDetail({
                   {order.items.length !== 1 ? "s" : ""}
                 </span>
               </div>
-
               <div className="px-5 py-4 flex flex-col gap-4">
                 {order.items.map((item, idx) => (
                   <div key={idx}>
                     <div className="flex items-start gap-4">
-                      {/* Product image */}
                       <div
                         className="w-16 h-20 shrink-0 overflow-hidden"
                         style={{
@@ -610,8 +1381,6 @@ function OrderDetail({
                           </div>
                         )}
                       </div>
-
-                      {/* Item details */}
                       <div className="flex-1 min-w-0">
                         <p
                           className="text-[0.875rem] font-bold leading-snug"
@@ -622,8 +1391,6 @@ function OrderDetail({
                         >
                           {item.name}
                         </p>
-
-                        {/* Variant pills */}
                         <div className="flex items-center gap-2 mt-2 flex-wrap">
                           {item.colorName && (
                             <span
@@ -664,8 +1431,6 @@ function OrderDetail({
                             Qty: {item.quantity}
                           </span>
                         </div>
-
-                        {/* Unit price */}
                         <p
                           className="text-[11px] mt-1.5"
                           style={{ color: "var(--adm-fg-muted)" }}
@@ -674,8 +1439,6 @@ function OrderDetail({
                           {item.quantity}
                         </p>
                       </div>
-
-                      {/* Line total */}
                       <div className="text-right shrink-0">
                         <p
                           className="text-[0.9rem] font-bold"
@@ -689,7 +1452,6 @@ function OrderDetail({
                         </p>
                       </div>
                     </div>
-
                     {idx < order.items.length - 1 && (
                       <div
                         className="mt-4 border-t"
@@ -698,8 +1460,6 @@ function OrderDetail({
                     )}
                   </div>
                 ))}
-
-                {/* Order total */}
                 <div
                   className="flex items-center justify-between pt-4 mt-1 border-t"
                   style={{ borderColor: "var(--adm-border)" }}
@@ -797,11 +1557,50 @@ function OrderDetail({
                 </div>
               </div>
             </div>
+            {/* Order Meta */}
+            <div
+              style={{
+                background: "var(--adm-bg-white)",
+                border: "1px solid var(--adm-border-soft)",
+                boxShadow: "var(--adm-shadow-card)",
+              }}
+            >
+              <div
+                className="flex items-center gap-2.5 px-5 py-3.5 border-b"
+                style={{ borderColor: "var(--adm-border-soft)" }}
+              >
+                <AlertCircle size={13} style={{ color: "var(--adm-accent)" }} />
+                <p
+                  className="text-[10px] font-bold tracking-[0.16em] uppercase"
+                  style={{ color: "var(--adm-accent)" }}
+                >
+                  Order Info
+                </p>
+              </div>
+              <div className="px-5 py-4 flex flex-col gap-2.5">
+                <InfoRow label="Order ID" value={`#${order.orderId}`} />
+                <InfoRow
+                  label="Placed"
+                  value={`${formatDate(order.createdAt)} · ${formatTime(order.createdAt)}`}
+                />
+                <InfoRow
+                  label="Last Updated"
+                  value={`${formatDate(order.updatedAt)} · ${formatTime(order.updatedAt)}`}
+                />
+                <InfoRow
+                  label="Type"
+                  value={order.isGuest ? "Guest Checkout" : "Registered"}
+                />
+                {order.delhivery?.waybill && (
+                  <InfoRow label="AWB" value={order.delhivery.waybill} mono />
+                )}
+              </div>
+            </div>
           </div>
 
           {/* ── RIGHT COLUMN ── */}
           <div className="flex flex-col gap-5">
-            {/* Customer / User Info */}
+            {/* Customer Info */}
             <div
               style={{
                 background: "var(--adm-bg-white)",
@@ -822,7 +1621,6 @@ function OrderDetail({
                 </p>
               </div>
               <div className="px-5 py-4 flex flex-col gap-3">
-                {/* Avatar + name */}
                 <div className="flex items-center gap-3">
                   <div
                     className="w-10 h-10 flex items-center justify-center text-[0.75rem] font-bold flex-shrink-0"
@@ -833,8 +1631,8 @@ function OrderDetail({
                     }}
                   >
                     {(order.isGuest
-                      ? order.guestInfo?.name || order.address.fullName
-                      : order.address.fullName
+                      ? order.guestInfo?.name || order.address.fullName || "UC"
+                      : order.address.fullName || "UC"
                     )
                       .split(" ")
                       .map((n) => n[0])
@@ -848,8 +1646,10 @@ function OrderDetail({
                       style={{ color: "var(--adm-fg)" }}
                     >
                       {order.isGuest
-                        ? order.guestInfo?.name || order.address.fullName
-                        : order.address.fullName}
+                        ? order.guestInfo?.name ||
+                          order.address.fullName ||
+                          "UC"
+                        : order.address.fullName || "UC"}
                     </p>
                     <p
                       className="text-[10px] mt-0.5"
@@ -859,13 +1659,10 @@ function OrderDetail({
                     </p>
                   </div>
                 </div>
-
                 <div
                   className="border-t"
                   style={{ borderColor: "var(--adm-border-soft)" }}
                 />
-
-                {/* Details */}
                 <div className="flex flex-col gap-2.5">
                   {(order.guestInfo?.phone || order.address.phone) && (
                     <div className="flex items-center gap-2">
@@ -938,7 +1735,6 @@ function OrderDetail({
                 </p>
               </div>
               <div className="px-5 py-4 flex flex-col gap-2.5">
-                {/* Payment status badge */}
                 <div
                   className="flex items-center justify-between p-3"
                   style={{
@@ -956,11 +1752,9 @@ function OrderDetail({
                     className="text-[10px] font-bold flex items-center gap-1"
                     style={{ color: "#27ae60" }}
                   >
-                    <CheckCircle size={10} />
-                    Paid
+                    <CheckCircle size={10} /> Paid
                   </span>
                 </div>
-
                 {order.payment?.method && (
                   <InfoRow
                     label="Method"
@@ -970,7 +1764,6 @@ function OrderDetail({
                     }
                   />
                 )}
-
                 {order.payment?.razorpay_order_id && (
                   <InfoRow
                     label="Razorpay Order"
@@ -979,7 +1772,6 @@ function OrderDetail({
                     truncate
                   />
                 )}
-
                 {order.payment?.razorpay_payment_id && (
                   <InfoRow
                     label="Payment ID"
@@ -988,7 +1780,6 @@ function OrderDetail({
                     truncate
                   />
                 )}
-
                 <div
                   className="border-t pt-2.5 mt-0.5"
                   style={{ borderColor: "var(--adm-border-soft)" }}
@@ -1014,42 +1805,12 @@ function OrderDetail({
               </div>
             </div>
 
-            {/* Order Meta */}
-            <div
-              style={{
-                background: "var(--adm-bg-white)",
-                border: "1px solid var(--adm-border-soft)",
-                boxShadow: "var(--adm-shadow-card)",
-              }}
-            >
-              <div
-                className="flex items-center gap-2.5 px-5 py-3.5 border-b"
-                style={{ borderColor: "var(--adm-border-soft)" }}
-              >
-                <AlertCircle size={13} style={{ color: "var(--adm-accent)" }} />
-                <p
-                  className="text-[10px] font-bold tracking-[0.16em] uppercase"
-                  style={{ color: "var(--adm-accent)" }}
-                >
-                  Order Info
-                </p>
-              </div>
-              <div className="px-5 py-4 flex flex-col gap-2.5">
-                <InfoRow label="Order ID" value={`#${order.orderId}`} />
-                <InfoRow
-                  label="Placed"
-                  value={`${formatDate(order.createdAt)} · ${formatTime(order.createdAt)}`}
-                />
-                <InfoRow
-                  label="Last Updated"
-                  value={`${formatDate(order.updatedAt)} · ${formatTime(order.updatedAt)}`}
-                />
-                <InfoRow
-                  label="Type"
-                  value={order.isGuest ? "Guest Checkout" : "Registered"}
-                />
-              </div>
-            </div>
+            {/* ── DELHIVERY CARD — inserted here in right column ── */}
+            <DelhiveryCard
+              order={order}
+              onShipmentCreated={handleShipmentCreated}
+              onCancelled={handleCancelled}
+            />
           </div>
         </div>
       </div>
@@ -1113,7 +1874,6 @@ function OrderCard({
 }) {
   const [updating, setUpdating] = useState(false);
   const cfg = STATUS_CONFIG[order.status];
-  const StatusIcon = cfg.icon;
 
   const handleStatusChange = async (newStatus: Order["status"]) => {
     setUpdating(true);
@@ -1178,13 +1938,24 @@ function OrderCard({
                   Guest
                 </span>
               )}
+              {/* ── Delhivery AWB badge on list card ── */}
+              {order.delhivery?.waybill && (
+                <span
+                  className="text-[9px] font-bold tracking-wide px-1.5 py-0.5 flex items-center gap-1 font-mono"
+                  style={{
+                    background: "rgba(41,128,185,0.08)",
+                    border: "1px solid rgba(41,128,185,0.22)",
+                    color: "#2980b9",
+                  }}
+                >
+                  <Truck size={8} />
+                  {order.delhivery.waybill}
+                </span>
+              )}
             </div>
             <p
               className="text-[0.8125rem] font-bold truncate"
-              style={{
-                fontFamily: "var(--nav-font)",
-                color: "var(--adm-fg)",
-              }}
+              style={{ fontFamily: "var(--nav-font)", color: "var(--adm-fg)" }}
             >
               {order.items[0]?.name}
               {order.items.length > 1 ? ` +${order.items.length - 1} more` : ""}
@@ -1215,10 +1986,7 @@ function OrderCard({
           <div className="text-right">
             <p
               className="text-[0.9rem] font-bold"
-              style={{
-                fontFamily: "var(--nav-font)",
-                color: "var(--adm-fg)",
-              }}
+              style={{ fontFamily: "var(--nav-font)", color: "var(--adm-fg)" }}
             >
               ₹{order.total.toLocaleString("en-IN")}
             </p>
@@ -1265,7 +2033,8 @@ function OrderCard({
               )}
             </div>
           </div>
-          {/* Delete button — only for delivered or cancelled */}
+
+          {/* Delete button */}
           {(order.status === "delivered" || order.status === "cancelled") && (
             <button
               onClick={() => onDelete(order._id, order.orderId)}
@@ -1290,6 +2059,7 @@ function OrderCard({
               <Trash2 size={10} />
             </button>
           )}
+
           {/* Details button */}
           <button
             onClick={() => onViewDetail(order)}
@@ -1320,7 +2090,7 @@ function OrderCard({
   );
 }
 
-// ─── Main Page
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AdminOrdersPage() {
   const router = useRouter();
@@ -1334,7 +2104,6 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Debounce search
   useEffect(() => {
     if (searchRef.current) clearTimeout(searchRef.current);
     searchRef.current = setTimeout(() => setDebouncedSearch(searchQuery), 400);
@@ -1377,7 +2146,6 @@ export default function AdminOrdersPage() {
       setOrders((prev) =>
         prev.map((o) => (o._id === id ? { ...o, status: newStatus } : o)),
       );
-      // Also update the selected order if we're in detail view
       if (selectedOrder?._id === id) {
         setSelectedOrder((prev) =>
           prev ? { ...prev, status: newStatus } : prev,
@@ -1385,6 +2153,7 @@ export default function AdminOrdersPage() {
       }
     } catch {}
   };
+
   const [deleteConfirm, setDeleteConfirm] = useState<{
     id: string;
     orderId: string;
@@ -1415,6 +2184,8 @@ export default function AdminOrdersPage() {
   const goBackToList = () => {
     setPageView("list");
     setSelectedOrder(null);
+    // Refresh list to pick up any status/delhivery changes made in detail view
+    fetchOrders(true);
   };
 
   const statusCounts = ALL_STATUSES.reduce(
@@ -1467,7 +2238,7 @@ export default function AdminOrdersPage() {
           display: flex;
           align-items: center;
           gap: 5px;
-          border-radius:8px;
+          border-radius: 8px;
           padding: 6px 14px;
           border: 1px solid var(--adm-border);
           background: var(--adm-bg-white);
@@ -1490,7 +2261,7 @@ export default function AdminOrdersPage() {
       `}</style>
 
       <div style={{ fontFamily: "var(--nav-font-ui)", color: "var(--adm-fg)" }}>
-        {/* ── Page header ── */}
+        {/* Page header */}
         <div
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-5 border-b"
           style={{
@@ -1507,10 +2278,7 @@ export default function AdminOrdersPage() {
             </p>
             <h1
               className="text-[1.4rem] font-bold"
-              style={{
-                fontFamily: "var(--nav-font)",
-                color: "var(--adm-fg)",
-              }}
+              style={{ fontFamily: "var(--nav-font)", color: "var(--adm-fg)" }}
             >
               Orders Management
             </h1>
@@ -1522,7 +2290,6 @@ export default function AdminOrdersPage() {
             </p>
           </div>
 
-          {/* Search + Refresh */}
           <div className="flex items-center gap-3">
             <div
               className="flex rounded-sm items-center gap-2 px-3 py-2"
@@ -1598,7 +2365,7 @@ export default function AdminOrdersPage() {
           </div>
         </div>
 
-        {/* ── Status filter pills ── */}
+        {/* Status filter pills */}
         <div
           className="flex items-center gap-2 flex-wrap px-6 py-4 border-b"
           style={{
@@ -1637,7 +2404,7 @@ export default function AdminOrdersPage() {
           })}
         </div>
 
-        {/* ── Orders list ── */}
+        {/* Orders list */}
         <div className="px-6 py-5">
           {loading ? (
             <div
@@ -1718,7 +2485,8 @@ export default function AdminOrdersPage() {
           )}
         </div>
       </div>
-      {/* ── Delete Confirm Dialog ── */}
+
+      {/* Delete Confirm Dialog */}
       {deleteConfirm && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-5"
