@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/context/cartContext";
 import ProductReviews from "@/components/(productPage)/productReviews";
+import BackButton from "@/components/backButton";
 
 interface ProductSize {
   size: string;
@@ -310,13 +311,13 @@ export default function ProductPage({ params }: Props) {
   const thumbsCanScrollLeft = thumbStart > 0;
   const thumbsCanScrollRight = thumbStart + THUMB_VISIBLE < images.length;
 
-  const handleAddToCart = () => {
-    if (isOutOfStock) return;
+  const handleAddToCart = (): boolean => {
+    if (isOutOfStock) return false;
     if (!selectedSize) {
       setSizeError(true);
-      return;
+      return false;
     }
-    if (maxQty <= 0) return;
+    if (maxQty <= 0) return false;
 
     for (let i = 0; i < qty; i++) {
       addItem({
@@ -336,11 +337,14 @@ export default function ProductPage({ params }: Props) {
     setSizeError(false);
     setTimeout(() => setAddedAnim(false), 1800);
     setQty(1);
+    return true;
   };
 
   const handleBuyNow = () => {
-    handleAddToCart();
-    setTimeout(() => router.push("/checkout"), 300);
+    const added = handleAddToCart();
+    if (added) {
+      setTimeout(() => router.push("/checkout"), 300);
+    }
   };
 
   return (
@@ -391,6 +395,9 @@ export default function ProductPage({ params }: Props) {
       >
         <div className="max-w-6xl mx-auto px-4 py-8 md:py-12">
           {/* ── Breadcrumb ── */}
+          <div className="mb-4 fade-up">
+            <BackButton fallbackHref="/products" label="Back" />
+          </div>
           <nav
             className="flex items-center gap-2 mb-8 text-xs font-semibold tracking-widest uppercase fade-up"
             style={{ color: "var(--nav-fg-muted)" }}

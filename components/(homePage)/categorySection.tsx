@@ -1,9 +1,9 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import Image2 from "@/public/homePage/categorySection/image1.png";
-import Image1 from "@/public/homePage/categorySection/image2.png";
-import Image3 from "@/public/homePage/categorySection/accessories-Photoroom.png";
+import Image2 from "@/public/homePage/categorySection/women_Image1.jpeg";
+import Image1 from "@/public/homePage/categorySection/men_Image2.jpeg";
+import Image3 from "@/public/homePage/categorySection/accessories_Image3.jpeg";
 interface CategoryCard {
   id: string;
   label: string;
@@ -50,7 +50,7 @@ function CategoryCardItem({
   return (
     <Link
       href={href}
-      className="group relative flex flex-col rounded-xl overflow-hidden w-[78vw] sm:w-[55vw] lg:w-auto shrink-0 lg:shrink aspect-[4/4]"
+      className="group relative flex flex-col rounded-xl overflow-hidden w-[78vw] sm:w-[55vw] lg:w-auto shrink-0 lg:shrink aspect-[4/4] transition-transform duration-300 hover:scale-[1.02]"
       style={{
         background:
           "linear-gradient(90deg, #E5D3C3 0%,#E1CCBA 50%, #D9C0AA 100%)",
@@ -61,39 +61,9 @@ function CategoryCardItem({
           src={imageSrc}
           alt={imageAlt}
           fill
-          className="object-contain object-right transition-transform duration-500 group-hover:scale-[1.03]"
+          className="object-contain object-right"
           sizes="(max-width: 768px) 78vw, (max-width: 1024px) 55vw, 33vw"
         />
-      </div>
-
-      {/* ── Category label — top left ── */}
-      <div className="relative z-10 p-5 sm:p-6">
-        <h3
-          className="text-[1.15rem] sm:text-[1.2rem] lg:text-[1.25rem]
-                     font-bold leading-[1.2] whitespace-pre-line tracking-wide"
-          style={{
-            color: "var(--category-label-fg)",
-            fontFamily: "var(--nav-font-ui)",
-          }}
-        >
-          {label}
-        </h3>
-      </div>
-
-      <div className="relative z-10 mt-[20%] p-5 sm:p-6">
-        <span
-          onClick={(e) => e.preventDefault()}
-          className="inline-flex items-center gap-1.5
-                     text-xs font-bold tracking-[0.18em] uppercase
-                     transition-opacity duration-150 group-hover:opacity-60"
-          style={{
-            color: "var(--category-cta-fg)",
-            fontFamily: "var(--nav-font-ui)",
-          }}
-        >
-          <p>Shop Now</p>
-          <span aria-hidden="true">→</span>
-        </span>
       </div>
     </Link>
   );

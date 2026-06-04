@@ -578,7 +578,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
               onMouseLeave={(e) =>
                 (e.currentTarget.style.color = "var(--nav-fg)")
               }
-              onClick={() => router.push("/checkout")}
+              onClick={() => openCart()}
               aria-label={`Open cart, ${totalItems} items`}
             >
               <ShoppingBag size={20} />
