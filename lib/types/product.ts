@@ -11,6 +11,6 @@ export interface Product {
   description: string;
   price: number;           
   category: string;       
-  gender?: "Men" | "Women" | "Unisex" | "Boys" | "Girls";
+  gender?: "Men" | "Women" | "Unisex";
   variants: ProductVariant[];
 }
