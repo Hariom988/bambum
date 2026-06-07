@@ -7,11 +7,14 @@ const TTL = 30_000;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q")?.trim() ?? "";
+  const q        = searchParams.get("q")?.trim()        ?? "";
   const category = searchParams.get("category")?.trim() ?? "";
-   const gender = searchParams.get("gender")?.trim() ?? "";
+  const gender   = searchParams.get("gender")?.trim()   ?? "";
 
-  const useCache = !q && !category;
+  // Only use the cache when the request is completely unfiltered.
+  // Previously `gender` was missing here, so every gender-filtered request
+  // was a cache hit and returned all products instead of the filtered set.
+  const useCache = !q && !category && !gender;
 
   if (useCache && cache && Date.now() - cache.ts < TTL) {
     return NextResponse.json(
@@ -23,7 +26,7 @@ export async function GET(request: Request) {
   try {
     const client = await clientPromise;
     const col = client.db("inventory").collection("products");
-    const filter: Record<string, any> = { isActive: true };
+    const filter: Record<string, unknown> = { isActive: true };
 
     if (q) {
       const regex = { $regex: q, $options: "i" };
@@ -31,7 +34,8 @@ export async function GET(request: Request) {
     }
     if (category) {
       filter.category = category;
-    }if (gender) {
+    }
+    if (gender) {
       filter.gender = gender;
     }
 
@@ -49,7 +53,7 @@ export async function GET(request: Request) {
         "variants.colorHex": 1,
         "variants.images": { $slice: 1 },
         "variants.sizes": 1,
-          gender: 1,
+        gender: 1,
       })
       .toArray();
 

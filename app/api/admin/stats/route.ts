@@ -19,11 +19,11 @@ export async function GET() {
       productsCol.countDocuments({ isActive: true }),
       productsCol.countDocuments({
         isActive: true,
-        category: "Men",
+        gender: "Men",
       }),
       productsCol.countDocuments({
         isActive: true,
-        category:"Women",
+        gender:"Women",
       }),
       ordersCol.countDocuments({}),
     ]);

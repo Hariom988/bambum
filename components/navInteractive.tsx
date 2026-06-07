@@ -5,7 +5,6 @@ import {
   ShoppingBag,
   Search,
   X,
-  ChevronRight,
   ArrowLeft,
   ArrowRight,
   Package,
@@ -14,44 +13,23 @@ import {
   User,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "@/context/cartContext";
 import Image from "next/image";
 import UserMenu from "@/components/userMenu";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface NavLink {
   label: string;
   href: string;
 }
 
-export interface NavCategory {
-  id: string;
-  title: string;
-  order: number;
-  links: NavLink[];
-}
-
-export interface NavItem {
-  _id: string;
-  label: string;
-  order: number;
-  isActive: boolean;
-  categories: NavCategory[];
-  href?: string;
-}
-
-interface SearchProduct {
-  _id: string;
-  slug: string;
-  name: string;
-  price: number;
-  category: string;
-  variants: { colorName: string; colorHex: string; images: string[] }[];
-}
-
-// ─── Animated Hamburger Component ─────────────────────────────────────────────
+const NAV_LINKS: NavLink[] = [
+  { label: "Men", href: "/products/category/men" },
+  { label: "Women", href: "/products/category/women" },
+  { label: "Accessories", href: "/products/category/accessories" },
+  { label: "Collections", href: "/products" },
+  { label: "About Us", href: "/aboutus" },
+];
 
 function AnimatedHamburger({
   isOpen,
@@ -91,17 +69,24 @@ function AnimatedHamburger({
 const DEBOUNCE_MS = 280;
 const MAX_RESULTS = 6;
 
-// ─── Main component ───────────────────────────────────────────────────────────
+interface SearchProduct {
+  _id: string;
+  slug: string;
+  name: string;
+  price: number;
+  category: string;
+  variants: { colorName: string; colorHex: string; images: string[] }[];
+}
 
-export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function NavInteractive() {
   const { totalItems, openCart } = useCart();
   const router = useRouter();
+  const pathname = usePathname();
   const { user, logout } = useAuth();
 
-  const [activeNav, setActiveNav] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [activePanel, setActivePanel] = useState<string | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -115,27 +100,16 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Mega menu hover ────────────────────────────────────────────────────────
-  const enter = (label: string) => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setActiveNav(label);
+  // ── Active-link helper ─────────────────────────────────────────────────────
+  const isActive = (href: string) => {
+    if (href === "/products") return pathname === "/products";
+    return pathname.startsWith(href);
   };
-  const leave = () => {
-    timeoutRef.current = setTimeout(() => setActiveNav(null), 120);
-  };
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
 
   // ── Global Event Listeners (Scroll Lock & Esc Key) ─────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && drawerOpen) {
-        setDrawerOpen(false);
-        setActivePanel(null);
-      }
+      if (e.key === "Escape" && drawerOpen) setDrawerOpen(false);
     };
 
     if (drawerOpen) {
@@ -245,13 +219,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
     router.push(`/products/${slug}`);
   };
 
-  const activeItem = navItems.find((n) => n.label === activeNav);
-  const activePanelItem = navItems.find((n) => n.label === activePanel);
-
-  const closeDrawer = () => {
-    setDrawerOpen(false);
-    setTimeout(() => setActivePanel(null), 300);
-  };
+  const closeDrawer = () => setDrawerOpen(false);
 
   const showSuggestions = suggestionsOpen && searchValue.trim().length > 0;
 
@@ -265,11 +233,6 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
           100% { transform: translate(30%,-30%) scale(1); }
         }
         .cart-badge-pop { animation: badgePop 0.35s cubic-bezier(0.22,1,0.36,1); }
-        @keyframes menuIn {
-          from { opacity: 0; transform: translateY(-4px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .anim-menu-in { animation: menuIn 0.18s ease; }
         @keyframes suggestIn {
           from { opacity: 0; transform: translateY(-6px); }
           to   { opacity: 1; transform: translateY(0); }
@@ -279,7 +242,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
         .anim-spin { animation: spin 0.8s linear infinite; }
       `}</style>
 
-      {/* ── HEADER (Bumped z-index) ── */}
+      {/* ── HEADER ── */}
       <header
         className="fixed top-0 left-0 right-0 z-[99990] h-[(--nav-height)]"
         style={{
@@ -287,12 +250,9 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
           borderBottom: "1px solid var(--nav-border)",
         }}
       >
-        <div
-          className="max-w-7xl mx-auto h-full flex items-center px-4 md:px-10 relative"
-          onMouseLeave={leave}
-        >
+        <div className="max-w-7xl mx-auto h-full flex items-center px-4 md:px-10 relative">
+          {/* Logo */}
           <div className="max-w-22">
-            {/* Logo */}
             <Link
               href="/"
               className="shrink-0 rounded-2xl overflow-hidden block w-20"
@@ -303,48 +263,27 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
 
           {/* ── DESKTOP NAV ── */}
           <nav className="hidden md:flex items-center gap-5 absolute left-1/2 -translate-x-1/2">
-            {navItems.map((item) =>
-              item.href ? (
-                <Link
-                  key={item._id}
-                  href={item.href}
-                  className={`
-                    cursor-pointer text-[0.65rem] sm:text-[0.78rem]  font-bold tracking-widest uppercase transition-colors duration-150
-                    border-b-2 pb-0.5 no-underline
-                    ${
-                      activeNav === item.label
-                        ? "border-[(--nav-accent)] text-[(--nav-accent)]"
-                        : "border-transparent text-[(--nav-fg)] hover:text-[(--nav-accent)]"
-                    }
-                  `}
-                  style={{ fontFamily: "var(--nav-font-ui)" }}
-                  onMouseEnter={leave}
-                >
-                  {item.label}
-                </Link>
-              ) : (
-                <button
-                  key={item._id}
-                  className={`
-                   cursor-pointer text-[0.65rem] sm:text-[0.78rem] text-sm font-bold tracking-widest uppercase transition-colors duration-150
-                    border-b-2 pb-0.5
-                    ${
-                      activeNav === item.label
-                        ? "border-[(--nav-accent)] text-[(--nav-accent)]"
-                        : "border-transparent text-[(--nav-fg)] hover:text-[(--nav-accent)]"
-                    }
-                  `}
-                  style={{ fontFamily: "var(--nav-font-ui)" }}
-                  onMouseEnter={() => enter(item.label)}
-                  aria-haspopup={item.categories.length > 0}
-                  aria-expanded={activeNav === item.label}
-                >
-                  {item.label}
-                </button>
-              ),
-            )}
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`
+                  text-[0.65rem] sm:text-[0.78rem] font-bold tracking-widest uppercase
+                  transition-colors duration-150 border-b-2 pb-0.5 no-underline
+                  ${
+                    isActive(link.href)
+                      ? "border-[(--nav-accent)] text-[(--nav-accent)]"
+                      : "border-transparent text-[(--nav-fg)] hover:text-[(--nav-accent)]"
+                  }
+                `}
+                style={{ fontFamily: "var(--nav-font-ui)" }}
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
 
+          {/* ── DESKTOP RIGHT ICONS ── */}
           <div className="hidden md:flex items-center gap-5 ml-auto">
             {/* Search */}
             <div ref={searchWrapRef} className="flex items-center relative">
@@ -411,14 +350,14 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                           <>
                             {searchResults.map((product, idx) => {
                               const img = product.variants[0]?.images?.[0];
-                              const isActive = cursor === idx;
+                              const active = cursor === idx;
                               return (
                                 <div
                                   key={product._id}
                                   className="flex items-center gap-3 px-3.5 py-2.5 cursor-pointer border-b last:border-b-0 transition-colors duration-100"
                                   style={{
                                     borderColor: "var(--nav-border)",
-                                    background: isActive
+                                    background: active
                                       ? "rgba(200,169,126,0.08)"
                                       : "transparent",
                                   }}
@@ -486,7 +425,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
                                     className="shrink-0 transition-opacity duration-150"
                                     style={{
                                       color: "var(--nav-fg-muted)",
-                                      opacity: isActive ? 1 : 0,
+                                      opacity: active ? 1 : 0,
                                     }}
                                   />
                                 </div>
@@ -568,7 +507,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
               </button>
             </div>
 
-            {/* Checkout */}
+            {/* Cart */}
             <button
               className="flex items-center justify-center w-9 h-9 rounded relative transition-colors duration-150 cursor-pointer"
               style={{ color: "var(--nav-fg)" }}
@@ -596,96 +535,24 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
             <UserMenu />
           </div>
 
-          {/* ── MOBILE RIGHT ICONS (Removed Search & Cart, Just Hamburger) ── */}
+          {/* ── MOBILE HAMBURGER ── */}
           <div className="flex md:hidden items-center ml-auto mr-12">
-            {/* Added right margin to stop the external portal 'N' from overlapping the menu */}
             <AnimatedHamburger
               isOpen={drawerOpen}
               onClick={() => setDrawerOpen(!drawerOpen)}
             />
           </div>
         </div>
-
-        {/* ── MEGA DROPDOWN ── */}
-        {activeNav && activeItem && activeItem.categories.length > 0 && (
-          <div
-            className="anim-menu-in absolute left-0 right-0 z-40 border-b"
-            style={{
-              top: "var(--nav-height)",
-              background: "var(--mega-bg)",
-              borderColor: "var(--mega-divider)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-            }}
-            onMouseEnter={() => enter(activeNav)}
-            onMouseLeave={leave}
-          >
-            <div className="flex justify-center py-7 px-6">
-              <div className="flex items-stretch">
-                {activeItem.categories.map((cat, idx) => (
-                  <div key={cat.id} className="flex items-stretch">
-                    {idx > 0 && (
-                      <div
-                        className="w-px self-stretch shrink-0 mx-9"
-                        style={{ background: "var(--mega-divider)" }}
-                      />
-                    )}
-                    <div className="min-w-[130px]">
-                      {cat.links[0] ? (
-                        <Link
-                          href={cat.links[0].href}
-                          className="block text-[0.9rem] font-bold capitalize tracking-[0.01em] mb-3.5 no-underline transition-colors duration-150"
-                          style={{
-                            fontFamily: "var(--nav-font-ui)",
-                            color: "var(--mega-col-title-fg)",
-                          }}
-                        >
-                          {cat.title}
-                        </Link>
-                      ) : (
-                        <p
-                          className="text-[0.9rem] font-bold capitalize tracking-[0.01em] mb-3.5"
-                          style={{
-                            fontFamily: "var(--nav-font-ui)",
-                            color: "var(--mega-col-title-fg)",
-                          }}
-                        >
-                          {cat.title}
-                        </p>
-                      )}
-                      {cat.links.slice(1).map((link, i) => (
-                        <Link
-                          key={i}
-                          href={link.href}
-                          className="block text-[0.72rem] font-semibold uppercase tracking-[0.09em] py-0.5 no-underline transition-colors duration-150 hover:underline underline-offset-[3px]"
-                          style={{ color: "var(--nav-accent)" }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.color =
-                              "var(--mega-link-hover-fg)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.color = "var(--nav-accent)")
-                          }
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </header>
 
-      {/* ── MOBILE DRAWER (Bumped z-index) ── */}
+      {/* ── MOBILE DRAWER ── */}
       <div
         className={`fixed inset-0 z-[99999] md:hidden ${
           drawerOpen ? "pointer-events-auto" : "pointer-events-none"
         }`}
         aria-hidden={!drawerOpen}
       >
-        {/* Overlay Backdrop */}
+        {/* Overlay */}
         <div
           className={`absolute inset-0 transition-opacity duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             drawerOpen ? "opacity-100" : "opacity-0"
@@ -694,7 +561,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
           onClick={closeDrawer}
         />
 
-        {/* Drawer panel sliding in from right */}
+        {/* Drawer panel */}
         <div
           className={`absolute top-0 right-0 bottom-0 w-[85vw] max-w-sm flex flex-col shadow-2xl transition-transform duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             drawerOpen ? "translate-x-0" : "translate-x-full"
@@ -703,7 +570,7 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
           role="dialog"
           aria-label="Navigation menu"
         >
-          {/* Drawer header mimicking nav layout for seamless crossover */}
+          {/* Drawer header */}
           <div
             className="flex items-center justify-between px-5 py-4 border-b shrink-0 h-[var(--nav-height)]"
             style={{ borderColor: "var(--nav-border)" }}
@@ -715,149 +582,42 @@ export default function NavInteractive({ navItems }: { navItems: NavItem[] }) {
             >
               <img className="w-full" src="/logo.png" alt="Bambumm" />
             </Link>
-
-            {/* Added margin to keep 'X' clear from the 'N' floating element */}
             <div className="mr-7">
               <AnimatedHamburger isOpen={drawerOpen} onClick={closeDrawer} />
             </div>
           </div>
 
           {/* Drawer nav list */}
-          <nav className="flex-1 overflow-y-auto relative">
-            {navItems.map((item) =>
-              item.href ? (
-                <Link
-                  key={item._id}
-                  href={item.href}
-                  onClick={closeDrawer}
-                  className="flex items-center justify-between w-full px-5 py-4 text-left border-b text-[0.85rem] font-bold uppercase tracking-[0.08em] transition-colors duration-150 no-underline"
-                  style={{
-                    fontFamily: "var(--nav-font-ui)",
-                    color: "var(--nav-fg)",
-                    borderColor: "var(--nav-border)",
-                    background: "transparent",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background =
-                      "var(--nav-dropdown-bg, rgba(200,169,126,0.08))")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
-                >
-                  <span>{item.label}</span>
-                </Link>
-              ) : (
-                <button
-                  key={item._id}
-                  className="flex items-center justify-between w-full px-5 py-4 text-left border-b text-[0.85rem] font-bold uppercase tracking-[0.08em] transition-colors duration-150 cursor-pointer"
-                  style={{
-                    fontFamily: "var(--nav-font-ui)",
-                    color: "var(--nav-fg)",
-                    borderColor: "var(--nav-border)",
-                    background: "transparent",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background =
-                      "var(--nav-dropdown-bg, rgba(200,169,126,0.08))")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
-                  onClick={() =>
-                    item.categories.length > 0
-                      ? setActivePanel(item.label)
-                      : closeDrawer()
-                  }
-                >
-                  <span>{item.label}</span>
-                  {item.categories.length > 0 && (
-                    <ChevronRight
-                      size={16}
-                      style={{ color: "var(--nav-fg-muted)", flexShrink: 0 }}
-                    />
-                  )}
-                </button>
-              ),
-            )}
-
-            {/* Slide-in sub-panel */}
-            {activePanel && activePanelItem && (
-              <div
-                className="anim-menu-in absolute inset-0 overflow-y-auto"
-                style={{ background: "var(--nav-bg)" }}
+          <nav className="flex-1 overflow-y-auto">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={closeDrawer}
+                className="flex items-center w-full px-5 py-4 text-left border-b text-[0.85rem] font-bold uppercase tracking-[0.08em] transition-colors duration-150 no-underline"
+                style={{
+                  fontFamily: "var(--nav-font-ui)",
+                  color: isActive(link.href)
+                    ? "var(--nav-accent)"
+                    : "var(--nav-fg)",
+                  borderColor: "var(--nav-border)",
+                  background: isActive(link.href)
+                    ? "var(--nav-dropdown-bg, rgba(200,169,126,0.08))"
+                    : "transparent",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background =
+                    "var(--nav-dropdown-bg, rgba(200,169,126,0.08))")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = isActive(link.href)
+                    ? "var(--nav-dropdown-bg, rgba(200,169,126,0.08))"
+                    : "transparent")
+                }
               >
-                <div
-                  className="flex items-center gap-3 px-5 py-4 border-b sticky top-0 z-10"
-                  style={{
-                    borderColor: "var(--nav-border)",
-                    background: "var(--nav-bg)",
-                  }}
-                >
-                  <button
-                    className="flex items-center justify-center w-8 h-8 border transition-colors duration-150 cursor-pointer"
-                    style={{
-                      borderColor: "var(--nav-border)",
-                      color: "var(--nav-fg-muted)",
-                      background: "transparent",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.color = "var(--nav-fg)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.color = "var(--nav-fg-muted)")
-                    }
-                    onClick={() => setActivePanel(null)}
-                    aria-label="Back"
-                  >
-                    <ArrowLeft size={16} />
-                  </button>
-                  <span
-                    className="text-[0.85rem] font-bold uppercase tracking-[0.08em]"
-                    style={{
-                      fontFamily: "var(--nav-font-ui)",
-                      color: "var(--nav-fg)",
-                    }}
-                  >
-                    {activePanelItem.label}
-                  </span>
-                </div>
-
-                <div className="px-5 py-4 flex flex-col gap-5">
-                  {activePanelItem.categories.map((cat) => (
-                    <div key={cat.id}>
-                      <p
-                        className="text-[0.75rem] font-bold uppercase tracking-[0.12em] mb-2"
-                        style={{ color: "var(--nav-fg-muted)" }}
-                      >
-                        {cat.title}
-                      </p>
-                      {cat.links.map((link, i) => (
-                        <Link
-                          key={i}
-                          href={link.href}
-                          className="block text-[0.8rem] font-semibold uppercase tracking-[0.07em] py-2 border-b no-underline transition-colors duration-150"
-                          style={{
-                            color: "var(--nav-accent)",
-                            borderColor: "var(--nav-border)",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.color =
-                              "var(--nav-accent-hover)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.color = "var(--nav-accent)")
-                          }
-                          onClick={closeDrawer}
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                {link.label}
+              </Link>
+            ))}
           </nav>
 
           {/* Drawer footer */}

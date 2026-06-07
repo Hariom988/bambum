@@ -10,7 +10,6 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
-  ChevronRight,
   ArrowLeft,
 } from "lucide-react";
 import ProductCard from "@/components/productCard";
@@ -22,6 +21,7 @@ import AccessoriesBanner from "@/public/productPage/accessoriesBanner.jpeg";
 import MobileAccessoriesImage from "@/public/productPage/mobileAcessoriesBanner.jpeg";
 import MobileMenImage from "@/public/productPage/mobileMenBanner.jpeg";
 import MobileWomenImage from "@/public/productPage/mobileWomenBanner.jpeg";
+
 interface ProductSize {
   size: string;
   stock: number;
@@ -50,6 +50,19 @@ const SORT_LABELS: Record<SortOption, string> = {
   "name-asc": "Name: A-Z",
 };
 
+// ─── Category Configuration ───────────────────────────────────────────────────
+//
+//  filterType  │ filterValue    │ API param sent
+//  ────────────┼────────────────┼─────────────────────────────
+//  "gender"    │ "Men"          │ /api/products?gender=Men
+//  "gender"    │ "Women"        │ /api/products?gender=Women
+//  "category"  │ "Accessories"  │ /api/products?category=Accessories
+//
+//  Previously accessories used filterType:"gender" + filterValue:"Accessories"
+//  which sent ?gender=Accessories — a value that exists in no document's gender
+//  field, so it always returned zero results (after the cache-bypass fix).
+//  Accessories is a category value, not a gender value.
+
 const CATEGORY_CONFIG: Record<
   string,
   {
@@ -65,7 +78,7 @@ const CATEGORY_CONFIG: Record<
   }
 > = {
   men: {
-    label: "Men's Underwear",
+    label: "Men's Collection",
     filterType: "gender",
     filterValue: "Men",
     tagline: "Next-Level Comfort",
@@ -77,12 +90,12 @@ const CATEGORY_CONFIG: Record<
     overlayColor: "rgba(8, 24, 22, 0.55)",
   },
   women: {
-    label: "Women's Accessories",
+    label: "Women's Collection",
     filterType: "gender",
     filterValue: "Women",
     tagline: "Effortless Elegance",
     description:
-      "Designed for the modern woman breathable, soft, and sustainably made from bamboo.",
+      "Designed for the modern woman — breathable, soft, and sustainably made from bamboo.",
     features: ["SUPER SOFT", "MOISTURE WICKING", "PERFECT FIT"],
     desktopBannerImage: womenBanner.src,
     mobileBannerImage: MobileWomenImage.src,
@@ -90,7 +103,7 @@ const CATEGORY_CONFIG: Record<
   },
   accessories: {
     label: "Accessories",
-    filterType: "gender",
+    filterType: "category", // ← was "gender" — Accessories is a category, not a gender
     filterValue: "Accessories",
     tagline: "Complete Your Look",
     description:
@@ -277,7 +290,6 @@ function FiltersPanel({
         </FilterSection>
       )}
 
-      {/* ── Size ── */}
       {allSizes.length > 0 && (
         <FilterSection title="Size" defaultOpen={true}>
           <div className="flex flex-wrap gap-2">
@@ -388,7 +400,6 @@ function FiltersPanel({
         </FilterSection>
       )}
 
-      {/* ── Price Range ── */}
       <FilterSection title="Price Range" defaultOpen={true}>
         <div className="flex items-center gap-2">
           {[
@@ -507,8 +518,6 @@ function SkeletonCard() {
 
 function CategoryBanner({
   config,
-  productCount,
-  loading,
 }: {
   config: (typeof CATEGORY_CONFIG)[string];
   productCount: number;
@@ -517,9 +526,7 @@ function CategoryBanner({
   return (
     <div
       className="relative mt-3 w-full overflow-hidden"
-      style={{
-        height: "clamp(350px, 48vw, 500px)",
-      }}
+      style={{ height: "clamp(350px, 48vw, 500px)" }}
     >
       <div className="hidden sm:block">
         <Image
@@ -543,21 +550,15 @@ function CategoryBanner({
           style={{ zIndex: 0 }}
         />
       </div>
-      {/* ── Text content — sits above image and overlay ── */}
-      <div className=" hidden sm:flex absolute inset-0 z-10  items-center">
+      <div className="hidden sm:flex absolute inset-0 z-10 items-center">
         <div className="w-full max-w-7xl mx-auto px-6 md:px-10 lg:px-16">
           <div className="max-w-[700px]">
-            {/* Tagline */}
             <p className="mb-4 text-[12px] md:text-[14px] font-semibold uppercase tracking-[0.25em] text-[#262018BF]">
               {config.tagline}
             </p>
-
-            {/* Heading */}
             <h1 className="text-[#2E2722] uppercase font-bold leading-[0.9] tracking-[-0.03em] text-xl md:text-[64px] lg:text-6xl max-w-[700px]">
               {config.label}
             </h1>
-
-            {/* Description */}
             <p className="mt-6 max-w-[480px] text-[#2E2722BF] text-[18px] md:text-[20px] leading-[1.5] font-medium">
               {config.description}
             </p>
@@ -565,14 +566,7 @@ function CategoryBanner({
               {config.features?.map((feature) => (
                 <span
                   key={feature}
-                  className="
-        text-[14px]
-        md:text-[18px]
-        font-semibold
-        uppercase
-        tracking-[0.02em]
-        text-[#262018]
-      "
+                  className="text-[14px] md:text-[18px] font-semibold uppercase tracking-[0.02em] text-[#262018]"
                 >
                   {feature}
                 </span>
@@ -616,6 +610,9 @@ export default function CategoryPage({
     setLoading(true);
     setProducts([]);
 
+    // Build the correct query param based on filterType.
+    // "gender"   → ?gender=Men / ?gender=Women
+    // "category" → ?category=Accessories
     const param =
       config.filterType === "gender"
         ? `gender=${encodeURIComponent(config.filterValue)}`
@@ -629,7 +626,6 @@ export default function CategoryPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryKey]);
 
-  // Close sort dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (sortRef.current && !sortRef.current.contains(e.target as Node))
@@ -639,7 +635,6 @@ export default function CategoryPage({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // ── Unknown category slug → graceful 404 page ───────────────────────────────
   if (!config) {
     return (
       <main
@@ -675,10 +670,6 @@ export default function CategoryPage({
     );
   }
 
-  // ── Derived filter options — all sourced from actual fetched product data ───
-
-  // allProductCategories = unique p.category values from inventory
-  // e.g. ["Briefs", "Hoodies", "Trunks"] — dynamically populated, zero hardcoding
   const allProductCategories = useMemo(
     () => [...new Set(products.map((p) => p.category).filter(Boolean))].sort(),
     [products],
@@ -710,7 +701,6 @@ export default function CategoryPage({
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [products]);
 
-  // ── Toggles ─────────────────────────────────────────────────────────────────
   const toggleCategory = useCallback(
     (val: string) =>
       setSelectedCategories((prev) =>
@@ -749,9 +739,6 @@ export default function CategoryPage({
     (minPrice || maxPrice ? 1 : 0) +
     (searchQuery ? 1 : 0);
 
-  // ── Client-side filter + sort ───────────────────────────────────────────────
-  // Gender/category already handled server-side by the API.
-  // Only secondary filters (category, size, colour, price, search) applied here.
   const filtered = useMemo(() => {
     const min = minPrice !== "" ? Number(minPrice) : null;
     const max = maxPrice !== "" ? Number(maxPrice) : null;
@@ -863,14 +850,13 @@ export default function CategoryPage({
           color: "var(--nav-fg)",
         }}
       >
-        {/* ══ Banner — real image background, text overlay ══ */}
         <CategoryBanner
           config={config}
           productCount={filtered.length}
           loading={loading}
         />
 
-        {/* ══ Toolbar ══ */}
+        {/* Toolbar */}
         <div
           className="border-b px-4 md:px-8 py-3"
           style={{ borderColor: "var(--nav-border)", background: "#fff" }}
@@ -886,7 +872,6 @@ export default function CategoryPage({
             </span>
 
             <div className="flex items-center gap-3">
-              {/* Sort dropdown */}
               <div ref={sortRef} className="relative">
                 <button
                   onClick={() => setSortDropOpen((v) => !v)}
@@ -952,7 +937,6 @@ export default function CategoryPage({
                 )}
               </div>
 
-              {/* Mobile filter button */}
               <button
                 onClick={() => setMobileFiltersOpen(true)}
                 className="md:hidden flex items-center gap-1.5 px-4 py-2 text-[0.72rem] font-bold tracking-widest uppercase"
@@ -978,7 +962,6 @@ export default function CategoryPage({
               </button>
             </div>
 
-            {/* Active filter pills */}
             {activeFilterCount > 0 && (
               <div className="w-full flex flex-wrap items-center gap-2 pt-1">
                 <span
@@ -1048,9 +1031,8 @@ export default function CategoryPage({
           </div>
         </div>
 
-        {/* ══ Content: sidebar + grid ══ */}
+        {/* Content: sidebar + grid */}
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 flex gap-8">
-          {/* Desktop sidebar */}
           <aside
             className="cp-sidebar hidden md:block shrink-0 sticky h-fit"
             style={{ width: 248, top: "calc(var(--nav-height) + 16px)" }}
@@ -1093,7 +1075,6 @@ export default function CategoryPage({
             </div>
           </aside>
 
-          {/* Product grid */}
           <div className="flex-1 min-w-0">
             {loading ? (
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
@@ -1180,7 +1161,7 @@ export default function CategoryPage({
           </div>
         </div>
 
-        {/* ══ Mobile filter drawer ══ */}
+        {/* Mobile filter drawer */}
         {mobileFiltersOpen && (
           <>
             <div
