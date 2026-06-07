@@ -16,11 +16,14 @@ import {
   User,
   Phone,
   Mail,
+  Trash2,
+  Minus,
 } from "lucide-react";
 import { useCart } from "@/context/cartContext";
 import { useAuth } from "@/context/authContext";
 import Image from "next/image";
 import Link from "next/link";
+import BackButton from "@/components/backButton";
 
 interface Address {
   _id: string;
@@ -87,7 +90,7 @@ const EMPTY_GUEST: GuestInfo = {
 export default function CheckoutPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice, clearCart, updateQty, removeItem } = useCart();
 
   const isGuest = !authLoading && !user;
   const [guestInfo, setGuestInfo] = useState<GuestInfo>(EMPTY_GUEST);
@@ -449,6 +452,9 @@ export default function CheckoutPage() {
         />
 
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
+          <div className="mb-4">
+            <BackButton fallbackHref="/products" label="Continue Shopping" />
+          </div>
           <div className="mb-8">
             <p
               className="text-[0.65rem] font-bold tracking-[0.2em] uppercase mb-1"
@@ -1188,7 +1194,7 @@ export default function CheckoutPage() {
                 >
                   {items.map((item) => (
                     <div
-                      key={`${item.productId}-${item.colorName}`}
+                      key={`${item.productId}-${item.colorName}-${item.size}`}
                       className="flex gap-4 px-6 py-4"
                     >
                       <Link
@@ -1238,11 +1244,123 @@ export default function CheckoutPage() {
                             className="text-[10px]"
                             style={{ color: "var(--nav-fg-muted)" }}
                           >
-                            {item.colorName} · Size: {item.size} · Qty:{" "}
-                            {item.quantity}
+                            {item.colorName} · Size: {item.size}
                           </span>
                         </div>
+
+                        {/* ── Quantity controls + remove ── */}
+                        <div className="flex items-center gap-3 mt-3">
+                          <div
+                            className="flex items-center"
+                            style={{ border: "1px solid var(--nav-border)" }}
+                          >
+                            <button
+                              onClick={() =>
+                                updateQty(
+                                  item.productId,
+                                  item.colorName,
+                                  item.size,
+                                  item.quantity - 1,
+                                )
+                              }
+                              className="flex items-center justify-center w-7 h-7 transition-colors duration-150"
+                              style={{
+                                background: "none",
+                                border: "none",
+                                cursor:
+                                  item.quantity <= 1
+                                    ? "not-allowed"
+                                    : "pointer",
+                                color: "var(--nav-fg-muted)",
+                                opacity: item.quantity <= 1 ? 0.4 : 1,
+                              }}
+                              aria-label="Decrease quantity"
+                            >
+                              <Minus size={11} />
+                            </button>
+                            <span
+                              className="w-8 text-center text-sm font-bold"
+                              style={{
+                                borderLeft: "1px solid var(--nav-border)",
+                                borderRight: "1px solid var(--nav-border)",
+                                color: "var(--nav-fg)",
+                                fontFamily: "var(--nav-font)",
+                                lineHeight: "28px",
+                              }}
+                            >
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() =>
+                                updateQty(
+                                  item.productId,
+                                  item.colorName,
+                                  item.size,
+                                  item.quantity + 1,
+                                )
+                              }
+                              className="flex items-center justify-center w-7 h-7 transition-colors duration-150"
+                              style={{
+                                background: "none",
+                                border: "none",
+                                cursor:
+                                  item.quantity >= item.stock
+                                    ? "not-allowed"
+                                    : "pointer",
+                                color: "var(--nav-fg-muted)",
+                                opacity: item.quantity >= item.stock ? 0.4 : 1,
+                              }}
+                              disabled={item.quantity >= item.stock}
+                              aria-label="Increase quantity"
+                            >
+                              <Plus size={11} />
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={() =>
+                              removeItem(
+                                item.productId,
+                                item.colorName,
+                                item.size,
+                              )
+                            }
+                            className="flex items-center justify-center w-7 h-7 transition-colors duration-150"
+                            style={{
+                              background: "none",
+                              border: "1px solid transparent",
+                              cursor: "pointer",
+                              color: "var(--nav-fg-muted)",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor =
+                                "rgba(217,79,61,0.3)";
+                              e.currentTarget.style.color = "var(--nav-sale)";
+                              e.currentTarget.style.background =
+                                "rgba(217,79,61,0.06)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = "transparent";
+                              e.currentTarget.style.color =
+                                "var(--nav-fg-muted)";
+                              e.currentTarget.style.background = "none";
+                            }}
+                            aria-label={`Remove ${item.name}`}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+
+                          {item.quantity >= item.stock && (
+                            <span
+                              className="text-[10px]"
+                              style={{ color: "var(--nav-sale)" }}
+                            >
+                              Max stock
+                            </span>
+                          )}
+                        </div>
                       </div>
+
                       <div className="shrink-0 text-right">
                         <p
                           className="text-sm font-bold"
@@ -1258,7 +1376,7 @@ export default function CheckoutPage() {
                           className="text-[10px] mt-0.5"
                           style={{ color: "var(--nav-fg-muted)" }}
                         >
-                          ₹{item.price} x {item.quantity}
+                          ₹{item.price} × {item.quantity}
                         </p>
                       </div>
                     </div>
