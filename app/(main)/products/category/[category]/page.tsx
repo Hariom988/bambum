@@ -19,6 +19,9 @@ import Link from "next/link";
 import menBanner from "@/public/productPage/menBanner.jpeg";
 import womenBanner from "@/public/productPage/womenBanner.jpeg";
 import AccessoriesBanner from "@/public/productPage/accessoriesBanner.jpeg";
+import MobileAccessoriesImage from "@/public/productPage/mobileAcessoriesBanner.jpeg";
+import MobileMenImage from "@/public/productPage/mobileMenBanner.jpeg";
+import MobileWomenImage from "@/public/productPage/mobileWomenBanner.jpeg";
 interface ProductSize {
   size: string;
   stock: number;
@@ -46,8 +49,6 @@ const SORT_LABELS: Record<SortOption, string> = {
   "price-desc": "Price: High to Low",
   "name-asc": "Name: A-Z",
 };
-const PLACEHOLDER =
-  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400&q=80";
 
 const CATEGORY_CONFIG: Record<
   string,
@@ -58,7 +59,8 @@ const CATEGORY_CONFIG: Record<
     tagline: string;
     description: string;
     features: string[];
-    bannerImage: string;
+    desktopBannerImage: string;
+    mobileBannerImage: string;
     overlayColor: string;
   }
 > = {
@@ -70,7 +72,8 @@ const CATEGORY_CONFIG: Record<
     description:
       "Engineered with ultra-soft bamboo fabric for unmatched comfort, all day, every day.",
     features: ["SUPER SOFT", "MOISTURE WICKING", "PERFECT FIT"],
-    bannerImage: menBanner.src,
+    desktopBannerImage: menBanner.src,
+    mobileBannerImage: MobileMenImage.src,
     overlayColor: "rgba(8, 24, 22, 0.55)",
   },
   women: {
@@ -81,7 +84,8 @@ const CATEGORY_CONFIG: Record<
     description:
       "Designed for the modern woman breathable, soft, and sustainably made from bamboo.",
     features: ["SUPER SOFT", "MOISTURE WICKING", "PERFECT FIT"],
-    bannerImage: womenBanner.src,
+    desktopBannerImage: womenBanner.src,
+    mobileBannerImage: MobileWomenImage.src,
     overlayColor: "rgba(28, 10, 6, 0.52)",
   },
   accessories: {
@@ -92,7 +96,8 @@ const CATEGORY_CONFIG: Record<
     description:
       "Sustainably crafted accessories that complement every outfit.",
     features: ["SUPER SOFT", "MOISTURE WICKING", "PERFECT FIT"],
-    bannerImage: AccessoriesBanner.src,
+    desktopBannerImage: AccessoriesBanner.src,
+    mobileBannerImage: MobileAccessoriesImage.src,
     overlayColor: "rgba(8, 20, 8, 0.52)",
   },
 };
@@ -256,7 +261,6 @@ function FiltersPanel({
     <div>
       <FilterSearch value={searchQuery} onChange={onSearchChange} />
 
-      {/* ── Category filter — built dynamically from p.category in inventory ── */}
       {allProductCategories.length > 0 && (
         <FilterSection title="Category">
           <div className="flex flex-col gap-2">
@@ -308,7 +312,6 @@ function FiltersPanel({
         </FilterSection>
       )}
 
-      {/* ── Colour ── */}
       {allColors.length > 0 && (
         <FilterSection title="Colour" defaultOpen={true}>
           <div className="flex flex-wrap gap-2.5">
@@ -515,23 +518,33 @@ function CategoryBanner({
     <div
       className="relative mt-3 w-full overflow-hidden"
       style={{
-        // height: 380px desktop, 280px mobile — adjust freely
-        height: "clamp(280px, 54vw, 500px)",
+        height: "clamp(350px, 48vw, 500px)",
       }}
     >
-      {/* ── Real banner image fills the entire container ── */}
-      <Image
-        src={config.bannerImage}
-        alt={`${config.label} collection`}
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover object-center"
-        style={{ zIndex: 0 }}
-      />
-
+      <div className="hidden sm:block">
+        <Image
+          src={config.desktopBannerImage}
+          alt={`${config.label} collection`}
+          fill
+          priority
+          sizes="0vw sm:100vw"
+          className="object-cover sm:object-center"
+          style={{ zIndex: 0 }}
+        />
+      </div>
+      <div className="block sm:hidden">
+        <Image
+          src={config.mobileBannerImage}
+          alt={`${config.label} collection`}
+          fill
+          priority
+          sizes="100vw sm:0vw"
+          className="block sm:hidden object-cover sm:object-center"
+          style={{ zIndex: 0 }}
+        />
+      </div>
       {/* ── Text content — sits above image and overlay ── */}
-      <div className="absolute inset-0 z-10 flex items-center">
+      <div className=" hidden sm:flex absolute inset-0 z-10  items-center">
         <div className="w-full max-w-7xl mx-auto px-6 md:px-10 lg:px-16">
           <div className="max-w-[700px]">
             {/* Tagline */}
@@ -874,7 +887,7 @@ export default function CategoryPage({
 
             <div className="flex items-center gap-3">
               {/* Sort dropdown */}
-              <div ref={sortRef} className="relative" style={{ zIndex: 9999 }}>
+              <div ref={sortRef} className="relative">
                 <button
                   onClick={() => setSortDropOpen((v) => !v)}
                   className="flex items-center gap-2 px-4 py-2 text-[0.72rem] font-semibold tracking-wide transition-colors duration-150"
@@ -896,7 +909,6 @@ export default function CategoryPage({
                       background: "#fff",
                       border: "1px solid var(--nav-border)",
                       boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-                      minWidth: 200,
                       borderRadius: "8px",
                       zIndex: 9999,
                     }}

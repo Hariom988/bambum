@@ -12,7 +12,28 @@ import {
 } from "lucide-react";
 import ProductCard from "@/components/productCard";
 import { FilterSearch } from "@/components/filterSearch";
+import allProductsBannerDesktop from "@/public/productPage/allProductBanner.jpeg";
+import allProductsBannerMobile from "@/public/productPage/mobileAllProductBanner.jpeg";
 
+import Image, { StaticImageData } from "next/image";
+// ─────────────────────────────────────────────────────────────────────────────
+// All Products banner config — image only, no text overlay
+// ─────────────────────────────────────────────────────────────────────────────
+const ALL_PRODUCTS_BANNER = {
+  label: "All Products",
+  desktopBannerImage: allProductsBannerDesktop.src,
+  mobileBannerImage: allProductsBannerMobile.src,
+  // No overlayColor — the image stands alone
+};
+export interface CategoryBannerConfig {
+  label: string;
+  tagline?: string;
+  description?: string;
+  features?: string[];
+  desktopBannerImage: string | StaticImageData;
+  mobileBannerImage: string | StaticImageData;
+  overlayColor?: string;
+}
 interface ProductSize {
   size: string;
   stock: number;
@@ -40,8 +61,94 @@ const SORT_LABELS: Record<SortOption, string> = {
   "price-desc": "Price: High to Low",
   "name-asc": "Name: A–Z",
 };
+export interface CategoryBannerProps {
+  config: CategoryBannerConfig;
+  showContent?: boolean;
+}
+function CategoryBanner({ config, showContent = true }: CategoryBannerProps) {
+  return (
+    <div
+      className="relative mt-3 w-full overflow-hidden"
+      style={{ height: "clamp(415px, 48vw, 481px)" }}
+    >
+      {/* ── Desktop banner image ── */}
+      <div className="hidden sm:block absolute inset-0">
+        <Image
+          src={config.desktopBannerImage}
+          alt={`${config.label} collection`}
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+          style={{ zIndex: 0 }}
+        />
+      </div>
 
-// ── Accordion ─────────────────────────────────────────────────────────────────
+      {/* ── Mobile banner image ── */}
+      <div className="block sm:hidden absolute inset-0">
+        <Image
+          src={config.mobileBannerImage}
+          alt={`${config.label} collection`}
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+          style={{ zIndex: 0 }}
+        />
+      </div>
+
+      {/* ── Overlay — only rendered when overlayColor is provided ── */}
+      {config.overlayColor && (
+        <div
+          className="absolute inset-0"
+          style={{ background: config.overlayColor, zIndex: 1 }}
+        />
+      )}
+
+      {/* ── Text content — only rendered when showContent=true ── */}
+      {showContent && (
+        <div className="hidden sm:flex absolute inset-0 z-10 items-center">
+          <div className="w-full max-w-7xl mx-auto px-6 md:px-10 lg:px-16">
+            <div className="max-w-[700px]">
+              {/* Tagline */}
+              {config.tagline && (
+                <p className="mb-4 text-[12px] md:text-[14px] font-semibold uppercase tracking-[0.25em] text-[#262018BF]">
+                  {config.tagline}
+                </p>
+              )}
+
+              {/* Heading */}
+              <h1 className="text-[#2E2722] uppercase font-bold leading-[0.9] tracking-[-0.03em] text-xl md:text-[64px] lg:text-6xl max-w-[700px]">
+                {config.label}
+              </h1>
+
+              {/* Description */}
+              {config.description && (
+                <p className="mt-6 max-w-[480px] text-[#2E2722BF] text-[18px] md:text-[20px] leading-[1.5] font-medium">
+                  {config.description}
+                </p>
+              )}
+
+              {/* Feature tags */}
+              {config.features && config.features.length > 0 && (
+                <div className="mt-10 flex flex-wrap items-center gap-x-10 gap-y-3">
+                  {config.features.map((feature) => (
+                    <span
+                      key={feature}
+                      className="text-[14px] md:text-[18px] font-semibold uppercase tracking-[0.02em] text-[#262018]"
+                    >
+                      {feature}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 function FilterSection({
   title,
   children,
@@ -565,8 +672,6 @@ export function ProductsPageContent() {
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [products]);
 
-  // Toggles
-  // Toggles
   const toggleCategory = useCallback(
     (val: string) =>
       setSelectedCategories((prev) =>
@@ -733,6 +838,9 @@ export function ProductsPageContent() {
           color: "var(--nav-fg)",
         }}
       >
+        {/* ══ Shared banner — showContent=false renders image only, no text ══ */}
+        <CategoryBanner config={ALL_PRODUCTS_BANNER} showContent={false} />
+
         <div
           className="h-0.5 w-full"
           style={{ background: "var(--brand-teal)" }}
