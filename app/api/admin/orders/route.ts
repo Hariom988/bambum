@@ -36,6 +36,8 @@ export async function GET(req: NextRequest) {
       orders: orders.map((o) => ({ ...o, _id: o._id.toString() })),
     });
   } catch (err) {
+     const body = await req.json();
+    console.error(body);
     console.error("[admin/orders GET]", err);
     return NextResponse.json({ error: "Failed to fetch orders." }, { status: 500 });
   }
@@ -95,6 +97,8 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
+    const body = await req.json();
+    console.error(body);
     console.error("[admin/orders DELETE]", err);
     return NextResponse.json({ error: "Failed to delete order." }, { status: 500 });
   }

@@ -1035,8 +1035,110 @@ function DelhiveryCard({
             </div>
           </div>
         )}
+        {/* Re-ship button */}
+        {isCancelledDlv && order.status === "confirmed" && (
+          <div className="flex flex-col gap-2 pt-1">
+            {createError && (
+              <p
+                className="text-[11px] px-3 py-2"
+                style={{
+                  background: "var(--adm-bg-danger-lt)",
+                  border: "1px solid var(--adm-danger-border)",
+                  color: "var(--adm-danger)",
+                }}
+              >
+                {createError}
+              </p>
+            )}
+            <button
+              onClick={handleCreateShipment}
+              disabled={creating}
+              className={btnBase}
+              style={{
+                background: "var(--adm-accent)",
+                border: "1px solid var(--adm-accent)",
+                color: "#fff",
+                justifyContent: "center",
+              }}
+            >
+              {creating ? (
+                <Loader2 size={11} className="animate-spin" />
+              ) : (
+                <Send size={11} />
+              )}
+              {creating ? "Creating Shipment…" : "Create New Shipment"}
+            </button>
+          </div>
+        )}
 
         {/* Action buttons row */}
+        {!isCancelledDlv && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {/* Refresh tracking */}
+            <button
+              onClick={handleRefreshTracking}
+              disabled={refreshingTrack}
+              className={btnBase}
+              style={{
+                background: "var(--adm-bg-active)",
+                border: "1px solid var(--adm-accent-border)",
+                color: "var(--adm-accent)",
+                flex: 1,
+                justifyContent: "center",
+              }}
+            >
+              {refreshingTrack ? (
+                <Loader2 size={10} className="animate-spin" />
+              ) : (
+                <RefreshCw size={10} />
+              )}
+              {refreshingTrack ? "Refreshing…" : "Refresh Track"}
+            </button>
+
+            {/* Request pickup */}
+            {!showPickupForm && (
+              <button
+                onClick={() => {
+                  setShowPickupForm(true);
+                  setPickupSuccess("");
+                  setPickupError("");
+                }}
+                className={btnBase}
+                style={{
+                  background: "var(--adm-bg-soft)",
+                  border: "1px solid var(--adm-border)",
+                  color: "var(--adm-fg-muted)",
+                  flex: 1,
+                  justifyContent: "center",
+                }}
+              >
+                <Truck size={10} />
+                Request Pickup
+              </button>
+            )}
+
+            {/* Cancel shipment */}
+            {!cancelConfirm && (
+              <button
+                onClick={() => {
+                  setCancelConfirm(true);
+                  setCancelError("");
+                }}
+                className={btnBase}
+                style={{
+                  background: "var(--adm-bg-danger-lt)",
+                  border: "1px solid var(--adm-danger-border)",
+                  color: "var(--adm-danger)",
+                  flex: 1,
+                  justifyContent: "center",
+                }}
+              >
+                <Ban size={10} />
+                Cancel Shipment
+              </button>
+            )}
+          </div>
+        )}
         {!isCancelledDlv && (
           <div className="flex flex-wrap gap-2 pt-1">
             {/* Refresh tracking */}
@@ -1149,7 +1251,6 @@ function OrderDetail({
         : prev,
     );
   };
-
   const handleCancelled = () => {
     onOrderUpdate((prev) =>
       prev
@@ -1157,7 +1258,6 @@ function OrderDetail({
             ...prev,
             status: "cancelled",
             delhivery: {
-              ...prev.delhivery,
               status: "Cancelled",
               cancelledAt: new Date().toISOString(),
             },

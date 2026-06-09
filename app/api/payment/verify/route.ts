@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import crypto from "crypto";
 import { MongoClient, ObjectId } from "mongodb";
-
+interface Address {
+  fullName: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+}
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
 const MONGODB_URI = process.env.MONGODB_URI!;
 

@@ -1,15 +1,34 @@
-//  app/api/admin/delhivery/pickup/route.ts
-
+// app/api/admin/delhivery/pickup/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { createPickupRequest } from "@/lib/delhivery";
 
+/**
+ * POST /api/admin/delhivery/pickup
+ *
+ * Creates a warehouse-level pickup request with Delhivery.
+ * This is NOT per-order — it schedules a courier to collect from
+ * the warehouse on a given date/time. No orderId or customer
+ * validation is needed or expected.
+ *
+ * FIX: The previous route was copy-pasted from shipment/route.ts and
+ * still contained order-lookup + customer validation logic
+ * (phone, fullName checks). Since the pickup request body contains
+ * no orderId, that validation always failed with
+ * "Missing user or guest information." — the route never reached
+ * createPickupRequest() at all.
+ *
+ * Body: { pickup_date: "YYYY-MM-DD", pickup_time: "HH:MM:SS", expected_package_count: number }
+ */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { pickup_date, pickup_time, expected_package_count } = body;
+    const body = await req.json().catch(() => ({}));
+    const { pickup_date, pickup_time, expected_package_count } = body as {
+      pickup_date?: string;
+      pickup_time?: string;
+      expected_package_count?: number;
+    };
 
-    // ── Validate required fields ─────────────────────────────────────────────
     if (!pickup_date || !pickup_time || !expected_package_count) {
       return NextResponse.json(
         { error: "pickup_date, pickup_time, and expected_package_count are required." },
@@ -17,50 +36,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate date format YYYY-MM-DD
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(pickup_date)) {
-      return NextResponse.json(
-        { error: "pickup_date must be in YYYY-MM-DD format." },
-        { status: 400 }
-      );
-    }
-
-    // Validate time format HH:mm:ss
-    const timeRegex = /^\d{2}:\d{2}:\d{2}$/;
-    if (!timeRegex.test(pickup_time)) {
-      return NextResponse.json(
-        { error: "pickup_time must be in HH:mm:ss format." },
-        { status: 400 }
-      );
-    }
-
-    const packageCount = Number(expected_package_count);
-    if (!Number.isInteger(packageCount) || packageCount < 1) {
-      return NextResponse.json(
-        { error: "expected_package_count must be a positive integer." },
-        { status: 400 }
-      );
-    }
-
-    // ── Call Delhivery ───────────────────────────────────────────────────────
-    const result = await createPickupRequest(pickup_date, pickup_time, packageCount);
+    const result = await createPickupRequest(
+      pickup_date,
+      pickup_time.length === 5 ? `${pickup_time}:00` : pickup_time,
+      Number(expected_package_count)
+    );
 
     if (!result.success) {
       console.error("[admin/delhivery/pickup] Delhivery error:", result.raw);
       return NextResponse.json(
-        { error: result.error || "Pickup request creation failed." },
+        { error: result.error || "Pickup request failed." },
         { status: 502 }
       );
     }
 
+    console.log("[admin/delhivery/pickup] Pickup created:", {
+      pickupId: result.pickupId,
+      pickup_date,
+      pickup_time,
+      expected_package_count,
+    });
+
     return NextResponse.json({
       ok: true,
       pickupId: result.pickupId,
-      message: `Pickup request created for ${pickup_date} at ${pickup_time}.`,
+      message: "Pickup request created successfully.",
     });
   } catch (err) {
-    console.error("[admin/delhivery/pickup POST]", err);
+    console.error("[admin/delhivery/pickup POST] Unexpected error:", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
 }

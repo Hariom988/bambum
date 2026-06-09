@@ -328,13 +328,25 @@ export default function CheckoutPage() {
                   quantity: i.quantity,
                 })),
                 total: totalPrice,
-                address: {
-                  line1: deliveryAddress.line1,
-                  line2: deliveryAddress.line2,
-                  city: deliveryAddress.city,
-                  state: deliveryAddress.state,
-                  pincode: deliveryAddress.pincode,
-                },
+                address: isGuest
+                  ? {
+                      fullName: guestInfo.name,
+                      phone: guestInfo.phone,
+                      line1: deliveryAddress.line1,
+                      line2: deliveryAddress.line2 || "",
+                      city: deliveryAddress.city,
+                      state: deliveryAddress.state,
+                      pincode: deliveryAddress.pincode,
+                    }
+                  : {
+                      fullName: (deliveryAddress as Address).fullName,
+                      phone: (deliveryAddress as Address).phone,
+                      line1: (deliveryAddress as Address).line1,
+                      line2: (deliveryAddress as Address).line2 || "",
+                      city: (deliveryAddress as Address).city,
+                      state: (deliveryAddress as Address).state,
+                      pincode: (deliveryAddress as Address).pincode,
+                    },
                 // Guest-specific data
                 isGuest,
                 guestInfo: isGuest ? guestInfo : null,
