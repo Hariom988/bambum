@@ -459,7 +459,13 @@ function DelhiveryCard({
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
-        setPickupError(data.error || "Failed to create pickup request.");
+        setPickupError(
+          typeof data.error === "string"
+            ? data.error
+            : data.message ||
+                JSON.stringify(data.error) ||
+                "Failed to create pickup request.",
+        );
       } else {
         setPickupSuccess(
           data.message || "Pickup request created successfully.",
@@ -1071,74 +1077,6 @@ function DelhiveryCard({
           </div>
         )}
 
-        {/* Action buttons row */}
-        {!isCancelledDlv && (
-          <div className="flex flex-wrap gap-2 pt-1">
-            {/* Refresh tracking */}
-            <button
-              onClick={handleRefreshTracking}
-              disabled={refreshingTrack}
-              className={btnBase}
-              style={{
-                background: "var(--adm-bg-active)",
-                border: "1px solid var(--adm-accent-border)",
-                color: "var(--adm-accent)",
-                flex: 1,
-                justifyContent: "center",
-              }}
-            >
-              {refreshingTrack ? (
-                <Loader2 size={10} className="animate-spin" />
-              ) : (
-                <RefreshCw size={10} />
-              )}
-              {refreshingTrack ? "Refreshing…" : "Refresh Track"}
-            </button>
-
-            {/* Request pickup */}
-            {!showPickupForm && (
-              <button
-                onClick={() => {
-                  setShowPickupForm(true);
-                  setPickupSuccess("");
-                  setPickupError("");
-                }}
-                className={btnBase}
-                style={{
-                  background: "var(--adm-bg-soft)",
-                  border: "1px solid var(--adm-border)",
-                  color: "var(--adm-fg-muted)",
-                  flex: 1,
-                  justifyContent: "center",
-                }}
-              >
-                <Truck size={10} />
-                Request Pickup
-              </button>
-            )}
-
-            {/* Cancel shipment */}
-            {!cancelConfirm && (
-              <button
-                onClick={() => {
-                  setCancelConfirm(true);
-                  setCancelError("");
-                }}
-                className={btnBase}
-                style={{
-                  background: "var(--adm-bg-danger-lt)",
-                  border: "1px solid var(--adm-danger-border)",
-                  color: "var(--adm-danger)",
-                  flex: 1,
-                  justifyContent: "center",
-                }}
-              >
-                <Ban size={10} />
-                Cancel Shipment
-              </button>
-            )}
-          </div>
-        )}
         {!isCancelledDlv && (
           <div className="flex flex-wrap gap-2 pt-1">
             {/* Refresh tracking */}

@@ -3,23 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPickupRequest } from "@/lib/delhivery";
 
-/**
- * POST /api/admin/delhivery/pickup
- *
- * Creates a warehouse-level pickup request with Delhivery.
- * This is NOT per-order — it schedules a courier to collect from
- * the warehouse on a given date/time. No orderId or customer
- * validation is needed or expected.
- *
- * FIX: The previous route was copy-pasted from shipment/route.ts and
- * still contained order-lookup + customer validation logic
- * (phone, fullName checks). Since the pickup request body contains
- * no orderId, that validation always failed with
- * "Missing user or guest information." — the route never reached
- * createPickupRequest() at all.
- *
- * Body: { pickup_date: "YYYY-MM-DD", pickup_time: "HH:MM:SS", expected_package_count: number }
- */
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));

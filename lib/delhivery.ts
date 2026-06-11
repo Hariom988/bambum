@@ -291,26 +291,25 @@ export async function createPickupRequest(
 
     const data = await res.json();
 
-    const hasError = data.error || data.prepaid || data.message?.toLowerCase().includes("error");
+   if (data.pk || data.id || data.pickup_id) {
+  return {
+    success: true,
+    pickupId: String(data.pk || data.id || data.pickup_id),
+    raw: data,
+  };
+}
 
-    if (!hasError && (data.pk || data.id || data.pickup_id)) {
-      return {
-        success: true,
-        pickupId: String(data.pk || data.id || data.pickup_id),
-        raw: data,
-      };
-    }
+if (res.ok && !data.error) {
+  return { success: true, raw: data };
+}
 
-    if (!hasError && res.ok) {
-      return { success: true, raw: data };
-    }
+const errorParts: string[] = [];
+if (data.error)   errorParts.push(typeof data.error === "string" ? data.error : JSON.stringify(data.error));
+if (data.message) errorParts.push(data.message);
+const errorMsg = errorParts.join(" | ") || `HTTP ${res.status}`;
+return { success: false, error: errorMsg, raw: data };
 
-    const errorParts: string[] = [];
-    if (data.error)   errorParts.push(data.error);
-    if (data.message) errorParts.push(data.message);
-    if (data.prepaid) errorParts.push(`Wallet: ${data.prepaid}`);
-    const errorMsg = errorParts.join(" | ") || `HTTP ${res.status}`;
-    return { success: false, error: errorMsg, raw: data };
+
   } catch (err) {
     console.error("[delhivery] createPickupRequest error:", err);
     return {
