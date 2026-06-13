@@ -1,5 +1,4 @@
 // app/(main)/layout.tsx
-
 import type { Metadata } from "next";
 import "@/app/globals.css";
 import Footer from "@/components/footer";
@@ -8,6 +7,8 @@ import { CartProvider } from "@/context/cartContext";
 import NavigationTracker from "@/components/navigationTracker";
 import FloatingBackButton from "@/components/floatingBackButton";
 import CartDrawer from "@/components/cartDrawer";
+import { WishlistProvider } from "@/context/wishlistContext";
+import WishlistDrawer from "@/components/wishlistDrawer";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AuthProvider } from "@/context/authContext";
@@ -25,14 +26,17 @@ export default function RootLayout({
   return (
     <AuthProvider>
       <CartProvider>
-        <Header />
-        {children}
-        <Footer />
-        <CartDrawer />
-        <NavigationTracker />
-        <FloatingBackButton />
-        <Analytics />
-        <SpeedInsights />
+        <WishlistProvider>
+          <Header />
+          {children}
+          <Footer />
+          <CartDrawer />
+          <WishlistDrawer />
+          <NavigationTracker />
+          <FloatingBackButton />
+          <Analytics />
+          <SpeedInsights />
+        </WishlistProvider>
       </CartProvider>
     </AuthProvider>
   );

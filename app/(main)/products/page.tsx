@@ -14,11 +14,7 @@ import ProductCard from "@/components/productCard";
 import { FilterSearch } from "@/components/filterSearch";
 import allProductsBannerDesktop from "@/public/productPage/allProductBanner.jpeg";
 import allProductsBannerMobile from "@/public/productPage/mobileAllProductBanner.jpeg";
-
 import Image, { StaticImageData } from "next/image";
-// ─────────────────────────────────────────────────────────────────────────────
-// All Products banner config — image only, no text overlay
-// ─────────────────────────────────────────────────────────────────────────────
 const ALL_PRODUCTS_BANNER = {
   label: "All Products",
   desktopBannerImage: allProductsBannerDesktop.src,

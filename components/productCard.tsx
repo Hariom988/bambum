@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useCart } from "@/context/cartContext";
-import { Minus, Plus, ShoppingBag, X, ChevronUp } from "lucide-react";
+import { Minus, Plus, ShoppingBag, X, ChevronUp, Heart } from "lucide-react";
 import Link from "next/link";
+import { useWishlist } from "@/context/wishlistContext";
 
 interface ProductSize {
   size: string;
@@ -50,8 +51,6 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
   const firstImage = variant?.images?.[0];
   const productId = product._id ?? product.slug;
   const selectedSize = selectedSizes[activeVariant] ?? null;
-
-  // ✅ sizes must exist AND have at least one entry
   const hasSizes = Array.isArray(variant?.sizes) && variant.sizes.length > 0;
   const totalStock = variant?.sizes?.reduce((s, v) => s + v.stock, 0) ?? 0;
   const isOutOfStock = hasSizes && totalStock === 0;
@@ -201,7 +200,27 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
       </div>
     );
   };
+  const { isInWishlist } = useWishlist();
+  const wishlisted = isInWishlist(productId);
 
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (wishlisted) {
+      removeItem(productId, "undefined", "undefined");
+    } else {
+      addItem({
+        productId,
+        slug: product.slug,
+        name: product.name,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        image: firstImage,
+        category: product.category,
+        addedAt: Date.now(),
+      });
+    }
+  };
   return (
     <Link
       href={`/products/${product.slug}`}
@@ -241,7 +260,26 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
           />
-
+          <button
+            onClick={handleWishlistToggle}
+            aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            className="absolute top-3 right-3 z-10 flex items-center justify-center w-8 h-8 transition-all duration-200"
+            style={{
+              background: wishlisted
+                ? "var(--nav-accent)"
+                : "rgba(255,255,255,0.9)",
+              border: "1px solid var(--nav-border)",
+              cursor: "pointer",
+            }}
+          >
+            <Heart
+              size={14}
+              style={{
+                color: wishlisted ? "#fff" : "var(--nav-fg-muted)",
+                fill: wishlisted ? "#fff" : "none",
+              }}
+            />
+          </button>
           {discountPercent && (
             <div
               className="absolute top-3 left-3 px-2 py-1 text-[10px] font-bold tracking-wider uppercase"

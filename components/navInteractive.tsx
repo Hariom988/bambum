@@ -11,13 +11,14 @@ import {
   LogOut,
   Loader2,
   User,
+  Heart,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "@/context/cartContext";
 import Image from "next/image";
 import UserMenu from "@/components/userMenu";
-
+import { useWishlist } from "@/context/wishlistContext";
 export interface NavLink {
   label: string;
   href: string;
@@ -82,6 +83,7 @@ interface SearchProduct {
 
 export default function NavInteractive() {
   const { totalItems, openCart } = useCart();
+  const { totalItems: wishlistTotal, openWishlist } = useWishlist();
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
@@ -507,6 +509,31 @@ export default function NavInteractive() {
               </button>
             </div>
 
+            {/* Wishlist */}
+            <button
+              className="flex items-center justify-center w-9 h-9 rounded relative transition-colors duration-150 cursor-pointer"
+              style={{ color: "var(--nav-fg)" }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.color = "var(--nav-accent)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.color = "var(--nav-fg)")
+              }
+              onClick={() => openWishlist()}
+              aria-label={`Open wishlist, ${wishlistTotal} items`}
+            >
+              <Heart size={20} />
+              {wishlistTotal > 0 && (
+                <span
+                  key={wishlistTotal}
+                  className="cart-badge-pop absolute top-0 right-0 translate-x-[30%] -translate-y-[30%] min-w-[16px] h-4 rounded-full flex items-center justify-center text-[0.6rem] font-bold text-white px-1"
+                  style={{ background: "var(--nav-accent)" }}
+                >
+                  {wishlistTotal > 99 ? "99+" : wishlistTotal}
+                </span>
+              )}
+            </button>
+
             {/* Cart */}
             <button
               className="flex items-center justify-center w-9 h-9 rounded relative transition-colors duration-150 cursor-pointer"
@@ -700,6 +727,36 @@ export default function NavInteractive() {
                         style={{ background: "var(--nav-accent)" }}
                       >
                         {totalItems}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
+                    style={{
+                      fontFamily: "var(--nav-font-ui)",
+                      borderColor: "var(--nav-border)",
+                      color: "var(--nav-fg)",
+                      background: "transparent",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background =
+                        "var(--nav-dropdown-bg, rgba(200,169,126,0.08))")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
+                    onClick={() => {
+                      closeDrawer();
+                      openWishlist();
+                    }}
+                  >
+                    <Heart size={16} /> Wishlist
+                    {wishlistTotal > 0 && (
+                      <span
+                        className="rounded-full text-[0.65rem] font-bold text-white px-1.5 py-0.5 leading-none"
+                        style={{ background: "var(--nav-accent)" }}
+                      >
+                        {wishlistTotal}
                       </span>
                     )}
                   </button>

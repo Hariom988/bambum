@@ -7,6 +7,7 @@ import {
   useEffect,
   useCallback,
   ReactNode,
+  useRef,
 } from "react";
 
 export interface AuthUser {
@@ -28,6 +29,7 @@ interface AuthContextValue {
   ) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  registerLoginCallback: (cb: () => Promise<void>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -60,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (!res.ok) return { error: data.error || "Login failed." };
       setUser(data.user);
+      if (loginCallbackRef.current) await loginCallbackRef.current();
       return {};
     } catch {
       return { error: "Network error. Please try again." };
@@ -84,7 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
-
+  const loginCallbackRef = useRef<(() => Promise<void>) | null>(null);
+  const registerLoginCallback = useCallback((cb: () => Promise<void>) => {
+    loginCallbackRef.current = cb;
+  }, []);
   const logout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
@@ -92,7 +98,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout, refreshUser }}
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        logout,
+        refreshUser,
+        registerLoginCallback,
+      }}
     >
       {children}
     </AuthContext.Provider>

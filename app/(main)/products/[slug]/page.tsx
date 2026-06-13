@@ -13,11 +13,12 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Heart,
 } from "lucide-react";
 import { useCart } from "@/context/cartContext";
 import ProductReviews from "@/components/(productPage)/productReviews";
 import BackButton from "@/components/backButton";
-
+import { useWishlist } from "@/context/wishlistContext";
 interface ProductSize {
   size: string;
   stock: number;
@@ -47,7 +48,6 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-// ── Skeleton ──────────────────────────────────────────────────────────────────
 function Skeleton() {
   return (
     <main
@@ -102,7 +102,6 @@ function Skeleton() {
   );
 }
 
-// ── Size Guide Modal ──────────────────────────────────────────────────────────
 function SizeGuideModal({ onClose }: { onClose: () => void }) {
   const rows = [
     { label: "Small (S)", waistIn: "28–30", waistCm: "70–75" },
@@ -195,7 +194,6 @@ function SizeGuideModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ── Stars ─────────────────────────────────────────────────────────────────────
 function Stars({ rating }: { rating: number }) {
   return (
     <div className="flex items-center gap-0.5">
@@ -221,7 +219,6 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function ProductPage({ params }: Props) {
   const { slug } = use(params);
   const router = useRouter();
@@ -347,6 +344,25 @@ export default function ProductPage({ params }: Props) {
     }
   };
 
+  const { removeItem, isInWishlist } = useWishlist();
+  const wishlisted = isInWishlist(productId);
+
+  const handleWishlistToggle = () => {
+    if (wishlisted) {
+      removeItem(productId);
+    } else {
+      addItem({
+        productId,
+        slug: product.slug,
+        name: product.name,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        image: images[0] ?? "",
+        category: product.category,
+        addedAt: Date.now(),
+      });
+    }
+  };
   return (
     <>
       {showSizeGuide && (
@@ -1022,6 +1038,33 @@ export default function ProductPage({ params }: Props) {
                     }
                   >
                     BUY NOW
+                  </button>
+                  <button
+                    onClick={handleWishlistToggle}
+                    className="w-full flex items-center justify-center gap-2 font-bold tracking-[0.14em] uppercase rounded-xl transition-all duration-200"
+                    style={{
+                      height: 52,
+                      fontSize: "13px",
+                      background: wishlisted
+                        ? "rgba(200,169,126,0.1)"
+                        : "transparent",
+                      color: wishlisted
+                        ? "var(--nav-accent)"
+                        : "var(--nav-fg-muted)",
+                      border: `1px solid ${wishlisted ? "var(--nav-accent)" : "var(--nav-border)"}`,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Heart
+                      size={16}
+                      style={{
+                        fill: wishlisted ? "var(--nav-accent)" : "none",
+                        color: wishlisted
+                          ? "var(--nav-accent)"
+                          : "var(--nav-fg-muted)",
+                      }}
+                    />
+                    {wishlisted ? "Wishlisted" : "Add to Wishlist"}
                   </button>
                 </div>
               ) : (

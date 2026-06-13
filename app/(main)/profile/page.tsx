@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Phone, Mail } from "lucide-react";
 import { useAuth } from "@/context/authContext";
 import Link from "next/link";
+import { useWishlist } from "@/context/wishlistContext";
 
 interface ProfileData {
   name: string;
@@ -25,6 +26,7 @@ export default function ProfileOverview() {
     spent: 0,
     wishlistItems: 0,
   });
+  const { totalItems: wishlistItems } = useWishlist();
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -45,7 +47,7 @@ export default function ProfileOverview() {
           (sum: number, o: { total: number }) => sum + (o.total || 0),
           0,
         );
-        setStats({ orders: orders.length, spent, wishlistItems: 0 });
+        setStats((prev) => ({ ...prev, orders: orders.length, spent }));
       })
       .catch(() => {})
       .finally(() => setLoadingStats(false));
