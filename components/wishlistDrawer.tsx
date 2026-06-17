@@ -27,8 +27,8 @@ interface SizePickerProps {
 }
 
 function SizePicker({ item, onClose }: SizePickerProps) {
-  const { addItem: addToCart } = useCart();
-  const { openCart } = useCart();
+  const { addItem: addToCart, openCart } = useCart();
+  const { closeWishlist } = useWishlist();
 
   interface SizeEntry {
     size: string;
@@ -86,6 +86,7 @@ function SizePicker({ item, onClose }: SizePickerProps) {
       image: item.image,
       stock,
     });
+    closeWishlist();
     openCart();
     onClose();
   };
@@ -368,23 +369,274 @@ function WishlistItemRow({ item }: { item: WishlistItem }) {
   );
 }
 
+// ── Checkout Size Picker Modal ────────────────────────────────────────────────
+// Shown when user clicks "Proceed to Checkout" from the wishlist drawer footer.
+// Validates size selection before moving item to cart and navigating.
+
+interface CheckoutSizePickerProps {
+  item: WishlistItem;
+  onClose: () => void;
+  onConfirm: (
+    size: string,
+    colorName: string,
+    colorHex: string,
+    stock: number,
+  ) => void;
+}
+
+function CheckoutSizePicker({
+  item,
+  onClose,
+  onConfirm,
+}: CheckoutSizePickerProps) {
+  const [sizes, setSizes] = useState<{ size: string; stock: number }[]>([]);
+  const [variants, setVariants] = useState<
+    {
+      colorName: string;
+      colorHex: string;
+      sizes: { size: string; stock: number }[];
+    }[]
+  >([]);
+  const [activeVariantIdx, setActiveVariantIdx] = useState(0);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [sizeError, setSizeError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/products/${encodeURIComponent(item.slug)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        const v = d.product?.variants ?? [];
+        setVariants(v);
+        setSizes(v[0]?.sizes ?? []);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [item.slug]);
+
+  useEffect(() => {
+    setSizes(variants[activeVariantIdx]?.sizes ?? []);
+    setSelectedSize(null);
+  }, [activeVariantIdx, variants]);
+
+  const handleConfirm = () => {
+    if (!selectedSize) {
+      setSizeError(true);
+      return;
+    }
+    const activeVariant = variants[activeVariantIdx];
+    const sizeData = sizes.find((s) => s.size === selectedSize);
+    if (!sizeData || sizeData.stock === 0) return;
+    onConfirm(
+      selectedSize,
+      activeVariant.colorName,
+      activeVariant.colorHex,
+      sizeData.stock,
+    );
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[210] flex items-end sm:items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.55)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm overflow-hidden"
+        style={{ background: "#fff", border: "1px solid var(--nav-border)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between px-5 py-4"
+          style={{
+            borderBottom: "1px solid var(--nav-border)",
+            background: "var(--nav-dropdown-bg, rgba(200,169,126,0.06))",
+          }}
+        >
+          <div>
+            <p
+              className="text-xs font-bold uppercase tracking-widest"
+              style={{ color: "var(--nav-fg)" }}
+            >
+              Select Size to Checkout
+            </p>
+            <p
+              className="text-[10px] mt-0.5 truncate max-w-[220px]"
+              style={{ color: "var(--nav-fg-muted)" }}
+            >
+              {item.name}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--nav-fg-muted)",
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Color swatches — only when multiple variants */}
+        {variants.length > 1 && (
+          <div
+            className="flex items-center gap-2 px-5 py-3 flex-wrap"
+            style={{ borderBottom: "1px solid var(--nav-border)" }}
+          >
+            <span
+              className="text-[10px] font-bold tracking-widest uppercase mr-1"
+              style={{ color: "var(--nav-fg-muted)" }}
+            >
+              Color:
+            </span>
+            {variants.map((v, idx) => (
+              <button
+                key={idx}
+                title={v.colorName}
+                onClick={() => setActiveVariantIdx(idx)}
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  background: v.colorHex,
+                  border:
+                    activeVariantIdx === idx
+                      ? "2px solid var(--brand-teal)"
+                      : "2px solid rgba(0,0,0,0.15)",
+                  outline:
+                    activeVariantIdx === idx
+                      ? "1.5px solid var(--brand-teal)"
+                      : "none",
+                  outlineOffset: 2,
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Size grid */}
+        <div className="p-5">
+          <p
+            className="text-[10px] font-bold tracking-widest uppercase mb-3"
+            style={{
+              color: sizeError ? "var(--nav-sale)" : "var(--nav-fg-muted)",
+            }}
+          >
+            {sizeError ? "Please select a size to continue" : "Select Size"}
+          </p>
+          {loading ? (
+            <p className="text-xs" style={{ color: "var(--nav-fg-muted)" }}>
+              Loading…
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2 mb-5">
+              {sizes.map((s) => {
+                const oos = s.stock === 0;
+                const active = selectedSize === s.size;
+                return (
+                  <button
+                    key={s.size}
+                    disabled={oos}
+                    onClick={() => {
+                      setSelectedSize(s.size);
+                      setSizeError(false);
+                    }}
+                    className="px-4 py-2 text-xs font-bold tracking-widest uppercase transition-all"
+                    style={{
+                      border: active
+                        ? "1px solid var(--brand-teal)"
+                        : oos
+                          ? "1px solid #e0e0e0"
+                          : "1px solid var(--nav-border)",
+                      background: active
+                        ? "var(--brand-teal)"
+                        : oos
+                          ? "#f5f5f5"
+                          : "#fff",
+                      color: active
+                        ? "#fff"
+                        : oos
+                          ? "#bdbdbd"
+                          : "var(--nav-fg)",
+                      cursor: oos ? "not-allowed" : "pointer",
+                      textDecoration: oos ? "line-through" : "none",
+                    }}
+                  >
+                    {s.size}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Confirm CTA */}
+          <button
+            onClick={handleConfirm}
+            disabled={loading}
+            className="wl-shop-btn"
+            style={{ opacity: loading ? 0.5 : 1 }}
+          >
+            Proceed to Checkout <ArrowRight size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Drawer ───────────────────────────────────────────────────────────────
 
 export default function WishlistDrawer() {
   const { items, totalItems, isOpen, closeWishlist } = useWishlist();
+  const { addItem: addToCart } = useCart();
   const router = useRouter();
   const drawerRef = useRef<HTMLDivElement>(null);
+  const [checkoutItem, setCheckoutItem] = useState<WishlistItem | null>(null);
 
-  // Close on Escape
+  // Close on Escape — dismisses checkout modal first, then drawer
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeWishlist();
+      if (e.key === "Escape") {
+        if (checkoutItem) setCheckoutItem(null);
+        else closeWishlist();
+      }
     };
     if (isOpen) window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [isOpen, closeWishlist]);
+  }, [isOpen, closeWishlist, checkoutItem]);
 
-  // Lock body scroll
+  // Called by CheckoutSizePicker after a valid size is confirmed
+  const handleCheckoutConfirm = (
+    size: string,
+    colorName: string,
+    colorHex: string,
+    stock: number,
+  ) => {
+    if (!checkoutItem) return;
+    addToCart({
+      productId: checkoutItem.productId,
+      slug: checkoutItem.slug,
+      name: checkoutItem.name,
+      price: checkoutItem.price,
+      category: checkoutItem.category,
+      colorName,
+      colorHex,
+      size,
+      image: checkoutItem.image,
+      stock,
+    });
+    setCheckoutItem(null);
+    closeWishlist();
+    router.push("/checkout");
+  };
+
+  // Lock body scroll while drawer is open
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
     return () => {
@@ -394,6 +646,15 @@ export default function WishlistDrawer() {
 
   return (
     <>
+      {/* Checkout size validation modal — rendered above the drawer */}
+      {checkoutItem && (
+        <CheckoutSizePicker
+          item={checkoutItem}
+          onClose={() => setCheckoutItem(null)}
+          onConfirm={handleCheckoutConfirm}
+        />
+      )}
+
       <style>{`
         .wl-overlay {
           position: fixed; inset: 0; background: rgba(0,0,0,0.4);
@@ -461,6 +722,7 @@ export default function WishlistDrawer() {
           transition: background 0.2s ease;
         }
         .wl-shop-btn:hover { background: var(--nav-accent-hover); }
+        .wl-shop-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         @keyframes wlItemIn {
           from { opacity: 0; transform: translateX(12px); }
@@ -630,7 +892,7 @@ export default function WishlistDrawer() {
               <Link
                 href="/profile/wishlist"
                 onClick={closeWishlist}
-                className="flex items-center gap-1 text-[11px] font-bold tracking-widest uppercase no-underline transition-colors duration-150"
+                className="flex items-center gap-1 text-[11px] font-bold tracking-widests uppercase no-underline transition-colors duration-150"
                 style={{ color: "var(--nav-accent)" }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.color = "var(--nav-accent-hover)")
@@ -643,18 +905,19 @@ export default function WishlistDrawer() {
               </Link>
             </div>
 
+            {/* Checkout CTA — mirrors cart drawer pattern */}
+            <button
+              onClick={() => setCheckoutItem(items[0])}
+              className="wl-shop-btn"
+            >
+              Proceed to Checkout <ArrowRight size={14} />
+            </button>
+
             <button
               onClick={() => {
                 closeWishlist();
                 router.push("/products");
               }}
-              className="wl-shop-btn"
-            >
-              Continue Shopping <ArrowRight size={14} />
-            </button>
-
-            <button
-              onClick={closeWishlist}
               className="w-full text-center text-[11px] tracking-[0.1em] uppercase mt-3 py-2 transition-colors duration-150"
               style={{
                 color: "var(--nav-fg-muted)",
@@ -669,7 +932,7 @@ export default function WishlistDrawer() {
                 (e.currentTarget.style.color = "var(--nav-fg-muted)")
               }
             >
-              Close
+              Continue Shopping
             </button>
           </div>
         )}

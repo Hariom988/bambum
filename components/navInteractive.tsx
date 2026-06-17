@@ -65,8 +65,6 @@ function AnimatedHamburger({
   );
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const DEBOUNCE_MS = 280;
 const MAX_RESULTS = 6;
 
@@ -78,8 +76,6 @@ interface SearchProduct {
   category: string;
   variants: { colorName: string; colorHex: string; images: string[] }[];
 }
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function NavInteractive() {
   const { totalItems, openCart } = useCart();
@@ -102,13 +98,10 @@ export default function NavInteractive() {
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Active-link helper ─────────────────────────────────────────────────────
   const isActive = (href: string) => {
     if (href === "/products") return pathname === "/products";
     return pathname.startsWith(href);
   };
-
-  // ── Global Event Listeners (Scroll Lock & Esc Key) ─────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && drawerOpen) setDrawerOpen(false);
@@ -128,7 +121,6 @@ export default function NavInteractive() {
     };
   }, [drawerOpen]);
 
-  // ── Search ─────────────────────────────────────────────────────────────────
   const fetchSuggestions = useCallback(async (q: string) => {
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
@@ -563,7 +555,7 @@ export default function NavInteractive() {
           </div>
 
           {/* ── MOBILE HAMBURGER ── */}
-          <div className="flex md:hidden items-center ml-auto mr-12">
+          <div className="flex md:hidden items-center ml-auto ">
             <AnimatedHamburger
               isOpen={drawerOpen}
               onClick={() => setDrawerOpen(!drawerOpen)}
@@ -819,6 +811,36 @@ export default function NavInteractive() {
                   }}
                 >
                   <User size={16} /> Sign In
+                </button>
+                <button
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
+                  style={{
+                    fontFamily: "var(--nav-font-ui)",
+                    borderColor: "var(--nav-border)",
+                    color: "var(--nav-fg)",
+                    background: "transparent",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background =
+                      "var(--nav-dropdown-bg, rgba(200,169,126,0.08))")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
+                  onClick={() => {
+                    closeDrawer();
+                    openWishlist();
+                  }}
+                >
+                  <Heart size={16} /> Wishlist
+                  {wishlistTotal > 0 && (
+                    <span
+                      className="rounded-full text-[0.65rem] font-bold text-white px-1.5 py-0.5 leading-none"
+                      style={{ background: "var(--nav-accent)" }}
+                    >
+                      {wishlistTotal}
+                    </span>
+                  )}
                 </button>
                 <button
                   className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border text-[0.8rem] font-semibold tracking-wide transition-colors duration-150 cursor-pointer"

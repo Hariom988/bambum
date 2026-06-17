@@ -73,7 +73,7 @@ export async function PUT(req: NextRequest) {
           updatedAt: new Date(),
         },
       },
-      { upsert: true }, // creates the document on first save
+      { upsert: true }, 
     );
     await client.close();
     return NextResponse.json({ ok: true });

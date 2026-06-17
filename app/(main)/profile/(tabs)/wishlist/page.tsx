@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Heart, ShoppingBag, Package, Trash2, X } from "lucide-react";
@@ -18,21 +18,17 @@ interface SizePickerModalProps {
 function SizePickerModal({ item, onClose }: SizePickerModalProps) {
   const { addItem: addToCart, openCart } = useCart();
   const [sizes, setSizes] = useState<{ size: string; stock: number }[]>([]);
-  const [variants, setVariants] = useState;
-  {
-    colorName: string;
-    colorHex: string;
-    sizes: {
-      size: string;
-      stock: number;
-    }
-    [];
-  }
-  [] > [];
+  const [variants, setVariants] = useState<
+    {
+      colorName: string;
+      colorHex: string;
+      sizes: { size: string; stock: number }[];
+    }[]
+  >([]);
   const [activeVariantIdx, setActiveVariantIdx] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useState(() => {
+  useEffect(() => {
     fetch(`/api/products/${encodeURIComponent(item.slug)}`)
       .then((r) => r.json())
       .then((d) => {
@@ -42,7 +38,7 @@ function SizePickerModal({ item, onClose }: SizePickerModalProps) {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  });
+  }, [item.slug]);
 
   const handleSizeSelect = (
     size: string,

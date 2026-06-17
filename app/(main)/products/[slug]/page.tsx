@@ -343,15 +343,18 @@ export default function ProductPage({ params }: Props) {
       setTimeout(() => router.push("/checkout"), 300);
     }
   };
-
-  const { removeItem, isInWishlist } = useWishlist();
+  const {
+    removeItem: removeFromWishlist,
+    addItem: addToWishlist,
+    isInWishlist,
+  } = useWishlist();
   const wishlisted = isInWishlist(productId);
 
   const handleWishlistToggle = () => {
     if (wishlisted) {
-      removeItem(productId);
+      removeFromWishlist(productId);
     } else {
-      addItem({
+      addToWishlist({
         productId,
         slug: product.slug,
         name: product.name,
@@ -1057,12 +1060,11 @@ export default function ProductPage({ params }: Props) {
                   >
                     <Heart
                       size={16}
-                      style={{
-                        fill: wishlisted ? "var(--nav-accent)" : "none",
-                        color: wishlisted
-                          ? "var(--nav-accent)"
-                          : "var(--nav-fg-muted)",
-                      }}
+                      fill={wishlisted ? "var(--nav-accent)" : "none"}
+                      stroke={
+                        wishlisted ? "var(--nav-accent)" : "var(--nav-fg-muted)"
+                      }
+                      strokeWidth={2}
                     />
                     {wishlisted ? "Wishlisted" : "Add to Wishlist"}
                   </button>

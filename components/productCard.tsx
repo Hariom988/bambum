@@ -200,16 +200,20 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
       </div>
     );
   };
-  const { isInWishlist } = useWishlist();
+  const {
+    isInWishlist,
+    addItem: addToWishlist,
+    removeItem: removeFromWishlist,
+  } = useWishlist();
   const wishlisted = isInWishlist(productId);
 
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (wishlisted) {
-      removeItem(productId, "undefined", "undefined");
+      removeFromWishlist(productId);
     } else {
-      addItem({
+      addToWishlist({
         productId,
         slug: product.slug,
         name: product.name,
@@ -274,10 +278,9 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
           >
             <Heart
               size={14}
-              style={{
-                color: wishlisted ? "#fff" : "var(--nav-fg-muted)",
-                fill: wishlisted ? "#fff" : "none",
-              }}
+              fill={wishlisted ? "#fff" : "none"}
+              stroke={wishlisted ? "#fff" : "var(--nav-fg-muted)"}
+              strokeWidth={2}
             />
           </button>
           {discountPercent && (

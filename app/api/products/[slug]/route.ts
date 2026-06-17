@@ -16,7 +16,7 @@ export async function GET(
       {
         projection: {
           _id: 1, name: 1, slug: 1, description: 1,
-          price: 1, category: 1, variants: 1, stock: 1,
+          price: 1,originalPrice:1, category: 1, variants: 1, stock: 1,
         },
       }
     );
