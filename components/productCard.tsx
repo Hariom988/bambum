@@ -267,19 +267,12 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
           <button
             onClick={handleWishlistToggle}
             aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-            className="absolute top-3 right-3 z-10 flex items-center justify-center w-8 h-8 transition-all duration-200"
-            style={{
-              background: wishlisted
-                ? "var(--nav-accent)"
-                : "rgba(255,255,255,0.9)",
-              border: "1px solid var(--nav-border)",
-              cursor: "pointer",
-            }}
+            className="absolute cursor-pointer top-3 right-3 z-10 flex items-center justify-center w-8 h-8 transition-all duration-200"
           >
             <Heart
-              size={14}
-              fill={wishlisted ? "#fff" : "none"}
-              stroke={wishlisted ? "#fff" : "var(--nav-fg-muted)"}
+              size={16}
+              fill={wishlisted ? "var(--nav-accent)" : "none"}
+              stroke={wishlisted ? "var(--nav-accent)" : "var(--nav-fg-muted)"}
               strokeWidth={2}
             />
           </button>
